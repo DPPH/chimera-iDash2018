@@ -56,13 +56,22 @@ mat_float operator*(const mat_float &A, const mat_float &B) {
     const int m = B.NumCols();
     assert(B.NumRows() == l);
     mat_float reps;
-    reps.SetDims(n,m);
+    reps.SetDims(n, m);
     for (int i = 0; i < n; i++)
         for (int j = 0; j < m; j++) {
-        reps[i][j]=0;
+            reps[i][j] = 0;
             for (int k = 0; k < l; k++)
                 reps[i][j] += A[i][k] * B[k][j];
-    }
+        }
+    return reps;
+}
+
+float operator*(const vec_float &A, const vec_float &B) {
+    const int n = A.length();
+    assert(B.length() == n);
+    float reps = 0;
+    for (int i = 0; i < n; i++)
+        reps += A[i] * B[i];
     return reps;
 }
 
@@ -93,12 +102,12 @@ vec_float operator*(const vec_float &b, const mat_float &A) {
 }
 
 /** diag(w) * A */
-mat_float diagProd(const vec_float& w, const mat_float& A) {
+mat_float diagProd(const vec_float &w, const mat_float &A) {
     const int n = A.NumRows();
     const int m = A.NumCols();
     assert(w.length() == n);
     mat_float reps;
-    reps.SetDims(n,m);
+    reps.SetDims(n, m);
     for (int i = 0; i < n; i++)
         for (int j = 0; j < m; j++)
             reps[i][j] = w[i] * A[i][j];
@@ -138,13 +147,13 @@ vec_float operator+(const vec_float &a, const vec_float &b) {
  *
  * this function multiplies row i and column i by alpha.
  * */
-void symetricScale(mat_float& G, int i, float alpha) {
+void symetricScale(mat_float &G, int i, float alpha) {
     const int k = G.NumRows();
-    for (int j = i+1; j<k; j++) {
+    for (int j = i + 1; j < k; j++) {
         G[i][j] *= alpha;
         G[j][i] = G[i][j];
     }
-    G[i][i]=1.;
+    G[i][i] = 1.;
 }
 
 /**
@@ -159,42 +168,42 @@ void symetricScale(mat_float& G, int i, float alpha) {
  * this function adds gamma times row i to row j.
  * then adds gamma times col i to col j.
  */
-void symetricTransvect(mat_float& G, int j, int i, float gamma) {
+void symetricTransvect(mat_float &G, int j, int i, float gamma) {
     const int k = G.NumRows();
     G[j][i] = 0.;
-    for (int l = i+1; l<k; l++) {
+    for (int l = i + 1; l < k; l++) {
         G[j][l] += gamma * G[i][l];
     }
     //just copy the column
-    for (int l = i; l<k; l++) {
+    for (int l = i; l < k; l++) {
         G[l][j] = G[j][l];
     }
 }
 
 
 /** multiply row i by alpha */
-void rowScale(mat_float& A, int i, float alpha) {
+void rowScale(mat_float &A, int i, float alpha) {
     const int m = A.NumCols();
-    for (int j=0; j<m; j++) A[i][j] *= alpha;
+    for (int j = 0; j < m; j++) A[i][j] *= alpha;
 }
 
 /** add gamma times row i to row j */
-void rowTransvect(mat_float& A, int j, int i, float gamma) {
+void rowTransvect(mat_float &A, int j, int i, float gamma) {
     const int m = A.NumCols();
-    for (int l=0; l<m; l++) A[j][l] += gamma * A[i][l];
+    for (int l = 0; l < m; l++) A[j][l] += gamma * A[i][l];
 }
 
-float sqr(float x) { return x*x; }
+float sqr(float x) { return x * x; }
 
 /** square norm of columns */
-vec_float colSqNorms(const mat_float& A) {
+vec_float colSqNorms(const mat_float &A) {
     const int n = A.NumRows();
     const int m = A.NumCols();
     vec_float reps;
     reps.SetLength(m);
     clear(reps);
-    for (int j=0; j<m; j++) {
-        for (int i=0; i<n; i++) {
+    for (int j = 0; j < m; j++) {
+        for (int i = 0; i < n; i++) {
             reps[j] += sqr(A[i][j]);
         }
     }
@@ -202,14 +211,14 @@ vec_float colSqNorms(const mat_float& A) {
 }
 
 /** square norm of columns */
-vec_float scaledColSqNorms(const mat_float& A, const vec_float& w) {
+vec_float scaledColSqNorms(const mat_float &A, const vec_float &w) {
     const int n = A.NumRows();
     const int m = A.NumCols();
     vec_float reps;
     reps.SetLength(m);
     clear(reps);
-    for (int j=0; j<m; j++) {
-        for (int i=0; i<n; i++) {
+    for (int j = 0; j < m; j++) {
+        for (int i = 0; i < n; i++) {
             reps[j] += w[i] * sqr(A[i][j]);
         }
     }
@@ -217,100 +226,152 @@ vec_float scaledColSqNorms(const mat_float& A, const vec_float& w) {
 }
 
 float pvalexp(float x) {
-    return 1. + erf(-exp(x)/(2.*sqrt(2)));
+    return 1. + erf(-exp(x) / (2. * sqrt(2)));
 }
 
-void fill_matrix_S(mat_float& S, int n, int m) {
+bool is_binary(float x) {
+    return x == 0 || x == 1;
+}
+
+void fill_matrix_S(mat_float &S, int n, int m) {
     ifstream ifs("data/snpMat.txt");
     assert(ifs);
-    S.SetDims(n,m);
+    S.SetDims(n, m);
     string line;
     std::getline(ifs, line); //ignore first header line
-    for (int i=0; i<n; i++)
-        for (int j=0; j<n; j++)
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++) {
             ifs >> S[i][j];
+            assert(is_binary(S[i][j])); //S binary
+        }
+    assert(ifs); //verify that all values have been read
     ifs.close();
 }
 
-void fill_matrix_Xy(mat_float& X, vec_float y, int n, int k) {
+void fill_matrix_Xy(mat_float &X, vec_float &y, int n, int k) {
     ifstream ifs("data/covariates.csv");
     assert(ifs);
-    X.SetDims(n,k);
+    X.SetDims(n, k);
     y.SetLength(n);
     mat_RR B;
+    vec_RR sums;
+    vec_RR nbels;
+    B.SetDims(k, n);
+    sums.SetLength(k);
+    clear(sums);
+    nbels.SetLength(k);
+    clear(nbels);
 
     string line;
     string buf;
     std::getline(ifs, line); //ignore first header line
-    for (int i=0; i<n; i++) {
+    for (int i = 0; i < n; i++) {
         std::getline(ifs, line);
-        for (int j=0; j<int(line.size()); j++) {
-            if (line[j]==',') line[j]=' ';
+        for (int j = 0; j < int(line.size()); j++) {
+            if (line[j] == ',') line[j] = ' ';
         }
         istringstream iss(line);
         iss >> buf; //ignore label
         iss >> y[i]; //read y
-        B[0][i]=1.; //intercept first
-        for (int j=1; j<=k; j++) iss >> B[j][i];
+        assert(is_binary(y[i])); //S binary
+        B[0][i] = 1.; //intercept first
+        nbels[0]++;
+        for (int j = 1; j < k; j++) {
+            iss >> buf;
+            if (buf == "NA") {
+                B[j][i] = -1e80;
+            } else {
+                B[j][i] = stod(buf);
+                sums[j] += B[j][i];
+                nbels[j]++;
+            }
+        }
+        assert(iss);
     }
+    assert(ifs);
     ifs.close();
+    //replace all NANs by average
+    //cout << B << endl;
+    //cout << nbels << endl;
+    for (int j = 0; j < k; j++) {
+        sums[j] /= nbels[j];
+    }
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < k; j++) {
+            if (B[j][i] < 1e-75) {
+                B[j][i] = sums[j];
+            }
+        }
+    }
     //orthogonalize B
-    for (int i=0; i<=k; i++) {
+    for (int i = 0; i < k; i++) {
         //remove component on previous vectors
-        for (int j=0; j<i; j++) {
-            B[i] -= (B[i]*B[j])*B[j];
+        for (int j = 0; j < i; j++) {
+            B[i] -= (B[i] * B[j]) * B[j];
         }
         //normalize B[i]
-        RR alpha = inv(sqrt(B[i]*B[i]));
+        RR alpha = inv(sqrt(B[i] * B[i]));
         B[i] *= alpha;
     }
+    //cout << B << endl;
+    //cout << B*transpose(B) << endl;
     //put B in X
-    for (int i=0; i<n; i++) {
-        for (int j=0; j<k; j++) {
-            conv(X[i][j],B[j][i]);
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < k; j++) {
+            conv(X[i][j], B[j][i]);
         }
     }
 }
 
 
-
 int main() {
     int k = 4;
-    int m = 10000;
-    int n = 235;
-    int ITERS = 5;    //num of logreg iters
+    int m = 10643;
+    int n = 245;
+    int ITERS = 10;    //num of logreg iters
     double step = 5.; //learning rate
     mat_float X;
     mat_float S;
     vec_float y;
+    fill_matrix_S(S, n, m);
+    fill_matrix_Xy(X, y, n, k);
+
     //
     vec_float p;
 
     //logistic regression
     vec_float beta;
-    beta.SetLength(n);
+    beta.SetLength(k);
     clear(beta);
     for (int iter = 0; iter <= ITERS; iter++) {
         p = sigmoid_vec(X * beta);
-        beta = beta + step * (transpose(X) * (y - p));
+        vec_float mgrad = (transpose(X) * (y - p));
+        beta = beta + step * mgrad;
+        cout << "grad: " << iter << " " << sqrt(mgrad * mgrad) << endl;
+        //cout << "p: " << p << endl;
     }
     // p and W
     vec_float w;
     w.SetLength(n);
     for (int i = 0; i < n; i++) w[i] = p[i] * (1 - p[i]);
+    cout << "grad: " << (transpose(X) * (y - p)) << endl;
+    cout << "beta: " << beta << endl;
+    cout << "p: " << p << endl;
+    cout << "w: " << w << endl;
     // Zstar
     vec_float zStar;
     zStar = (y - p) * S;
+    cout << "zStar:" << zStar << endl;
     // G
     mat_float G = transpose(X) * diagProd(w, X);
     mat_float A = transpose(X) * diagProd(w, S);
     //cholesky
-    for (int i=0; i<k; i++) {
-        assert(sqrt(G[i][i])>0); //the matrix must be positive definite!!
-        float alpha = 1./sqrt(G[i][i]);
+    for (int i = 0; i < k; i++) {
+        assert(sqrt(G[i][i]) > 0); //the matrix must be positive definite!!
+        float alpha = 1. / sqrt(G[i][i]);
         symetricScale(G, i, alpha);
         rowScale(A, i, alpha);
-        for (int j=i+1; j<k; j++) {
+        for (int j = i + 1; j < k; j++) {
             float gamma = -G[j][i];
             symetricTransvect(G, j, i, gamma);
             rowTransvect(A, j, i, gamma);
@@ -318,11 +379,13 @@ int main() {
     }
     //denominator
     vec_float sStar2 = scaledColSqNorms(S, w) - colSqNorms(A);
-    vec_float ri; ri.SetLength(m);
-    for (int j=0; j<m; j++)
-        ri[j] = 2*log(abs(zStar[j])) - log(abs(sStar2[j]));
-    vec_float pval; pval.SetLength(m);
-    for (int j=0; j<m; j++)
+    vec_float ri;
+    ri.SetLength(m);
+    for (int j = 0; j < m; j++)
+        ri[j] = 2 * log(abs(zStar[j])) - log(abs(sStar2[j]));
+    vec_float pval;
+    pval.SetLength(m);
+    for (int j = 0; j < m; j++)
         pval[j] = pvalexp(ri[j]);
     return 0;
 }
