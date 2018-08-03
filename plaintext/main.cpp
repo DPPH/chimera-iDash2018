@@ -226,7 +226,7 @@ vec_float scaledColSqNorms(const mat_float &A, const vec_float &w) {
 }
 
 float pvalexp(float x) {
-    return 1. + erf(-exp(x) / (2. * sqrt(2)));
+    return 1. + erf(-exp(x/2.) / sqrt(2.));
 }
 
 bool is_binary(float x) {
@@ -240,7 +240,7 @@ void fill_matrix_S(mat_float &S, int n, int m) {
     string line;
     std::getline(ifs, line); //ignore first header line
     for (int i = 0; i < n; i++)
-        for (int j = 0; j < n; j++) {
+        for (int j = 0; j < m; j++) {
             ifs >> S[i][j];
             assert(is_binary(S[i][j])); //S binary
         }
@@ -365,6 +365,8 @@ int main() {
     // G
     mat_float G = transpose(X) * diagProd(w, X);
     mat_float A = transpose(X) * diagProd(w, S);
+    cout << "G: " << G << endl;
+    cout << "A: " << A << endl;
     //cholesky
     for (int i = 0; i < k; i++) {
         assert(sqrt(G[i][i]) > 0); //the matrix must be positive definite!!
@@ -379,13 +381,21 @@ int main() {
     }
     //denominator
     vec_float sStar2 = scaledColSqNorms(S, w) - colSqNorms(A);
+    cout << "sStar2: " << sStar2 << endl;
     vec_float ri;
     ri.SetLength(m);
     for (int j = 0; j < m; j++)
         ri[j] = 2 * log(abs(zStar[j])) - log(abs(sStar2[j]));
+    cout << "ri: " << ri << endl;
     vec_float pval;
     pval.SetLength(m);
     for (int j = 0; j < m; j++)
         pval[j] = pvalexp(ri[j]);
+    cout << "pval: " << pval << endl;
+
+    ofstream ofs("pvalexp.dat");
+    for (int j = 0; j < m; j++)
+        ofs << ri[j] << " " << pval[j] << endl;
+    ofs.close();
     return 0;
 }
