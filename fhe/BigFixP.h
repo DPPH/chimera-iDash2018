@@ -34,28 +34,26 @@ public:
     BigTorusParams(uint64_t torus_limbs);
 };
 
-static_assert(sizeof(BigTorusParams)==8, "Bad compiler");
+static_assert(sizeof(BigTorusParams) == 8, "Bad compiler");
 
 class BigFixPParams {
 public:
     BigTorusParams torus_params; ///< total number of limbs
     int64_t plaintext_expo;      ///< plaintext exponent
-    int64_t level_expo;
+    int64_t level_expo; ///< level exponent
 
     BigFixPParams(const BigTorusParams &torus_params, int64_t plaintext_expo, int64_t level_expo);
-    ///< level exponent
 };
 
-static_assert(sizeof(BigFixPParams)==24, "Bad compiler");
+static_assert(sizeof(BigFixPParams) == 24, "Bad compiler");
 
 class BigFixP {
 public:
     uint64_t *limbs_raw;
-    const BigFixPParams * const params;
+    const BigFixPParams *const params;
 
-    BigFixP(const BigFixPParams* params):
-            params(params)
-    {
+    BigFixP(const BigFixPParams *params) :
+            params(params) {
         limbs_raw = new uint64_t[params->torus_params.torus_limbs];
     }
 
@@ -82,11 +80,10 @@ public:
 class BigTorus {
 public:
     uint64_t *limbs_raw;
-    const BigTorusParams *const  params;
+    const BigTorusParams *const params;
 
-    BigTorus(const BigTorusParams* params):
-    params(params)
-    {
+    BigTorus(const BigTorusParams *params) :
+            params(params) {
         limbs_raw = new uint64_t[params->torus_limbs];
     }
 
@@ -113,11 +110,13 @@ public:
 class BigTorusRef {
 public:
     uint64_t *limbs_raw;
-    const BigTorusParams * const params;
+    const BigTorusParams *const params;
 
     BigTorusRef(uint64_t *limbs_raw, const BigTorusParams *params);
-    BigTorusRef(const BigTorus& torus);
-    BigTorusRef(BigTorus& torus);
+
+    BigTorusRef(const BigTorus &torus);
+
+    BigTorusRef(BigTorus &torus);
 };
 
 
@@ -125,7 +124,8 @@ class BigFixPRef {
 public:
     uint64_t *limbs_raw;
     const BigFixPParams *const params;
-    BigFixPRef(const BigFixP& a);
+
+    BigFixPRef(const BigFixP &a);
 };
 
 

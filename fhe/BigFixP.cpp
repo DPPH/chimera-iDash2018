@@ -23,10 +23,10 @@ void prepareAdd(BigFixPAddParams &out, const BigFixPParams &pres, const BigFixPP
 
     // verify (strong) L_c <= min(rho_a + L_a, rho_b + L_b) - rho_c
     int64_t maximal_level_expo = std::min(pa.plaintext_expo + pa.level_expo, pb.plaintext_expo + pb.level_expo)
-                                     - pres.plaintext_expo;
+                                 - pres.plaintext_expo;
     assert_dramatically(pres.level_expo <= maximal_level_expo,
                         "addition level exponent is too small"
-                        );
+    );
 
     // left shift computation for a
     out.sa = pa.plaintext_expo + pa.level_expo - pres.plaintext_expo - pres.level_expo;
@@ -49,7 +49,7 @@ void special_add_lshift(uint64_t *out, uint64_t *a, int64_t out_limbs, int64_t a
     int64_t oc = out_limbs;
     int64_t signif_limbs = a_limbs - slimbs;
 
-    if (sbits==0) {
+    if (sbits == 0) {
         //it is a shift by an exact amount of limbs
         if (signif_limbs <= 0) {
             // a:        **************|
@@ -75,7 +75,7 @@ void special_add_lshift(uint64_t *out, uint64_t *a, int64_t out_limbs, int64_t a
             }
         }
     } else {
-        int64_t ocp = oc+1;
+        int64_t ocp = oc + 1;
         //we shift a by slimbs limbs + sbits bits
         //and we keep oc+1 limbs of the output
         //right shift by 64-sbits bits if not exact
@@ -132,11 +132,11 @@ void add(BigFixP &reps, const BigFixP &a, const BigFixP &b, int64_t out_precisio
 
 BigTorusRef::BigTorusRef(uint64_t *limbs_raw, const BigTorusParams *params) : limbs_raw(limbs_raw), params(params) {}
 
-BigTorusRef::BigTorusRef(const BigTorus &torus): limbs_raw(torus.limbs_raw), params(torus.params) {}
+BigTorusRef::BigTorusRef(const BigTorus &torus) : limbs_raw(torus.limbs_raw), params(torus.params) {}
 
-BigTorusRef::BigTorusRef(BigTorus &torus): limbs_raw(torus.limbs_raw), params(torus.params) {}
+BigTorusRef::BigTorusRef(BigTorus &torus) : limbs_raw(torus.limbs_raw), params(torus.params) {}
 
-BigFixPRef::BigFixPRef(const BigFixP &a): limbs_raw(a.limbs_raw), params(a.params) {}
+BigFixPRef::BigFixPRef(const BigFixP &a) : limbs_raw(a.limbs_raw), params(a.params) {}
 
 BigTorusParams::BigTorusParams(uint64_t torus_limbs) : torus_limbs(torus_limbs) {}
 
