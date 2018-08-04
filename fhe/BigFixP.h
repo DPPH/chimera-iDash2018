@@ -29,16 +29,21 @@ inline void assert_weakly(bool condition, const std::string &message = "") {
 
 class BigTorusParams {
 public:
-    uint64_t torus_limbs;    //total number of limbs
+    uint64_t torus_limbs; ///< total number of limbs
+
+    BigTorusParams(uint64_t torus_limbs);
 };
 
 static_assert(sizeof(BigTorusParams)==8, "Bad compiler");
 
 class BigFixPParams {
 public:
-    BigTorusParams torus_params; //total number of limbs
-    int64_t plaintext_expo;      //plaintext exponent
-    int64_t level_expo;          //level exponent
+    BigTorusParams torus_params; ///< total number of limbs
+    int64_t plaintext_expo;      ///< plaintext exponent
+    int64_t level_expo;
+
+    BigFixPParams(const BigTorusParams &torus_params, int64_t plaintext_expo, int64_t level_expo);
+    ///< level exponent
 };
 
 static_assert(sizeof(BigFixPParams)==24, "Bad compiler");

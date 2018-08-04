@@ -137,3 +137,8 @@ BigTorusRef::BigTorusRef(const BigTorus &torus): limbs_raw(torus.limbs_raw), par
 BigTorusRef::BigTorusRef(BigTorus &torus): limbs_raw(torus.limbs_raw), params(torus.params) {}
 
 BigFixPRef::BigFixPRef(const BigFixP &a): limbs_raw(a.limbs_raw), params(a.params) {}
+
+BigTorusParams::BigTorusParams(uint64_t torus_limbs) : torus_limbs(torus_limbs) {}
+
+BigFixPParams::BigFixPParams(const BigTorusParams &torus_params, int64_t plaintext_expo, int64_t level_expo)
+        : torus_params(torus_params), plaintext_expo(plaintext_expo), level_expo(level_expo) {}
