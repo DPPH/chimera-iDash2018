@@ -11,15 +11,22 @@ void prepareAdd(BigFixPAddParams &out, const BigFixPParams &pres, const BigFixPP
     out.ib_limbs = pb.torus_params.torus_limbs;
     out.ic_limbs = pres.torus_params.torus_limbs;
     out.oc_limbs = (out_precision_bits + BITS_PER_LIMBS - 1) / BITS_PER_LIMBS;
-    assert_dramatically(out.oc_limbs <= out.ic_limbs);
+    assert_dramatically(out.oc_limbs <= out.ic_limbs,
+                        "too much precision required"
+    );
 
     // verify (weak) rho_c >= max(rho_a, rho_b)
-    assert_weakly(pres.plaintext_expo >= std::max(pa.plaintext_expo, pb.plaintext_expo));
+    int64_t minimal_plaintext_expo = std::max(pa.plaintext_expo, pb.plaintext_expo);
+    assert_weakly(pres.plaintext_expo >= minimal_plaintext_expo,
+                  "addition plaintext exponent is too small"
+    );
 
     // verify (strong) L_c <= min(rho_a + L_a, rho_b + L_b) - rho_c
-    assert_dramatically(pres.level_expo <=
-                        std::min(pa.plaintext_expo + pa.level_expo, pb.plaintext_expo + pb.level_expo)
-                        - pres.plaintext_expo);
+    int64_t maximal_level_expo = std::min(pa.plaintext_expo + pa.level_expo, pb.plaintext_expo + pb.level_expo)
+                                     - pres.plaintext_expo;
+    assert_dramatically(pres.level_expo <= maximal_level_expo,
+                        "addition level exponent is too small"
+                        );
 
     // left shift computation for a
     out.sa = pa.plaintext_expo + pa.level_expo - pres.plaintext_expo - pres.level_expo;

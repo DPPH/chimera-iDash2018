@@ -52,15 +52,15 @@ int main() {
     BigFixPParams params;
     params.torus_params.torus_limbs = 10;
     params.plaintext_expo = 10;
-    params.level_expo = 50;
+    params.level_expo = 128;
     BigFixPParams paramsb;
-    paramsb.torus_params.torus_limbs = 10;
+    paramsb.torus_params.torus_limbs = 11;
     paramsb.plaintext_expo = 10;
-    paramsb.level_expo = 50;
+    paramsb.level_expo = 128;
     BigFixPParams paramsc;
     paramsc.torus_params.torus_limbs = 10;
     paramsc.plaintext_expo = 10;
-    paramsc.level_expo = 49;
+    paramsc.level_expo = 64;
 
     //torus load and store to RR
     for (int trial = 0; trial < 100; trial++) {
@@ -95,12 +95,13 @@ int main() {
         BigFixP testFixpC(&paramsc);
         to_fixP(testFixpA, testa);
         to_fixP(testFixpB, testb);
-        add(testFixpC, testFixpA, testFixpB, NA);
+        add(testFixpC, testFixpA, testFixpB, 640);
         RR testc = to_RR(testFixpC);
 
         RR::SetOutputPrecision(long(640 * log(2) / log(10)));
         cout << testa << endl;
         cout << testb << endl;
+        cout << testa+testb << endl;
         cout << testc << endl;
         assert(abs(testa+testb-testc)<=1e-100);
     }
