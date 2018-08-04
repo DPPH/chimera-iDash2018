@@ -122,6 +122,19 @@ void fixPRawAdd(uint64_t *reps, uint64_t *a, uint64_t *b, const BigFixPAddParams
     mpn_add_n(c, tmp_a, tmp_b, params.oc_limbs);
 }
 
+void fixPRawSub(uint64_t *reps, uint64_t *a, uint64_t *b, const BigFixPAddParams &params) {
+    uint64_t *tmp_a = params.tmp_a;
+    uint64_t *tmp_b = params.tmp_b;
+    uint64_t *c = reps + params.ic_limbs - params.oc_limbs;
+
+    //left shift a by sa positions and keep oc limbs
+    special_add_lshift(tmp_a, a, params.oc_limbs, params.ia_limbs, params.sa);
+    //left shift b by sb positions and keep oc limbs
+    special_add_lshift(tmp_b, b, params.oc_limbs, params.ib_limbs, params.sb);
+    //add a,b (on oc_limbs)
+    mpn_sub_n(c, tmp_a, tmp_b, params.oc_limbs);
+}
+
 void clear(BigFixP &reps) {
     fixPRawClear(reps.limbs_raw, reps.params->torus_params.torus_limbs);
 }
@@ -155,6 +168,28 @@ void add(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, in
     prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
     for (long i = 0; i < a.length; i++) {
         fixPRawAdd(reps.limbs_raw + i * nreps, a.limbs_raw + i * na, b.limbs_raw + i * nb, addParams);
+    }
+    releaseAdd(addParams);
+}
+
+void sub(BigFixP &reps, const BigFixP &a, const BigFixP &b, int64_t out_precision_bits) {
+    BigFixPAddParams addParams;
+    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_params.torus_limbs * BITS_PER_LIMBS;
+    prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
+    fixPRawSub(reps.limbs_raw, a.limbs_raw, b.limbs_raw, addParams);
+    releaseAdd(addParams);
+}
+
+void sub(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, int64_t out_precision_bits) {
+    const int64_t nreps = reps.params->torus_params.torus_limbs;
+    const int64_t na = a.params->torus_params.torus_limbs;
+    const int64_t nb = b.params->torus_params.torus_limbs;
+    assert_dramatically(reps.length == a.length && reps.length == b.length, "wrong dimensions");
+    BigFixPAddParams addParams;
+    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_params.torus_limbs * BITS_PER_LIMBS;
+    prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
+    for (long i = 0; i < a.length; i++) {
+        fixPRawSub(reps.limbs_raw + i * nreps, a.limbs_raw + i * na, b.limbs_raw + i * nb, addParams);
     }
     releaseAdd(addParams);
 }

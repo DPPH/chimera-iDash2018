@@ -11,6 +11,12 @@ NTL::RR to_RR(const BigFixPRef &a);
 
 void tAb_prod(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b);
 
+void Ab_prod(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b);
+
+void Ab_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b);
+
+void tAb_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b);
+
 NTL::RR to_RR(const BigTorusRef &a);
 
 void fill_matrix_S(BigFixPMatrix &S);
@@ -20,6 +26,8 @@ void fill_matrix_Xy(BigFixPMatrix &X, BigFixPVector &y);
 void sigmoid_vec(BigFixPVector &p, BigFixPVector &w, BigFixPVector &x);
 
 void public_scale(BigFixPVector &res, int alpha);
+
+void public_scale_fake(BigFixPVector &res, int alpha);
 
 NTL::RR debug_norm(const BigFixPVector &v);
 

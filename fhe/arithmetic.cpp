@@ -164,7 +164,7 @@ void sigmoid_vec(BigFixPVector &p, BigFixPVector &w, BigFixPVector &x) {
     //this function is bootstrapped, so we will just use the RR conversion
     for (int64_t i = 0; i < p.length; i++) {
         RR xx = to_RR(x(i));
-        RR sigmo = inv(1 + exp(xx));
+        RR sigmo = inv(1 + exp(-xx));
         to_fixP(p(i), sigmo);
         to_fixP(w(i), sigmo * (1 - sigmo));
     }
@@ -194,12 +194,20 @@ std::ostream &operator<<(std::ostream &out, const BigFixPVector &v) {
     out << "[";
     for (int64_t i = 0; i < v.length; i++) {
         out << to_double(to_RR(v(i))) << " ";
+        if (i == 5 && v.length > 10) {
+            out << "... ";
+            i = v.length - 6;
+        }
     }
     out << "]";
     return out;
 }
 
 void tAb_prod(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
+    tAb_prod_fake(res, A, b);
+}
+
+void tAb_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
     const uint64_t n = A.rows;
     const uint64_t m = A.cols;
     assert_dramatically(b.length == n, "wrong dimension");
@@ -219,6 +227,34 @@ void tAb_prod(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
     }
     vec_RR reps = tAA * bb;
     for (int64_t i = 0; i < m; i++) {
+        to_fixP(res(i), reps[i]);
+    }
+}
+
+void Ab_prod(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
+    Ab_prod_fake(res, A, b);
+}
+
+void Ab_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
+    const uint64_t n = A.rows;
+    const uint64_t m = A.cols;
+    assert_dramatically(b.length == m, "wrong dimension");
+    assert_dramatically(res.length == n, "wrong dimension");
+    //this function is bootstrapped, so we will just use the RR conversion
+    mat_RR AA;
+    AA.SetDims(n, m);
+    vec_RR bb;
+    bb.SetLength(m);
+    for (int64_t i = 0; i < n; i++) {
+        for (int64_t j = 0; j < m; j++) {
+            AA[i][j] = to_RR(A(i, j));
+        }
+    }
+    for (int64_t j = 0; j < m; j++) {
+        bb[j] = to_RR(b(j));
+    }
+    vec_RR reps = AA * bb;
+    for (int64_t i = 0; i < n; i++) {
         to_fixP(res(i), reps[i]);
     }
 }

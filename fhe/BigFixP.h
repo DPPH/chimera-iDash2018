@@ -138,6 +138,10 @@ void add(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, in
 
 void add(BigFixP &reps, const BigFixP &a, const BigFixP &b, int64_t out_precision_bits = NA);
 
+void sub(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, int64_t out_precision_bits = NA);
+
+void sub(BigFixP &reps, const BigFixP &a, const BigFixP &b, int64_t out_precision_bits = NA);
+
 void clear(BigFixP &reps);
 
 void clear(BigFixPVector &reps);

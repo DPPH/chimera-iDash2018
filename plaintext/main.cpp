@@ -402,12 +402,21 @@ int main() {
     beta.SetLength(k);
     clear(beta);
     for (int iter = 0; iter <= ITERS; iter++) {
+        cout << "--- iter " << iter << "-----" << endl;
+        cout << "beta: " << beta << endl;
+        vec_float XBeta = X*beta;
+        cout << "XBeta: " << XBeta << endl;
         p = sigmoid_vec(X * beta);
-        vec_float mgrad = (transpose(X) * (y - p));
+        cout << "p: " << p << endl;
+        vec_float ymp = y-p;
+        cout << "ymp: " << ymp << endl;
+        vec_float mgrad = (transpose(X) * ymp);
+        cout << "mgrad: " << mgrad << endl;
         beta = beta + step * mgrad;
         cout << "grad: " << iter << " " << sqrt(mgrad * mgrad) << endl;
         //cout << "p: " << p << endl;
     }
+    return 0;
     // p and W
     vec_float w;
     w.SetLength(n);
