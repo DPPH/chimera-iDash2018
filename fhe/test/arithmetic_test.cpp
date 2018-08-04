@@ -2,6 +2,7 @@
 #include <NTL/LLL.h>
 #include "../BigFixP.h"
 #include "../commons.h"
+#include "../arithmetic.h"
 
 NTL_CLIENT;
 

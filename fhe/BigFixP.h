@@ -7,34 +7,11 @@
 #include <cassert>
 #include <string>
 #include <iostream>
+#include <gmp.h>
 
-#include "gmp.h"
+#include "commons.h"
+#include "BigTorus.h"
 
-const int64_t NA = 1ul << 63ul;
-const int64_t BITS_PER_LIMBS = 64;
-const int64_t BYTES_PER_LIMBS = BITS_PER_LIMBS / 8;
-
-inline void assert_dramatically(bool condition, const std::string &message = "") {
-    if (!condition) {
-        std::cerr << "ASSERT_FAILED: " << message << std::endl;
-        abort();
-    }
-}
-
-inline void assert_weakly(bool condition, const std::string &message = "") {
-    if (!condition) {
-        std::cerr << "ASSERT_WARNING: " << message << std::endl;
-    }
-}
-
-class BigTorusParams {
-public:
-    uint64_t torus_limbs; ///< total number of limbs
-
-    BigTorusParams(uint64_t torus_limbs);
-};
-
-static_assert(sizeof(BigTorusParams) == 8, "Bad compiler");
 
 class BigFixPParams {
 public:
@@ -62,62 +39,7 @@ public:
     }
 };
 
-class BigFixPVector {
-public:
-    uint64_t length;
-    uint64_t *limbs_raw;
-    BigFixPParams *params;
-};
 
-class BigFixPMatrix {
-public:
-    uint64_t rows;
-    uint64_t cols;
-    uint64_t *limbs_raw;
-    BigFixPParams *params;
-};
-
-class BigTorus {
-public:
-    uint64_t *limbs_raw;
-    const BigTorusParams *const params;
-
-    BigTorus(const BigTorusParams *params) :
-            params(params) {
-        limbs_raw = new uint64_t[params->torus_limbs];
-    }
-
-    ~BigTorus() {
-        delete[] limbs_raw;
-    }
-};
-
-class BigTorusVector {
-public:
-    uint64_t length;
-    uint64_t *limbs_raw;
-    BigFixPParams *params;
-};
-
-class BigTorusMatrix {
-public:
-    uint64_t rows;
-    uint64_t cols;
-    uint64_t *limbs_raw;
-    BigFixPParams *params;
-};
-
-class BigTorusRef {
-public:
-    uint64_t *limbs_raw;
-    const BigTorusParams *const params;
-
-    BigTorusRef(uint64_t *limbs_raw, const BigTorusParams *params);
-
-    BigTorusRef(const BigTorus &torus);
-
-    BigTorusRef(BigTorus &torus);
-};
 
 
 class BigFixPRef {
@@ -126,6 +48,37 @@ public:
     const BigFixPParams *const params;
 
     BigFixPRef(const BigFixP &a);
+
+    BigFixPRef(uint64_t *limbs, const BigFixPParams *params);
+};
+
+class BigFixPVector {
+public:
+    uint64_t *limbs_raw;
+    const uint64_t length;
+    const BigFixPParams *const params;
+
+    BigFixPRef operator()(uint64_t i);
+
+    BigFixPRef operator()(uint64_t i) const;
+
+    BigFixPVector(uint64_t length, const BigFixPParams *params);
+
+    ~BigFixPVector();
+};
+
+class BigFixPMatrix {
+public:
+    uint64_t *limbs_raw;
+    const uint64_t rows;
+    const uint64_t cols;
+    const BigFixPParams *const params;
+
+    BigFixPRef operator()(uint64_t i, uint64_t j);
+
+    BigFixPMatrix(uint64_t rows, uint64_t cols, const BigFixPParams *params);
+
+    ~BigFixPMatrix();
 };
 
 
@@ -176,6 +129,17 @@ void special_add_lshift(uint64_t *out, uint64_t *a,
  */
 void fixPRawAdd(uint64_t *reps, uint64_t *a, uint64_t *b, const BigFixPAddParams &params);
 
+/**
+ * zero
+ */
+void fixPRawClear(uint64_t *reps, const uint64_t limbs_size);
+
+void add(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, int64_t out_precision_bits = NA);
+
 void add(BigFixP &reps, const BigFixP &a, const BigFixP &b, int64_t out_precision_bits = NA);
+
+void clear(BigFixP &reps);
+
+void clear(BigFixPVector &reps);
 
 #endif //FHE_BIGFP_H

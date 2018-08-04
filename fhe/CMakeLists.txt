@@ -10,7 +10,7 @@ add_library(chimera-dpph
         BigFixP.cpp
         BigFixP.h
         commons.cpp
-        commons.h)
+        commons.h arithmetic.cpp arithmetic.h BigTorus.cpp BigTorus.h)
 
 add_executable(fhe main.cpp )
 target_link_libraries(fhe chimera-dpph -lntl -lgmp -lm)
