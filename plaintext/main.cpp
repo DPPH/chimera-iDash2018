@@ -226,7 +226,7 @@ vec_float scaledColSqNorms(const mat_float &A, const vec_float &w) {
 }
 
 float pvalexp(float x) {
-    return 1. + erf(-exp(x/2.) / sqrt(2.));
+    return 1. + erf(-exp(x / 2.) / sqrt(2.));
 }
 
 bool is_binary(float x) {
@@ -324,12 +324,70 @@ void fill_matrix_Xy(mat_float &X, vec_float &y, int n, int k) {
 }
 
 
+void draw_histogram(const string &name, const vec_float &values) {
+    static const int NB = 100;
+    double vmin = INFINITY;
+    double vmax = -INFINITY;
+    double vmean = 0;
+    double vstdev = 0;
+    double n = values.length();
+    double bins[NB + 1];
+    for (int i = 0; i <= NB; i++) bins[i] = 0;
+    for (float v : values) {
+        if (v > vmax) vmax = v;
+        if (v < vmin) vmin = v;
+        vmean += v;
+        vstdev += v * v;
+    }
+    vmean /= n;
+    vstdev /= n;
+    vstdev -= vmean * vmean;
+    vstdev = sqrt(vstdev);
+    cout << name << " -- " << vmean << " +- " << vstdev << " -- [ " << vmin << " , " << vmax << " ]" << endl;
+    for (float v : values) {
+        double x = NB * (v - vmin) / (vmax - vmin);
+        double xf = floor(x);
+        long xidx = long(xf);
+        if (xidx == NB) {
+            bins[NB] += 1.;
+        } else {
+            bins[xidx] += xf + 1 - x;
+            bins[xidx + 1] += x - xf;
+        }
+    }
+    ofstream ofs(name + string(".histo"));
+    for (int i = 0; i <= NB; i++)
+        ofs << vmin + double(i) / double(NB) * (vmax - vmin) << " " << bins[i] << endl;
+    ofs.close();
+    ofstream ofs2(name + string(".histo.plot"));
+    ofs2 << "set term post eps color enhanced" << endl;
+    ofs2 << "set output '" << name << ".eps'" << endl;
+    ofs2 << "plot '" << name << ".histo' with boxes" << endl;
+    ofs2.close();
+    system((string("gnuplot ")+name+string(".histo.plot")).c_str());
+    system((string("epstopdf ")+name+string(".eps")).c_str());
+}
+
+void draw_histogram(const string &name, const mat_float &values) {
+    long n = values.NumRows();
+    long m = values.NumCols();
+    vec_float tmp;
+    tmp.SetLength(n * m);
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            tmp[i * m + j] = values[i][j];
+        }
+    }
+    draw_histogram(name, tmp);
+}
+
+
 int main() {
     int k = 4;
     int m = 10643;
     int n = 245;
-    int ITERS = 10;    //num of logreg iters
-    double step = 5.; //learning rate
+    int ITERS = 7;    //num of logreg iters
+    double step = 4.; //learning rate (close to 4)
     mat_float X;
     mat_float S;
     vec_float y;
@@ -357,16 +415,21 @@ int main() {
     cout << "grad: " << (transpose(X) * (y - p)) << endl;
     cout << "beta: " << beta << endl;
     cout << "p: " << p << endl;
+    draw_histogram("p", p);
     cout << "w: " << w << endl;
+    draw_histogram("w", w);
     // Zstar
     vec_float zStar;
     zStar = (y - p) * S;
     cout << "zStar:" << zStar << endl;
+    draw_histogram("zStar", zStar);
     // G
     mat_float G = transpose(X) * diagProd(w, X);
     mat_float A = transpose(X) * diagProd(w, S);
     cout << "G: " << G << endl;
+    draw_histogram("G", G);
     cout << "A: " << A << endl;
+    draw_histogram("A", A);
     //cholesky
     for (int i = 0; i < k; i++) {
         assert(sqrt(G[i][i]) > 0); //the matrix must be positive definite!!
@@ -382,16 +445,19 @@ int main() {
     //denominator
     vec_float sStar2 = scaledColSqNorms(S, w) - colSqNorms(A);
     cout << "sStar2: " << sStar2 << endl;
+    draw_histogram("sStar2", sStar2);
     vec_float ri;
     ri.SetLength(m);
     for (int j = 0; j < m; j++)
         ri[j] = 2 * log(abs(zStar[j])) - log(abs(sStar2[j]));
     cout << "ri: " << ri << endl;
+    draw_histogram("ri", ri);
     vec_float pval;
     pval.SetLength(m);
     for (int j = 0; j < m; j++)
         pval[j] = pvalexp(ri[j]);
     cout << "pval: " << pval << endl;
+    draw_histogram("pval", pval);
 
     ofstream ofs("pvalexp.dat");
     for (int j = 0; j < m; j++)
