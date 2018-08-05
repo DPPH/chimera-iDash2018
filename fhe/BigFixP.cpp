@@ -140,8 +140,8 @@ void clear(BigFixP &reps) {
 }
 
 void clear(BigFixPVector &reps) {
-    const int n = reps.params->torus_params.torus_limbs;
-    for (int i = 0; i < reps.length; i++) {
+    const int64_t n = reps.params->torus_params.torus_limbs;
+    for (uint64_t i = 0; i < reps.length; i++) {
         fixPRawClear(reps.limbs_raw + i * n, n);
     }
 }
@@ -166,7 +166,7 @@ void add(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, in
     BigFixPAddParams addParams;
     if (out_precision_bits == NA) out_precision_bits = reps.params->torus_params.torus_limbs * BITS_PER_LIMBS;
     prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
-    for (long i = 0; i < a.length; i++) {
+    for (uint64_t i = 0; i < a.length; i++) {
         fixPRawAdd(reps.limbs_raw + i * nreps, a.limbs_raw + i * na, b.limbs_raw + i * nb, addParams);
     }
     releaseAdd(addParams);
@@ -188,7 +188,7 @@ void sub(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, in
     BigFixPAddParams addParams;
     if (out_precision_bits == NA) out_precision_bits = reps.params->torus_params.torus_limbs * BITS_PER_LIMBS;
     prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
-    for (long i = 0; i < a.length; i++) {
+    for (uint64_t i = 0; i < a.length; i++) {
         fixPRawSub(reps.limbs_raw + i * nreps, a.limbs_raw + i * na, b.limbs_raw + i * nb, addParams);
     }
     releaseAdd(addParams);

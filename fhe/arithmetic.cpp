@@ -81,8 +81,8 @@ void fill_matrix_S(BigFixPMatrix &S) {
 }
 
 void fill_matrix_Xy(BigFixPMatrix &X, BigFixPVector &y) {
-    const long n = X.rows;
-    const long k = X.cols;
+    const uint64_t n = X.rows;
+    const uint64_t k = X.cols;
     assert_dramatically(y.length == n, "dimension of X, y are wrong");
     basic_ifstream<char> ifs("data/covariates.csv");
     assert(ifs);
@@ -99,7 +99,7 @@ void fill_matrix_Xy(BigFixPMatrix &X, BigFixPVector &y) {
     string buf;
     RR rrbuf;
     std::getline(ifs, line); //ignore first header line
-    for (int i = 0; i < n; i++) {
+    for (uint64_t i = 0; i < n; i++) {
         std::getline(ifs, line);
         for (int j = 0; j < int(line.size()); j++) {
             if (line[j] == ',') line[j] = ' ';
@@ -112,7 +112,7 @@ void fill_matrix_Xy(BigFixPMatrix &X, BigFixPVector &y) {
 
         B[0][i] = 1.; //intercept first
         nbels[0]++;
-        for (int j = 1; j < k; j++) {
+        for (uint64_t j = 1; j < k; j++) {
             iss >> buf;
             if (buf == "NA") {
                 B[j][i] = -1e80;
@@ -129,20 +129,20 @@ void fill_matrix_Xy(BigFixPMatrix &X, BigFixPVector &y) {
     //replace all NANs by average
     //cout << B << endl;
     //cout << nbels << endl;
-    for (int j = 0; j < k; j++) {
+    for (uint64_t j = 0; j < k; j++) {
         sums[j] /= nbels[j];
     }
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < k; j++) {
+    for (uint64_t i = 0; i < n; i++) {
+        for (uint64_t j = 0; j < k; j++) {
             if (B[j][i] < 1e-75) {
                 B[j][i] = sums[j];
             }
         }
     }
     //orthogonalize B
-    for (int i = 0; i < k; i++) {
+    for (uint64_t i = 0; i < k; i++) {
         //remove component on previous vectors
-        for (int j = 0; j < i; j++) {
+        for (uint64_t j = 0; j < i; j++) {
             B[i] -= (B[i] * B[j]) * B[j];
         }
         //normalize B[i]
@@ -152,8 +152,8 @@ void fill_matrix_Xy(BigFixPMatrix &X, BigFixPVector &y) {
     //cout << B << endl;
     //cout << B*transpose(B) << endl;
     //put B in X
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < k; j++) {
+    for (uint64_t i = 0; i < n; i++) {
+        for (uint64_t j = 0; j < k; j++) {
             to_fixP(X(i, j), B[j][i]);
         }
     }
@@ -162,7 +162,7 @@ void fill_matrix_Xy(BigFixPMatrix &X, BigFixPVector &y) {
 void sigmoid_vec(BigFixPVector &p, BigFixPVector &w, BigFixPVector &x) {
     assert_dramatically(p.length == x.length && p.length == w.length, "wrong dimensions");
     //this function is bootstrapped, so we will just use the RR conversion
-    for (int64_t i = 0; i < p.length; i++) {
+    for (uint64_t i = 0; i < p.length; i++) {
         RR xx = to_RR(x(i));
         RR sigmo = inv(1 + exp(-xx));
         to_fixP(p(i), sigmo);
@@ -182,7 +182,7 @@ NTL::RR debug_norm(const BigFixPVector &v) {
     //this function is bootstrapped, so we will just use the RR conversion
     RR reps;
     reps = 0;
-    for (int64_t i = 0; i < v.length; i++) {
+    for (uint64_t i = 0; i < v.length; i++) {
         RR xx = to_RR(v(i));
         reps += xx * xx;
     }
@@ -192,7 +192,7 @@ NTL::RR debug_norm(const BigFixPVector &v) {
 std::ostream &operator<<(std::ostream &out, const BigFixPVector &v) {
     //this function is bootstrapped, so we will just use the RR conversion
     out << "[";
-    for (int64_t i = 0; i < v.length; i++) {
+    for (uint64_t i = 0; i < v.length; i++) {
         out << to_double(to_RR(v(i))) << " ";
         if (i == 5 && v.length > 10) {
             out << "... ";
@@ -217,16 +217,16 @@ void tAb_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
     tAA.SetDims(m, n);
     vec_RR bb;
     bb.SetLength(n);
-    for (int64_t i = 0; i < m; i++) {
-        for (int64_t j = 0; j < n; j++) {
+    for (uint64_t i = 0; i < m; i++) {
+        for (uint64_t j = 0; j < n; j++) {
             tAA[i][j] = to_RR(A(j, i));
         }
     }
-    for (int64_t j = 0; j < n; j++) {
+    for (uint64_t j = 0; j < n; j++) {
         bb[j] = to_RR(b(j));
     }
     vec_RR reps = tAA * bb;
-    for (int64_t i = 0; i < m; i++) {
+    for (uint64_t i = 0; i < m; i++) {
         to_fixP(res(i), reps[i]);
     }
 }
@@ -245,16 +245,16 @@ void Ab_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
     AA.SetDims(n, m);
     vec_RR bb;
     bb.SetLength(m);
-    for (int64_t i = 0; i < n; i++) {
-        for (int64_t j = 0; j < m; j++) {
+    for (uint64_t i = 0; i < n; i++) {
+        for (uint64_t j = 0; j < m; j++) {
             AA[i][j] = to_RR(A(i, j));
         }
     }
-    for (int64_t j = 0; j < m; j++) {
+    for (uint64_t j = 0; j < m; j++) {
         bb[j] = to_RR(b(j));
     }
     vec_RR reps = AA * bb;
-    for (int64_t i = 0; i < n; i++) {
+    for (uint64_t i = 0; i < n; i++) {
         to_fixP(res(i), reps[i]);
     }
 }

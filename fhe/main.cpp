@@ -55,7 +55,7 @@ int main() {
     int m = 10643;
     int n = 245;
     int ITERS = 7;    //num of logreg iters
-    double step = 4.; //learning rate (close to 4)
+    //double step = 4.; //learning rate (close to 4)
 
     BigFixPMatrix X(n, k, &X_params);
     BigFixPMatrix S(n, m, &S_params);
