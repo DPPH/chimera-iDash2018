@@ -8,8 +8,8 @@ NTL_CLIENT
 double log2Diff(const RR &a, const RR &b);
 
 TEST(FFT_TEST, precompute_iFFT) {
-    int nblimbs = 5;
-    int n = 8192;
+    int nblimbs = 2;
+    int n = 1024;
     //int N = n / 2;
     //int ns4 = n / 4;
 
@@ -33,8 +33,8 @@ TEST(FFT_TEST, precompute_iFFT) {
 }
 
 TEST(FFT_TEST, precompute_FFT) {
-    int nblimbs = 3;
-    int n = 16384;
+    int nblimbs = 2;
+    int n = 1024;
     //int N = n / 2;
     //int ns4 = n / 4;
 
@@ -58,7 +58,7 @@ TEST(FFT_TEST, precompute_FFT) {
 
 TEST(FFT_TEST, bijection_iFFT_FFT) {
     int nblimbs = 3;
-    int n = 16384;
+    int n = 512;
     int N = n / 2;
     int ns4 = n / 4;
     int64_t PREC = nblimbs * BITS_PER_LIMBS;
@@ -95,13 +95,13 @@ TEST(FFT_TEST, bijection_iFFT_FFT) {
     delete_BigReal_array(N, out2);
     delete_BigComplex_array(ns4, out);
     delete_BigReal_array(N, in);
-    clear_precomp_iFFT(powombar);
+    clear_precomp_FFT(powombar);
     clear_precomp_iFFT(powomega);
 }
 
 TEST(FFT_TEST, bijection_FFT_iFFT) {
-    int nblimbs = 3;
-    int n = 16384;
+    int nblimbs = 2;
+    int n = 256;
     int N = n / 2;
     int ns4 = n / 4;
     int64_t PREC = nblimbs * BITS_PER_LIMBS;
@@ -145,7 +145,7 @@ TEST(FFT_TEST, bijection_FFT_iFFT) {
     delete_BigReal_array(N, out);
     delete_BigComplex_array(ns4, in);
 
-    clear_precomp_iFFT(powombar);
+    clear_precomp_FFT(powombar);
     clear_precomp_iFFT(powomega);
 }
 

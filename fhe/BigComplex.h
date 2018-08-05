@@ -17,6 +17,8 @@ public:
     BigReal imag;
 
     BigComplex(uint64_t nblimbs);
+
+    ~BigComplex();
 };
 
 /**

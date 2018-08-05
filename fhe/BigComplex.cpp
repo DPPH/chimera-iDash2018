@@ -2,6 +2,8 @@
 
 BigComplex::BigComplex(uint64_t nblimbs) : real(nblimbs), imag(nblimbs) {}
 
+BigComplex::~BigComplex() {}
+
 BigComplexRef::BigComplexRef(BigReal *real, BigReal *imag) : real(real), imag(imag) {}
 
 BigComplexRef::BigComplexRef(const BigReal *real, const BigReal *imag) :

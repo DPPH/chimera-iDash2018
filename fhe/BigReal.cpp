@@ -1,3 +1,4 @@
+#include <cassert>
 #include "BigReal.h"
 
 BigReal::BigReal(uint64_t nblimbs) : nblimbs(nblimbs) {
@@ -40,9 +41,9 @@ void to_BigReal(BigReal &dest, const BigTorusRef &v) {
     const int zerofill = dsize - vcopysize;
     const int vcopyoffset = vsize - vcopysize;
     //copy the nblimbs most significant limbs
-    mpz_clear(dest.value);
-    dest.value->_mp_alloc = dsize;
-    dest.value->_mp_d = (mp_limb_t *) malloc(dsize * BYTES_PER_LIMBS);
+    mpz_realloc2(dest.value, dsize * BITS_PER_LIMBS);
+    assert(dest.value->_mp_alloc >= dsize);
+    //dest.value->_mp_d = (mp_limb_t *) malloc(dsize * BYTES_PER_LIMBS);
     //fill the zeros
     if (zerofill > 0) {
         mpn_zero(dest.value->_mp_d, zerofill);
@@ -111,10 +112,10 @@ void to_BigReal(BigReal &dest, const NTL::RR &v) {
     if (vv == 0) {
         mpz_set_ui(dest.value, 0);
     } else {
-        mpz_clear(dest.value);
-        dest.value->_mp_alloc = vsize;
+        mpz_realloc2(dest.value, vsize * BITS_PER_LIMBS);
+        assert(dest.value->_mp_alloc >= vsize);
         dest.value->_mp_size = vneg ? -vsize : vsize;
-        dest.value->_mp_d = (mp_limb_t *) malloc(vsize * BYTES_PER_LIMBS);
+        //dest.value->_mp_d = (mp_limb_t *) malloc(vsize * BYTES_PER_LIMBS);
         mpn_copyi(dest.value->_mp_d, ZZ_limbs_get(vv), vsize);
     }
 }
