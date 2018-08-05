@@ -57,8 +57,8 @@ void native_encrypt(TLwe &reps, const BigTorusRef &plaintext, const TLweKey &key
 
 void native_phase(BigTorusRef reps, const TLwe &tlwe, const TLweKey &key, uint64_t alpha_bits = NA);
 
-void slot_encrypt(TLwe &reps, const BigFixPRef &plaintext, const TLweKey &key, uint64_t alpha_bits = NA);
+void slot_encrypt(TLwe &reps, const NTL::RR &plaintext, const TLweKey &key, uint64_t alpha_bits = NA);
 
-void slot_decrypt(BigFixPRef reps, const TLwe &tlwe, const TLweKey &key, uint64_t alpha_bits = NA);
+NTL::RR slot_decrypt(const TLwe &tlwe, const TLweKey &key, uint64_t alpha_bits = NA);
 
 #endif //FHE_TLWE_H

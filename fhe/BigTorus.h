@@ -95,17 +95,40 @@ void bigTorusScale(const BigTorusRef &x, int64_t coef);
 /** copy the limb_precision most significant bits from x to dest */
 void copy(BigTorusRef dest, const BigTorusRef &x, uint64_t limb_precision = NA);
 
-/** copy the limb_precision most significant bits from x to dest */
+/** make dest zero */
+void zero(BigTorusRef dest);
+
+/** make the limb_precision most significant bits of dest uniformly random */
 void random(BigTorusRef dest, uint64_t limb_precision = NA);
-
-/** add two bigtorus (with the provided precision) */
-void add(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision = NA);
-
-/** add two bigtorus (with the provided precision) */
-void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision = NA);
 
 /** add a noise of magnitude 2^-alpha (cutoff distribution for now) */
 void add_noise(BigTorusRef dest, uint64_t alpha_bits, uint64_t limb_precision = NA);
+
+struct bigtorus_addsub_params {
+    uint64_t asize;
+    uint64_t bsize;
+    uint64_t dsize;
+    uint64_t limb_precision;
+    uint64_t aoffset;
+    uint64_t boffset;
+    uint64_t doffset;
+};
+
+/** prepare an addition or a subtraction (with the provided precision) */
+bigtorus_addsub_params prepare_addsub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b,
+                                      uint64_t limb_precision = NA);
+
+/** add two bigtorus (prepared) */
+void add_prep(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, const bigtorus_addsub_params &params);
+
+/** add two bigtorus (prepared) */
+void sub_prep(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, const bigtorus_addsub_params &params);
+
+/** add two bigtorus (with the provided precision, wrapper function) */
+void add(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision = NA);
+
+/** add two bigtorus (with the provided precision, wrapper function) */
+void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision = NA);
 
 void to_torus(BigTorusRef reps, const NTL::RR &a);
 
