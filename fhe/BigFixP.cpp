@@ -150,7 +150,7 @@ void fixPRawClear(uint64_t *reps, const uint64_t limbs_size) {
     mpn_zero(reps, limbs_size);
 }
 
-void add(BigFixP &reps, const BigFixP &a, const BigFixP &b, int64_t out_precision_bits) {
+void add(BigFixP &reps, const BigFixP &a, const BigFixP &b, uint64_t out_precision_bits) {
     BigFixPAddParams addParams;
     if (out_precision_bits == NA) out_precision_bits = reps.params->torus_params.torus_limbs * BITS_PER_LIMBS;
     prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
@@ -158,7 +158,7 @@ void add(BigFixP &reps, const BigFixP &a, const BigFixP &b, int64_t out_precisio
     releaseAdd(addParams);
 }
 
-void add(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, int64_t out_precision_bits) {
+void add(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, uint64_t out_precision_bits) {
     const int64_t nreps = reps.params->torus_params.torus_limbs;
     const int64_t na = a.params->torus_params.torus_limbs;
     const int64_t nb = b.params->torus_params.torus_limbs;
@@ -172,7 +172,7 @@ void add(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, in
     releaseAdd(addParams);
 }
 
-void sub(BigFixP &reps, const BigFixP &a, const BigFixP &b, int64_t out_precision_bits) {
+void sub(BigFixP &reps, const BigFixP &a, const BigFixP &b, uint64_t out_precision_bits) {
     BigFixPAddParams addParams;
     if (out_precision_bits == NA) out_precision_bits = reps.params->torus_params.torus_limbs * BITS_PER_LIMBS;
     prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
@@ -180,7 +180,7 @@ void sub(BigFixP &reps, const BigFixP &a, const BigFixP &b, int64_t out_precisio
     releaseAdd(addParams);
 }
 
-void sub(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, int64_t out_precision_bits) {
+void sub(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, uint64_t out_precision_bits) {
     const int64_t nreps = reps.params->torus_params.torus_limbs;
     const int64_t na = a.params->torus_params.torus_limbs;
     const int64_t nb = b.params->torus_params.torus_limbs;

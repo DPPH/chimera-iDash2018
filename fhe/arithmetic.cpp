@@ -258,3 +258,13 @@ void Ab_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
         to_fixP(res(i), reps[i]);
     }
 }
+
+uint8_t random_bit() {
+    return uint8_t(random_uint64_t() % 2);
+}
+
+uint64_t random_uint64_t() {
+    uint64_t buf;
+    mpn_random(&buf, 1);
+    return buf;
+}

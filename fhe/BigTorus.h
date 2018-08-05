@@ -2,6 +2,7 @@
 #define FHE_BIGTORUS_H
 
 #include <cstdint>
+#include "commons.h"
 
 /**
  * A bigTorus holds a real number modulo 1, with maximal precision N*64 bits.
@@ -90,6 +91,22 @@ void bigTorusRawScale(uint64_t *limbs, int64_t coef, uint64_t nblimbs);
 
 /** multiply a bigTorus by an integer (modulo 1) */
 void bigTorusScale(const BigTorusRef &x, int64_t coef);
+
+/** copy the limb_precision most significant bits from x to dest */
+void copy(BigTorusRef dest, const BigTorusRef &x, uint64_t limb_precision = NA);
+
+/** copy the limb_precision most significant bits from x to dest */
+void random(BigTorusRef dest, uint64_t limb_precision = NA);
+
+/** add two bigtorus (with the provided precision) */
+void add(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision = NA);
+
+/** add two bigtorus (with the provided precision) */
+void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision = NA);
+
+void to_torus(BigTorusRef reps, const NTL::RR &a);
+
+NTL::RR to_RR(const BigTorusRef &a);
 
 
 #endif //FHE_BIGTORUS_H

@@ -134,13 +134,13 @@ void fixPRawAdd(uint64_t *reps, uint64_t *a, uint64_t *b, const BigFixPAddParams
  */
 void fixPRawClear(uint64_t *reps, const uint64_t limbs_size);
 
-void add(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, int64_t out_precision_bits = NA);
+void add(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, uint64_t out_precision_bits = NA);
 
-void add(BigFixP &reps, const BigFixP &a, const BigFixP &b, int64_t out_precision_bits = NA);
+void add(BigFixP &reps, const BigFixP &a, const BigFixP &b, uint64_t out_precision_bits = NA);
 
-void sub(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, int64_t out_precision_bits = NA);
+void sub(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, uint64_t out_precision_bits = NA);
 
-void sub(BigFixP &reps, const BigFixP &a, const BigFixP &b, int64_t out_precision_bits = NA);
+void sub(BigFixP &reps, const BigFixP &a, const BigFixP &b, uint64_t out_precision_bits = NA);
 
 void clear(BigFixP &reps);
 

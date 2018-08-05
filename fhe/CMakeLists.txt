@@ -23,12 +23,14 @@ add_library(chimera-dpph
         BigFFT.cpp
         BigFFT.h
         BigComplex.cpp
-        BigComplex.h)
+        BigComplex.h
+        TLwe.cpp
+        TLwe.h)
 
 add_executable(fhe main.cpp )
 target_link_libraries(fhe chimera-dpph -lntl -lmpfr -lgmp -lm)
 
-add_executable(unittest test/arithmetic_test.cpp test/fft_test.cpp)
+add_executable(unittest test/arithmetic_test.cpp test/fft_test.cpp test/tlwe_test.cpp)
 target_link_libraries(unittest gtest gtest_main chimera-dpph -lntl -lmpfr -lgmp -lm)
 
 enable_testing()
