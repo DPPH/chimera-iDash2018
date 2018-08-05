@@ -4,7 +4,7 @@
 TLweParams::TLweParams(const uint64_t N, const BigFixPParams &fixp_params) : N(N), fixp_params(fixp_params) {}
 
 TLwe::TLwe(const TLweParams &params) :
-        limbs(new uint64_t[(params.N + 1) * params.fixp_params.torus_params.torus_limbs * sizeof(uint64_t)]),
+        limbs(new uint64_t[(params.N + 1) * params.fixp_params.torus_limbs * sizeof(uint64_t)]),
         params(params) {
 }
 
@@ -13,21 +13,21 @@ TLwe::~TLwe() {
 }
 
 BigTorusRef TLwe::getAT(uint64_t i) {
-    return BigTorusRef(limbs + i * params.fixp_params.torus_params.torus_limbs, &params.fixp_params.torus_params);
+    return BigTorusRef(limbs + i * params.fixp_params.torus_limbs, &params.fixp_params);
 }
 
 BigTorusRef TLwe::getAT(uint64_t i) const {
-    return BigTorusRef(limbs + i * params.fixp_params.torus_params.torus_limbs, &params.fixp_params.torus_params);
+    return BigTorusRef(limbs + i * params.fixp_params.torus_limbs, &params.fixp_params);
 }
 
 BigTorusRef TLwe::getBT() {
-    return BigTorusRef(limbs + params.N * params.fixp_params.torus_params.torus_limbs,
-                       &params.fixp_params.torus_params);
+    return BigTorusRef(limbs + params.N * params.fixp_params.torus_limbs,
+                       &params.fixp_params);
 }
 
 BigTorusRef TLwe::getBT() const {
-    return BigTorusRef(limbs + params.N * params.fixp_params.torus_params.torus_limbs,
-                       &params.fixp_params.torus_params);
+    return BigTorusRef(limbs + params.N * params.fixp_params.torus_limbs,
+                       &params.fixp_params);
 }
 
 TLweKey::TLweKey(const TLweParams &params) :
@@ -50,7 +50,7 @@ std::shared_ptr<TLweKey> tlwe_keygen(const TLweParams &params) {
 
 void zero(TLwe &tlwe) {
     const uint64_t Np = tlwe.params.N + 1;
-    const uint64_t limbSize = tlwe.params.fixp_params.torus_params.torus_limbs;
+    const uint64_t limbSize = tlwe.params.fixp_params.torus_limbs;
     mpn_zero(tlwe.limbs, Np * limbSize);
 }
 

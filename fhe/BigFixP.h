@@ -13,9 +13,8 @@
 #include "BigTorus.h"
 
 
-class BigFixPParams {
+class BigFixPParams : public BigTorusParams {
 public:
-    BigTorusParams torus_params; ///< total number of limbs
     int64_t plaintext_expo;      ///< plaintext exponent
     int64_t level_expo; ///< level exponent
 
@@ -31,7 +30,7 @@ public:
 
     BigFixP(const BigFixPParams *params) :
             params(params) {
-        limbs_raw = new uint64_t[params->torus_params.torus_limbs];
+        limbs_raw = new uint64_t[params->torus_limbs];
     }
 
     ~BigFixP() {

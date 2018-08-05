@@ -14,9 +14,9 @@
 NTL_CLIENT;
 
 void to_fixP(BigFixPRef reps, const NTL::RR &a) {
-    const int64_t n = reps.params->torus_params.torus_limbs;
+    const int64_t n = reps.params->torus_limbs;
     RR::SetPrecision(n * BITS_PER_LIMBS + 2);
-    BigTorusRef ta(reps.limbs_raw, &reps.params->torus_params);
+    BigTorusRef ta(reps.limbs_raw, reps.params);
     to_torus(ta, a * pow(2, -(reps.params->plaintext_expo + reps.params->level_expo)));
 }
 
@@ -33,7 +33,7 @@ void to_torus(BigTorusRef reps, const NTL::RR &a) {
 }
 
 NTL::RR to_RR(const BigFixPRef &a) {
-    BigTorusRef ta(a.limbs_raw, &a.params->torus_params);
+    BigTorusRef ta(a.limbs_raw, a.params);
     RR reps = to_RR(ta);
     reps *= NTL::pow(to_RR(2), to_RR(a.params->level_expo + a.params->plaintext_expo));
     return reps;
@@ -172,7 +172,7 @@ void sigmoid_vec(BigFixPVector &p, BigFixPVector &w, BigFixPVector &x) {
 
 void public_scale(BigFixPVector &res, int alpha) {
     const uint64_t length = res.length;
-    const uint64_t nblimbs = res.params->torus_params.torus_limbs;
+    const uint64_t nblimbs = res.params->torus_limbs;
     for (uint64_t i = 0; i < length; i++) {
         bigTorusRawScale(res.limbs_raw + i * nblimbs, alpha, nblimbs);
     }

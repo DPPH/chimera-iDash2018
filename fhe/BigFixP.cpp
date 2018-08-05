@@ -7,9 +7,9 @@ BigFixPAddParams::BigFixPAddParams() :
 
 void prepareAdd(BigFixPAddParams &out, const BigFixPParams &pres, const BigFixPParams &pa, const BigFixPParams &pb,
                 int64_t out_precision_bits) {
-    out.ia_limbs = pa.torus_params.torus_limbs;
-    out.ib_limbs = pb.torus_params.torus_limbs;
-    out.ic_limbs = pres.torus_params.torus_limbs;
+    out.ia_limbs = pa.torus_limbs;
+    out.ib_limbs = pb.torus_limbs;
+    out.ic_limbs = pres.torus_limbs;
     out.oc_limbs = (out_precision_bits + BITS_PER_LIMBS - 1) / BITS_PER_LIMBS;
     assert_dramatically(out.oc_limbs <= out.ic_limbs,
                         "too much precision required"
@@ -136,11 +136,11 @@ void fixPRawSub(uint64_t *reps, uint64_t *a, uint64_t *b, const BigFixPAddParams
 }
 
 void clear(BigFixP &reps) {
-    fixPRawClear(reps.limbs_raw, reps.params->torus_params.torus_limbs);
+    fixPRawClear(reps.limbs_raw, reps.params->torus_limbs);
 }
 
 void clear(BigFixPVector &reps) {
-    const int64_t n = reps.params->torus_params.torus_limbs;
+    const int64_t n = reps.params->torus_limbs;
     for (uint64_t i = 0; i < reps.length; i++) {
         fixPRawClear(reps.limbs_raw + i * n, n);
     }
@@ -152,19 +152,19 @@ void fixPRawClear(uint64_t *reps, const uint64_t limbs_size) {
 
 void add(BigFixP &reps, const BigFixP &a, const BigFixP &b, uint64_t out_precision_bits) {
     BigFixPAddParams addParams;
-    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_params.torus_limbs * BITS_PER_LIMBS;
+    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_limbs * BITS_PER_LIMBS;
     prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
     fixPRawAdd(reps.limbs_raw, a.limbs_raw, b.limbs_raw, addParams);
     releaseAdd(addParams);
 }
 
 void add(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, uint64_t out_precision_bits) {
-    const int64_t nreps = reps.params->torus_params.torus_limbs;
-    const int64_t na = a.params->torus_params.torus_limbs;
-    const int64_t nb = b.params->torus_params.torus_limbs;
+    const int64_t nreps = reps.params->torus_limbs;
+    const int64_t na = a.params->torus_limbs;
+    const int64_t nb = b.params->torus_limbs;
     assert_dramatically(reps.length == a.length && reps.length == b.length, "wrong dimensions");
     BigFixPAddParams addParams;
-    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_params.torus_limbs * BITS_PER_LIMBS;
+    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_limbs * BITS_PER_LIMBS;
     prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
     for (uint64_t i = 0; i < a.length; i++) {
         fixPRawAdd(reps.limbs_raw + i * nreps, a.limbs_raw + i * na, b.limbs_raw + i * nb, addParams);
@@ -174,19 +174,19 @@ void add(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, ui
 
 void sub(BigFixP &reps, const BigFixP &a, const BigFixP &b, uint64_t out_precision_bits) {
     BigFixPAddParams addParams;
-    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_params.torus_limbs * BITS_PER_LIMBS;
+    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_limbs * BITS_PER_LIMBS;
     prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
     fixPRawSub(reps.limbs_raw, a.limbs_raw, b.limbs_raw, addParams);
     releaseAdd(addParams);
 }
 
 void sub(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, uint64_t out_precision_bits) {
-    const int64_t nreps = reps.params->torus_params.torus_limbs;
-    const int64_t na = a.params->torus_params.torus_limbs;
-    const int64_t nb = b.params->torus_params.torus_limbs;
+    const int64_t nreps = reps.params->torus_limbs;
+    const int64_t na = a.params->torus_limbs;
+    const int64_t nb = b.params->torus_limbs;
     assert_dramatically(reps.length == a.length && reps.length == b.length, "wrong dimensions");
     BigFixPAddParams addParams;
-    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_params.torus_limbs * BITS_PER_LIMBS;
+    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_limbs * BITS_PER_LIMBS;
     prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
     for (uint64_t i = 0; i < a.length; i++) {
         fixPRawSub(reps.limbs_raw + i * nreps, a.limbs_raw + i * na, b.limbs_raw + i * nb, addParams);
@@ -199,11 +199,11 @@ BigFixPRef::BigFixPRef(const BigFixP &a) : limbs_raw(a.limbs_raw), params(a.para
 BigFixPRef::BigFixPRef(uint64_t *limbs, const BigFixPParams *params) : limbs_raw(limbs), params(params) {}
 
 BigFixPParams::BigFixPParams(const BigTorusParams &torus_params, int64_t plaintext_expo, int64_t level_expo)
-        : torus_params(torus_params), plaintext_expo(plaintext_expo), level_expo(level_expo) {}
+        : BigTorusParams(torus_params), plaintext_expo(plaintext_expo), level_expo(level_expo) {}
 
 BigFixPMatrix::BigFixPMatrix(uint64_t rows, uint64_t cols, const BigFixPParams *params) : rows(rows), cols(cols),
                                                                                           params(params) {
-    limbs_raw = new uint64_t[rows * cols * params->torus_params.torus_limbs];
+    limbs_raw = new uint64_t[rows * cols * params->torus_limbs];
 }
 
 BigFixPMatrix::~BigFixPMatrix() {
@@ -211,11 +211,11 @@ BigFixPMatrix::~BigFixPMatrix() {
 }
 
 BigFixPRef BigFixPMatrix::operator()(uint64_t i, uint64_t j) {
-    return BigFixPRef(limbs_raw + (i * cols + j) * params->torus_params.torus_limbs, params);
+    return BigFixPRef(limbs_raw + (i * cols + j) * params->torus_limbs, params);
 }
 
 BigFixPVector::BigFixPVector(uint64_t length, const BigFixPParams *params) : length(length), params(params) {
-    limbs_raw = new uint64_t[length * params->torus_params.torus_limbs];
+    limbs_raw = new uint64_t[length * params->torus_limbs];
 }
 
 BigFixPVector::~BigFixPVector() {
@@ -223,9 +223,9 @@ BigFixPVector::~BigFixPVector() {
 }
 
 BigFixPRef BigFixPVector::operator()(uint64_t i) {
-    return BigFixPRef(limbs_raw + i * params->torus_params.torus_limbs, params);
+    return BigFixPRef(limbs_raw + i * params->torus_limbs, params);
 }
 
 BigFixPRef BigFixPVector::operator()(uint64_t i) const {
-    return BigFixPRef(limbs_raw + i * params->torus_params.torus_limbs, params);
+    return BigFixPRef(limbs_raw + i * params->torus_limbs, params);
 }

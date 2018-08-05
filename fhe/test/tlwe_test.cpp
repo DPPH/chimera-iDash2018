@@ -25,6 +25,27 @@ TEST(TLWE_TEST, tlwe_keygen) {
     }
 }
 
+TEST(TLWE_TEST, tlwe_zero) {
+    for (uint64_t nblimbs : {1, 2, 5}) {
+        int64_t pubexpo = 1;
+        int64_t levexpo = 2;
+        for (uint64_t N : {300, 400, 500}) {
+            TLweParams params(N, {{nblimbs}, pubexpo, levexpo});
+
+            TLwe c(params);
+
+            zero(c);
+
+            //check zero
+            for (uint64_t i = 0; i < N; ++i) {
+                for (uint64_t j = 0; j < nblimbs; ++j) {
+                    ASSERT_EQ(c.getAT(i).limbs_raw[j], 0u);
+                }
+            }
+        }
+    }
+}
+
 TEST(TLWE_TEST, tlwe_encrypt_decrypt_native) {
     for (uint64_t nblimbs : {1, 2, 5}) {
         int64_t pubexpo = 1;
@@ -35,8 +56,8 @@ TEST(TLWE_TEST, tlwe_encrypt_decrypt_native) {
             std::shared_ptr<TLweKey> key = tlwe_keygen(params);
 
             TLwe c(params);
-            BigTorus plaintext(&params.fixp_params.torus_params);
-            BigTorus plaintext2(&params.fixp_params.torus_params);
+            BigTorus plaintext(&params.fixp_params);
+            BigTorus plaintext2(&params.fixp_params);
 
             random(plaintext);
 
@@ -63,3 +84,4 @@ TEST(TLWE_TEST, tlwe_encrypt_decrypt_native) {
         }
     }
 }
+
