@@ -58,6 +58,7 @@ void native_encrypt(TLwe &reps, const BigTorusRef &plaintext, const TLweKey &key
     const uint64_t N = reps.params.N;
     const uint64_t alpha_limbs = limb_precision(alpha_bits);
     auto b = reps.getBT();
+    // b = plaintext + sum s_i a_i
     copy(b, plaintext, alpha_limbs);
     for (uint64_t i = 0; i < N; i++) {
         auto ai = reps.getAT(i);
@@ -66,6 +67,8 @@ void native_encrypt(TLwe &reps, const BigTorusRef &plaintext, const TLweKey &key
             add(b, b, ai, alpha_limbs);
         }
     }
+    //randomize below bit alpha (noise)
+    add_noise(b, alpha_bits, alpha_limbs);
 }
 
 void native_phase(BigTorusRef reps, const TLwe &tlwe, const TLweKey &key, uint64_t alpha_bits) {

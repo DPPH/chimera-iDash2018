@@ -40,7 +40,7 @@ TEST(TLWE_TEST, tlwe_encrypt_decrypt_native) {
 
             random(plaintext);
 
-            uint64_t noise_bits = uint64_t(0.75 * nblimbs * BITS_PER_LIMBS);
+            int64_t noise_bits = uint64_t(0.75 * nblimbs * BITS_PER_LIMBS);
             native_encrypt(c, plaintext, *key, noise_bits);
 
             //check randomness
@@ -58,7 +58,8 @@ TEST(TLWE_TEST, tlwe_encrypt_decrypt_native) {
             RR p2 = to_RR(plaintext2);
             //cout << p1 << endl;
             //cout << p2 << endl;
-            ASSERT_LE(log2Diff(p1, p2), -noise_bits);
+            ASSERT_LE(log2Diff(p1, p2), -noise_bits + 1);
+            ASSERT_GE(log2Diff(p1, p2), -noise_bits - 5);
         }
     }
 }

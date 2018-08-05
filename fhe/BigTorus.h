@@ -104,6 +104,8 @@ void add(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t 
 /** add two bigtorus (with the provided precision) */
 void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision = NA);
 
+void add_noise(BigTorusRef dest, uint64_t alpha_bits, uint64_t limb_precision = NA);
+
 void to_torus(BigTorusRef reps, const NTL::RR &a);
 
 NTL::RR to_RR(const BigTorusRef &a);
