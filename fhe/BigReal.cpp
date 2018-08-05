@@ -67,3 +67,54 @@ void to_BigReal(BigReal &dest, const BigTorusRef &v) {
 void copy(BigReal &dest, const BigReal &a) {
     mpz_set(dest.value, a.value);
 }
+
+BigReal *new_BigReal_array(uint64_t n, uint64_t nblimbs) {
+    BigReal *reps = (BigReal *) malloc(n * sizeof(BigReal));
+    for (uint64_t i = 0; i < n; i++) {
+        new(reps + i) BigReal(nblimbs);
+    }
+    return reps;
+}
+
+void delete_BigReal_array(uint64_t n, BigReal *array) {
+    for (uint64_t i = 0; i < n; i++) {
+        (array + i)->~BigReal();
+    }
+    free(array);
+}
+
+#include <NTL/ZZ_limbs.h>
+#include <gmp.h>
+
+using namespace NTL;
+
+NTL::RR to_RR(const BigReal &v) {
+    ZZ vv;
+    if (v.value->_mp_size == 0) {
+        clear(vv);
+    } else if (v.value->_mp_size > 0) {
+        ZZ_limbs_set(vv, v.value->_mp_d, v.value->_mp_size);
+    } else {
+        ZZ_limbs_set(vv, v.value->_mp_d, -v.value->_mp_size);
+        negate(vv, vv);
+    }
+    return to_RR(vv) / pow(to_RR(2), to_RR(v.nblimbs * BITS_PER_LIMBS));
+}
+
+void to_BigReal(BigReal &dest, const NTL::RR &v) {
+    assert_dramatically(abs(v) <= 1, "Bad range for BigReal");
+    RR::SetPrecision(dest.nblimbs * BITS_PER_LIMBS);
+    ZZ vv = RoundToZZ(v * pow(to_RR(2), to_RR(dest.nblimbs * BITS_PER_LIMBS)));
+    bool vneg = vv < 0;
+    int64_t vsize = vv.size();
+    if (vneg) negate(vv, vv);
+    if (vv == 0) {
+        mpz_set_ui(dest.value, 0);
+    } else {
+        mpz_clear(dest.value);
+        dest.value->_mp_alloc = vsize;
+        dest.value->_mp_size = vneg ? -vsize : vsize;
+        dest.value->_mp_d = (mp_limb_t *) malloc(vsize * BYTES_PER_LIMBS);
+        mpn_copyi(dest.value->_mp_d, ZZ_limbs_get(vv), vsize);
+    }
+}

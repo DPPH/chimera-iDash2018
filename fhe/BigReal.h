@@ -43,6 +43,14 @@ void copy(BigReal &dest, const BigReal &a);
 
 void to_BigReal(BigReal &dest, const BigTorusRef &v);
 
+NTL::RR to_RR(const BigReal &v);
+
+void to_BigReal(BigReal &dest, const NTL::RR &v);
+
+BigReal *new_BigReal_array(uint64_t n, uint64_t nblimbs);
+
+void delete_BigReal_array(uint64_t n, BigReal *array);
+
 //Real96 dtor96(double d) {
 //    Real96 reps;
 //    mpfr_set_d(reps.v, d, MPFR_RNDN);

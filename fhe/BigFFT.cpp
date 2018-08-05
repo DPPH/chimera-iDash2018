@@ -1,109 +1,56 @@
 #include <mpfr.h>
 #include "BigFFT.h"
 #include "BigReal.h"
-
-class BigComplex {
-public:
-    BigReal real;
-    BigReal imag;
-
-    BigComplex(uint64_t nblimbs) : real(nblimbs), imag(nblimbs) {}
-};
+#include "BigComplex.h"
 
 
-class BigComplexRef {
-public:
-    BigReal *const real;
-    BigReal *const imag;
-
-    BigComplexRef(BigReal *real, BigReal *imag) : real(real), imag(imag) {}
-
-    BigComplexRef(const BigReal *real, const BigReal *imag) :
-            real((BigReal *) real),
-            imag((BigReal *) imag) {}
-
-    BigComplexRef(BigComplex &z) :
-            real(&z.real),
-            imag(&z.imag) {}
-
-    BigComplexRef(const BigComplex &z) :
-            real((BigReal *) &z.real),
-            imag((BigReal *) &z.imag) {}
-};
-
-void accurate_cos_sin(BigComplexRef dest, int i, int n) {
-    const uint64_t nblimbs = dest.real->nblimbs;
-    const uint64_t FPREC = nblimbs * BITS_PER_LIMBS;
-    mpfr_t angle;
-    mpfr_t rsin;
-    mpfr_t rcos;
-    mpfr_init2(angle, FPREC + 1);
-    mpfr_init2(rsin, FPREC + 1);
-    mpfr_init2(rcos, FPREC + 1);
-    //compute the angle
-    i = ((i % n) + n) % n;
-    mpfr_const_pi(angle, MPFR_RNDN);
-    mpfr_mul_si(angle, angle, 2 * i, MPFR_RNDN);
-    mpfr_div_si(angle, angle, n, MPFR_RNDN);
-    //compute sin and cos
-    mpfr_sin_cos(rsin, rcos, angle, MPFR_RNDN);
-    //shift and write the answer
-    mpfr_mul_2ui(rcos, rcos, FPREC, MPFR_RNDN);
-    mpfr_mul_2ui(rsin, rsin, FPREC, MPFR_RNDN);
-    mpfr_get_z(dest.real->value, rcos, MPFR_RNDN);
-    mpfr_get_z(dest.real->value, rsin, MPFR_RNDN);
-    //cleanup
-    mpfr_clear(angle);
-    mpfr_clear(rsin);
-    mpfr_clear(rcos);
+BigComplex *precomp_iFFT(int n, uint64_t nblimbs) {
+    BigComplex *buf = (BigComplex *) malloc((n + 1) * sizeof(BigComplex));
+    int32_t *nn = (int32_t *) (buf);
+    BigComplex *powomega = buf + 1;
+    *nn = n;
+    for (int i = 0; i < n; i++) {
+        new(powomega + i) BigComplex(nblimbs);
+    }
+    for (int i = 0; i < n; i++) {
+        accurate_power_unity(powomega[i], i, n);
+    }
+    return powomega;
 }
 
-void mul(BigComplexRef dest, BigComplexRef a, BigComplexRef b) {
-    const uint64_t nblimbs = dest.real->nblimbs;
-    BigReal t1(nblimbs);
-    BigReal t2(nblimbs);
-    BigReal t3(nblimbs);
-    BigReal t4(nblimbs);
-    mul(t1, *a.real, *b.real);
-    mul(t2, *a.imag, *b.imag);
-    mul(t3, *a.real, *b.imag);
-    mul(t4, *a.imag, *b.real);
-    sub(*dest.real, t1, t2);
-    add(*dest.imag, t3, t4);
+void clear_precomp_iFFT(BigComplex *powomega) {
+    BigComplex *buf = powomega - 1;
+    int32_t *nn = (int32_t *) buf;
+    const int n = *nn;
+    for (int i = 0; i < n; i++) {
+        (powomega + i)->~BigComplex();
+    }
+    free(buf);
 }
 
-void mulTo(BigComplexRef dest, BigComplexRef a) {
-    mul(dest, dest, a);
-}
-
-void add(BigComplexRef dest, BigComplexRef a, BigComplexRef b) {
-    add(*dest.real, *a.real, *b.real);
-    add(*dest.imag, *a.imag, *b.imag);
-}
-
-void sub(BigComplexRef dest, BigComplexRef a, BigComplexRef b) {
-    sub(*dest.real, *a.real, *b.real);
-    sub(*dest.imag, *a.imag, *b.imag);
-}
-
-void copy(BigComplexRef dest, BigComplexRef a) {
-    copy(*dest.real, *a.real);
-    copy(*dest.imag, *a.imag);
-}
-
-void precomp_iFFT(BigComplex *powomega, int n) {
+BigComplex *precomp_FFT(int n, uint64_t nblimbs) {
+    BigComplex *buf = (BigComplex *) malloc((n + 1) * sizeof(BigComplex));
+    int32_t *nn = (int32_t *) (buf);
+    BigComplex *powombar = buf + 1;
+    *nn = n;
+    for (int i = 0; i < n; i++) {
+        new(powombar + i) BigComplex(nblimbs);
+    }
     for (int i = 0; i < n; i++)
-        accurate_cos_sin(powomega[i], i, n);
+        accurate_power_unity(powombar[i], (n - i) % n, n);
+    return powombar;
 }
 
-void precomp_FFT(BigComplex *powombar, int n) {
-    for (int i = 0; i < n; i++)
-        accurate_cos_sin(powombar[i], (n - i) % n, n);
+void clear_precomp_FFT(BigComplex *powombar) {
+    BigComplex *buf = powombar - 1;
+    int32_t *nn = (int32_t *) buf;
+    const int n = *nn;
+    for (int i = 0; i < n; i++) {
+        (powombar + i)->~BigComplex();
+    }
+    free(buf);
 }
 
-// P -> P(omega)
-// out size: n/4
-// in size: n/2, //RRRRRRRRRRIIIIIIIII
 void iFFT(BigComplex *out, const BigReal *in, int n, const BigComplex *powomega) {
     const uint64_t nblimbs = out[0].real.nblimbs;
     BigComplex t1(nblimbs);
@@ -140,7 +87,6 @@ static unsigned logPow2(int n) {
     return __builtin_popcount(n - 1);
 }
 
-// P(omega) -> P
 void FFT(BigReal *out, BigComplex *in, int n, const BigComplex *powombar) {
     const uint64_t nblimbs = out[0].nblimbs;
     BigComplex t1(nblimbs);
