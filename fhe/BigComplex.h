@@ -13,16 +13,24 @@
 
 class BigComplex {
 public:
-    BigReal real;
-    BigReal imag;
+    BigReal real; ///< real part
+    BigReal imag; ///< imaginary part
 
+    /* constructs a BigComplex of precision nblimbs x 64 */
     BigComplex(uint64_t nblimbs);
 
+    /* destroys a BigComplex */
     ~BigComplex();
+
+    /* prevents auto-copying */
+    BigComplex(const BigComplex &) = delete;
+
+    /* prevents auto-copying */
+    void operator=(const BigComplex &)= delete;
 };
 
 /**
- * reference to a BigComplex
+ * reference to a BigComplex (this only holds two pointers to existing real and imag)
  */
 class BigComplexRef {
 public:
@@ -38,20 +46,28 @@ public:
     BigComplexRef(const BigComplex &z);
 };
 
-void accurate_power_unity(BigComplexRef dest, int i, int n);
+/** computes exp(2i.pi. k/n) */
+void accurate_power_unity(BigComplexRef dest, int k, int n);
 
+/** multiplication dest = a * b */
 void mul(BigComplexRef dest, BigComplexRef a, BigComplexRef b);
 
+/** multiplication dest *= a */
 void mulTo(BigComplexRef dest, BigComplexRef a);
 
+/** addition (warning, you must ensure that this does not cause an overflow) */
 void add(BigComplexRef dest, BigComplexRef a, BigComplexRef b);
 
+/** subtraction (warning, you must ensure that this does not cause an overflow) */
 void sub(BigComplexRef dest, BigComplexRef a, BigComplexRef b);
 
+/** copy dest = a */
 void copy(BigComplexRef dest, BigComplexRef a);
 
+/** create an array */
 BigComplex *new_BigComplex_array(uint64_t n, uint64_t nblimbs);
 
+/** delete an array */
 void delete_BigComplex_array(uint64_t n, BigComplex *array);
 
 
