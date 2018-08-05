@@ -13,13 +13,20 @@ add_library(chimera-dpph
         BigFixP.cpp
         BigFixP.h
         commons.cpp
-        commons.h arithmetic.cpp arithmetic.h BigTorus.cpp BigTorus.h BigReal.cpp BigReal.h BigFFT.cpp BigFFT.h BigComplex.cpp BigComplex.h)
+        commons.h
+        arithmetic.cpp
+        arithmetic.h
+        BigTorus.cpp
+        BigTorus.h
+        BigReal.cpp
+        BigReal.h
+        BigFFT.cpp
+        BigFFT.h
+        BigComplex.cpp
+        BigComplex.h)
 
 add_executable(fhe main.cpp )
 target_link_libraries(fhe chimera-dpph -lntl -lmpfr -lgmp -lm)
-
-add_executable(mpFFT mpFFT.cpp)
-target_link_libraries(mpFFT chimera-dpph -lntl -lmpfr -lgmp -lm)
 
 add_executable(unittest test/arithmetic_test.cpp test/fft_test.cpp)
 target_link_libraries(unittest gtest gtest_main chimera-dpph -lntl -lmpfr -lgmp -lm)
