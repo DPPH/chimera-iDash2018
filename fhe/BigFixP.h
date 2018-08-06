@@ -51,35 +51,6 @@ public:
     BigFixPRef(uint64_t *limbs, const BigFixPParams *params);
 };
 
-class BigFixPVector {
-public:
-    uint64_t *limbs_raw;
-    const uint64_t length;
-    const BigFixPParams *const params;
-
-    BigFixPRef operator()(uint64_t i);
-
-    BigFixPRef operator()(uint64_t i) const;
-
-    BigFixPVector(uint64_t length, const BigFixPParams *params);
-
-    ~BigFixPVector();
-};
-
-class BigFixPMatrix {
-public:
-    uint64_t *limbs_raw;
-    const uint64_t rows;
-    const uint64_t cols;
-    const BigFixPParams *const params;
-
-    BigFixPRef operator()(uint64_t i, uint64_t j);
-
-    BigFixPMatrix(uint64_t rows, uint64_t cols, const BigFixPParams *params);
-
-    ~BigFixPMatrix();
-};
-
 
 // ***********************
 
@@ -129,20 +100,24 @@ void special_add_lshift(uint64_t *out, uint64_t *a,
 void fixPRawAdd(uint64_t *reps, uint64_t *a, uint64_t *b, const BigFixPAddParams &params);
 
 /**
+ * Performs the raw fixed point subtraction on the torus buffers a and b
+ *
+ * @param reps torus buffer for the result
+ * @param a torus buffer of a
+ * @param b torus buffer of b
+ * @param params the addition parameters
+ */
+void fixPRawSub(uint64_t *reps, uint64_t *a, uint64_t *b, const BigFixPAddParams &params);
+
+/**
  * zero
  */
 void fixPRawClear(uint64_t *reps, const uint64_t limbs_size);
 
-void add(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, uint64_t out_precision_bits = NA);
-
 void add(BigFixP &reps, const BigFixP &a, const BigFixP &b, uint64_t out_precision_bits = NA);
-
-void sub(BigFixPVector &reps, const BigFixPVector &a, const BigFixPVector &b, uint64_t out_precision_bits = NA);
 
 void sub(BigFixP &reps, const BigFixP &a, const BigFixP &b, uint64_t out_precision_bits = NA);
 
 void clear(BigFixP &reps);
-
-void clear(BigFixPVector &reps);
 
 #endif //FHE_BIGFP_H
