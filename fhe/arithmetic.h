@@ -1,34 +1,36 @@
 #ifndef FHE_ARITHMETIC_H
 #define FHE_ARITHMETIC_H
 
-#include "BigFixP.h"
-#include "BigFixPVector.h"
+#include "BigTorusVector.h"
+#include "BigTorus.h"
 
-void to_fixP(BigFixPRef reps, const NTL::RR &a);
+void to_fixP(BigTorusRef reps, const NTL::RR &a);
 
-NTL::RR to_RR(const BigFixPRef &a);
+NTL::RR fixp_to_RR(const BigTorusRef &a);
 
-void tAb_prod(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b);
+NTL::RR to_RR(const BigTorusRef &a);
 
-void Ab_prod(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b);
+void fixp_tAb_prod(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b);
 
-void Ab_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b);
+void fixp_Ab_prod(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b);
 
-void tAb_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b);
+void fixp_Ab_prod_fake(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b);
 
-void fill_matrix_S(BigFixPMatrix &S);
+void fixp_tAb_prod_fake(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b);
 
-void fill_matrix_Xy(BigFixPMatrix &X, BigFixPVector &y);
+void fill_matrix_S(BigTorusMatrix &S);
 
-void sigmoid_vec(BigFixPVector &p, BigFixPVector &w, BigFixPVector &x);
+void fill_matrix_Xy(BigTorusMatrix &X, BigTorusVector &y);
 
-void public_scale(BigFixPVector &res, int alpha);
+void fixp_sigmoid_vec(BigTorusVector &p, BigTorusVector &w, BigTorusVector &x);
 
-void public_scale_fake(BigFixPVector &res, int alpha);
+void fixp_public_scale(BigTorusVector &res, int alpha);
 
-NTL::RR debug_norm(const BigFixPVector &v);
+void fixp_public_scale_fake(BigTorusVector &res, int alpha);
 
-std::ostream &operator<<(std::ostream &out, const BigFixPVector &v);
+NTL::RR fixp_debug_norm(const BigTorusVector &v);
+
+std::ostream &operator<<(std::ostream &out, const BigTorusVector &v);
 
 uint8_t random_bit();
 

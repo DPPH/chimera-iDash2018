@@ -10,8 +10,7 @@ add_subdirectory(test/googletest)
 include_directories(test/googletest/googletest)
 
 add_library(chimera-dpph
-        BigFixP.cpp
-        BigFixP.h
+        BigTorusFixP.cpp
         commons.cpp
         commons.h
         arithmetic.cpp
@@ -25,7 +24,7 @@ add_library(chimera-dpph
         BigComplex.cpp
         BigComplex.h
         TLwe.cpp
-        TLwe.h BigTorusVector.cpp BigTorusVector.h BigFixPVector.cpp BigFixPVector.h)
+        TLwe.h BigTorusVector.cpp BigTorusVector.h)
 
 add_executable(fhe main.cpp )
 target_link_libraries(fhe chimera-dpph -lntl -lmpfr -lgmp -lm -pthread)

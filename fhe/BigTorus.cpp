@@ -3,13 +3,17 @@
 #include "commons.h"
 #include "arithmetic.h"
 
-BigTorusParams::BigTorusParams(uint64_t torus_limbs) : torus_limbs(torus_limbs) {}
+BigTorusParams::BigTorusParams(uint64_t torus_limbs, int64_t plaintext_expo, int64_t level_expo) :
+        torus_limbs(torus_limbs),
+        plaintext_expo(plaintext_expo),
+        level_expo(level_expo) {
+}
 
-BigTorusRef::BigTorusRef(uint64_t *limbs_raw, const BigTorusParams *params) : limbs_raw(limbs_raw), params(params) {}
+BigTorusRef::BigTorusRef(uint64_t *limbs, const BigTorusParams *params) : limbs(limbs), params(params) {}
 
-BigTorusRef::BigTorusRef(const BigTorus &torus) : limbs_raw(torus.limbs_raw), params(torus.params) {}
+BigTorusRef::BigTorusRef(const BigTorus &torus) : limbs(torus.limbs), params(torus.params) {}
 
-BigTorusRef::BigTorusRef(BigTorus &torus) : limbs_raw(torus.limbs_raw), params(torus.params) {}
+BigTorusRef::BigTorusRef(BigTorus &torus) : limbs(torus.limbs), params(torus.params) {}
 
 void bigTorusRawScale(uint64_t *limbs, int64_t coef, uint64_t nblimbs) {
     assert_dramatically(coef > 0, "negative scale not supported");
@@ -17,7 +21,7 @@ void bigTorusRawScale(uint64_t *limbs, int64_t coef, uint64_t nblimbs) {
 }
 
 void bigTorusScale(const BigTorusRef &x, int64_t coef) {
-    bigTorusRawScale(x.limbs_raw, coef, x.params->torus_limbs);
+    bigTorusRawScale(x.limbs, coef, x.params->torus_limbs);
 }
 
 void copy(BigTorusRef dest, const BigTorusRef &x, uint64_t limb_precision) {
@@ -32,7 +36,7 @@ void copy(BigTorusRef dest, const BigTorusRef &x, uint64_t limb_precision) {
     uint64_t xoffset = xsize - limb_precision;
     uint64_t doffset = dsize - limb_precision;
     //copy the significant bits
-    mpn_copyi(dest.limbs_raw + doffset, x.limbs_raw + xoffset, limb_precision);
+    mpn_copyi(dest.limbs + doffset, x.limbs + xoffset, limb_precision);
 }
 
 void random(BigTorusRef dest, uint64_t limb_precision) {
@@ -43,7 +47,7 @@ void random(BigTorusRef dest, uint64_t limb_precision) {
         assert_dramatically(limb_precision <= dsize, "destination is not precise enough");
     }
     uint64_t doffset = dsize - limb_precision;
-    mpn_random(dest.limbs_raw + doffset, limb_precision);
+    mpn_random(dest.limbs + doffset, limb_precision);
 }
 
 void add_noise(BigTorusRef dest, uint64_t alpha_bits, uint64_t limb_precision) {
@@ -64,7 +68,7 @@ void add_noise(BigTorusRef dest, uint64_t alpha_bits, uint64_t limb_precision) {
             mask |= (mask - 1);
             r &= mask;
         }
-        dest.limbs_raw[dsize - 1 - i] ^= r;
+        dest.limbs[dsize - 1 - i] ^= r;
     }
 }
 
@@ -89,16 +93,16 @@ prepare_addsub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uin
 }
 
 void add_prep(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, const bigtorus_addsub_params &prep) {
-    mpn_add_n(dest.limbs_raw + prep.doffset,
-              a.limbs_raw + prep.aoffset,
-              b.limbs_raw + prep.boffset,
+    mpn_add_n(dest.limbs + prep.doffset,
+              a.limbs + prep.aoffset,
+              b.limbs + prep.boffset,
               prep.limb_precision);
 }
 
 void sub_prep(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, const bigtorus_addsub_params &prep) {
-    mpn_sub_n(dest.limbs_raw + prep.doffset,
-              a.limbs_raw + prep.aoffset,
-              b.limbs_raw + prep.boffset,
+    mpn_sub_n(dest.limbs + prep.doffset,
+              a.limbs + prep.aoffset,
+              b.limbs + prep.boffset,
               prep.limb_precision);
 }
 
@@ -111,5 +115,6 @@ void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t 
 }
 
 void zero(BigTorusRef dest) {
-    mpn_zero(dest.limbs_raw, dest.params->torus_limbs);
+    mpn_zero(dest.limbs, dest.params->torus_limbs);
 }
+

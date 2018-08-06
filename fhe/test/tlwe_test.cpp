@@ -1,5 +1,6 @@
 #include <include/gtest/gtest.h>
 #include "../TLwe.h"
+#include "../arithmetic.h"
 #include <NTL/RR.h>
 
 NTL_CLIENT;
@@ -39,7 +40,7 @@ TEST(TLWE_TEST, tlwe_zero) {
             //check zero
             for (uint64_t i = 0; i < N; ++i) {
                 for (uint64_t j = 0; j < nblimbs; ++j) {
-                    ASSERT_EQ(c.getAT(i).limbs_raw[j], 0u);
+                    ASSERT_EQ(c.getAT(i).limbs[j], 0u);
                 }
             }
         }
@@ -67,7 +68,7 @@ TEST(TLWE_TEST, tlwe_encrypt_decrypt_native) {
             //check randomness
             std::set<uint64_t> dist;
             for (uint64_t i = 0; i < N; i++) {
-                dist.insert(c.getAT(i).limbs_raw[nblimbs - 1]);
+                dist.insert(c.getAT(i).limbs[nblimbs - 1]);
             }
             ASSERT_GE(dist.size(), 9 * N / 10);
 
@@ -75,11 +76,11 @@ TEST(TLWE_TEST, tlwe_encrypt_decrypt_native) {
             native_phase(plaintext2, c, *key);
 
             RR::SetPrecision(nblimbs * BITS_PER_LIMBS);
-            RR p1 = to_RR(plaintext);
-            RR p2 = to_RR(plaintext2);
+            RR p1 = fixp_to_RR(plaintext);
+            RR p2 = fixp_to_RR(plaintext2);
             //cout << p1 << endl;
             //cout << p2 << endl;
-            ASSERT_LE(log2Diff(p1, p2), -noise_bits + 1);
+            ASSERT_LE(log2Diff(p1, p2), -noise_bits + 5);
             ASSERT_GE(log2Diff(p1, p2), -noise_bits - 5);
         }
     }

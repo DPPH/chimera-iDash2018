@@ -1,10 +1,11 @@
+#include <gmp.h>
 #include "TLwe.h"
 #include "arithmetic.h"
 
-TLweParams::TLweParams(const uint64_t N, const BigFixPParams &fixp_params) : N(N), fixp_params(fixp_params) {}
+TLweParams::TLweParams(const uint64_t N, const BigTorusParams &fixp_params) : N(N), fixp_params(fixp_params) {}
 
 TLwe::TLwe(const TLweParams &params) :
-        BigFixPVector(params.N + 1, params.fixp_params),
+        BigTorusVector(params.N + 1, params.fixp_params),
         params(params) {
 }
 
@@ -18,15 +19,6 @@ BigTorusRef TLwe::getBT() {
 BigTorusRef TLwe::getBT() const {
     return getAT(params.N);
 }
-
-BigFixPRef TLwe::getBF() {
-    return getAF(params.N);
-}
-
-BigFixPRef TLwe::getBF() const {
-    return getAF(params.N);
-}
-
 
 TLweKey::TLweKey(const TLweParams &params) :
         key(new int8_t[params.N]),
@@ -85,13 +77,13 @@ void native_phase(BigTorusRef reps, const TLwe &tlwe, const TLweKey &key, uint64
 }
 
 void slot_encrypt(TLwe &reps, const NTL::RR &plaintext, const TLweKey &key, uint64_t alpha_bits) {
-    BigFixP tmp(&reps.params.fixp_params);
+    BigTorus tmp(&reps.params.fixp_params);
     to_fixP(tmp, plaintext);
-    native_encrypt(reps, BigTorusRef(tmp.limbs_raw, tmp.params), key, alpha_bits);
+    native_encrypt(reps, BigTorusRef(tmp.limbs, tmp.params), key, alpha_bits);
 }
 
 NTL::RR slot_decrypt(const TLwe &tlwe, const TLweKey &key, uint64_t alpha_bits) {
-    BigFixP tmp(&tlwe.params.fixp_params);
-    native_phase(BigTorusRef(tmp.limbs_raw, tmp.params), tlwe, key, alpha_bits);
-    return to_RR(tmp);
+    BigTorus tmp(&tlwe.params.fixp_params);
+    native_phase(BigTorusRef(tmp.limbs, tmp.params), tlwe, key, alpha_bits);
+    return fixp_to_RR(tmp);
 }

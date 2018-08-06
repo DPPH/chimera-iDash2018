@@ -58,7 +58,6 @@ public:
 };
 
 BENCHMARK_DEFINE_F(FFT_Bench, FFT)(benchmark::State &state) {
-    int64_t a = rand();
     for (auto _ : state) {
         FFT(out, inp, n, powombar);
     }
@@ -116,7 +115,6 @@ public:
 
 
 BENCHMARK_DEFINE_F(iFFT_Bench, iFFT)(benchmark::State &state) {
-    int64_t a = rand();
     for (auto _ : state) {
         iFFT(out, inp, n, powomega);
     }

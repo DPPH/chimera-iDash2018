@@ -8,15 +8,14 @@
 #include <fstream>
 #include <sstream>
 #include "arithmetic.h"
-#include "BigFixP.h"
 #include "commons.h"
 
 NTL_CLIENT;
 
-void to_fixP(BigFixPRef reps, const NTL::RR &a) {
+void to_fixP(BigTorusRef reps, const NTL::RR &a) {
     const int64_t n = reps.params->torus_limbs;
     RR::SetPrecision(n * BITS_PER_LIMBS + 2);
-    BigTorusRef ta(reps.limbs_raw, reps.params);
+    BigTorusRef ta(reps.limbs, reps.params);
     to_torus(ta, a * pow(2, -(reps.params->plaintext_expo + reps.params->level_expo)));
 }
 
@@ -28,12 +27,12 @@ void to_torus(BigTorusRef reps, const NTL::RR &a) {
     //cout << "az:" << az << endl;
     const uint64_t *limbs = ZZ_limbs_get(az);
     for (int64_t i = 0; i < n; i++) {
-        mpn_copyi(reps.limbs_raw, limbs, n);
+        mpn_copyi(reps.limbs, limbs, n);
     }
 }
 
-NTL::RR to_RR(const BigFixPRef &a) {
-    BigTorusRef ta(a.limbs_raw, a.params);
+NTL::RR fixp_to_RR(const BigTorusRef &a) {
+    BigTorusRef ta(a.limbs, a.params);
     RR reps = to_RR(ta);
     reps *= NTL::pow(to_RR(2), to_RR(a.params->level_expo + a.params->plaintext_expo));
     return reps;
@@ -47,7 +46,7 @@ NTL::RR to_RR(const BigTorusRef &a) {
     NTL::RR reps;
     reps = 0;
     for (long i = 0; i < n; i++) {
-        uint64_t limb = a.limbs_raw[i];
+        uint64_t limb = a.limbs[i];
         reps += (limb & mask32);
         reps *= pow2m32;
         reps += (limb >> 32u);
@@ -62,7 +61,7 @@ bool is_binary(const RR &value) {
     return value == 0 || value == 1;
 }
 
-void fill_matrix_S(BigFixPMatrix &S) {
+void fill_matrix_S(BigTorusMatrix &S) {
     const long m = S.cols;
     const long n = S.rows;
     basic_ifstream<char> ifs("data/snpMat.txt");
@@ -80,7 +79,7 @@ void fill_matrix_S(BigFixPMatrix &S) {
     ifs.close();
 }
 
-void fill_matrix_Xy(BigFixPMatrix &X, BigFixPVector &y) {
+void fill_matrix_Xy(BigTorusMatrix &X, BigTorusVector &y) {
     const uint64_t n = X.rows;
     const uint64_t k = X.cols;
     assert_dramatically(y.length == n, "dimension of X, y are wrong");
@@ -108,7 +107,7 @@ void fill_matrix_Xy(BigFixPMatrix &X, BigFixPVector &y) {
         iss >> buf; //ignore label
         iss >> rrbuf; //read y
         assert(is_binary(rrbuf)); //y binary
-        to_fixP(y.getAF(i), rrbuf);
+        to_fixP(y.getAT(i), rrbuf);
 
         B[0][i] = 1.; //intercept first
         nbels[0]++;
@@ -159,41 +158,41 @@ void fill_matrix_Xy(BigFixPMatrix &X, BigFixPVector &y) {
     }
 }
 
-void sigmoid_vec(BigFixPVector &p, BigFixPVector &w, BigFixPVector &x) {
+void fixp_sigmoid_vec(BigTorusVector &p, BigTorusVector &w, BigTorusVector &x) {
     assert_dramatically(p.length == x.length && p.length == w.length, "wrong dimensions");
     //this function is bootstrapped, so we will just use the RR conversion
     for (uint64_t i = 0; i < p.length; i++) {
-        RR xx = to_RR(x.getAF(i));
+        RR xx = fixp_to_RR(x.getAT(i));
         RR sigmo = inv(1 + exp(-xx));
-        to_fixP(p.getAF(i), sigmo);
-        to_fixP(w.getAF(i), sigmo * (1 - sigmo));
+        to_fixP(p.getAT(i), sigmo);
+        to_fixP(w.getAT(i), sigmo * (1 - sigmo));
     }
 }
 
-void public_scale(BigFixPVector &res, int alpha) {
+void fixp_public_scale(BigTorusVector &res, int alpha) {
     const uint64_t length = res.length;
-    const uint64_t nblimbs = res.bfp.torus_limbs;
+    const uint64_t nblimbs = res.btp.torus_limbs;
     for (uint64_t i = 0; i < length; i++) {
         bigTorusRawScale(res.limbs + i * nblimbs, alpha, nblimbs);
     }
 }
 
-NTL::RR debug_norm(const BigFixPVector &v) {
+NTL::RR fixp_debug_norm(const BigTorusVector &v) {
     //this function is bootstrapped, so we will just use the RR conversion
     RR reps;
     reps = 0;
     for (uint64_t i = 0; i < v.length; i++) {
-        RR xx = to_RR(v.getAF(i));
+        RR xx = fixp_to_RR(v.getAT(i));
         reps += xx * xx;
     }
     return sqrt(reps);
 }
 
-std::ostream &operator<<(std::ostream &out, const BigFixPVector &v) {
+std::ostream &operator<<(std::ostream &out, const BigTorusVector &v) {
     //this function is bootstrapped, so we will just use the RR conversion
     out << "[";
     for (uint64_t i = 0; i < v.length; i++) {
-        out << to_double(to_RR(v.getAF(i))) << " ";
+        out << to_double(fixp_to_RR(v.getAT(i))) << " ";
         if (i == 5 && v.length > 10) {
             out << "... ";
             i = v.length - 6;
@@ -203,11 +202,11 @@ std::ostream &operator<<(std::ostream &out, const BigFixPVector &v) {
     return out;
 }
 
-void tAb_prod(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
-    tAb_prod_fake(res, A, b);
+void fixp_tAb_prod(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b) {
+    fixp_tAb_prod_fake(res, A, b);
 }
 
-void tAb_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
+void fixp_tAb_prod_fake(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b) {
     const uint64_t n = A.rows;
     const uint64_t m = A.cols;
     assert_dramatically(b.length == n, "wrong dimension");
@@ -219,23 +218,23 @@ void tAb_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
     bb.SetLength(n);
     for (uint64_t i = 0; i < m; i++) {
         for (uint64_t j = 0; j < n; j++) {
-            tAA[i][j] = to_RR(A(j, i));
+            tAA[i][j] = fixp_to_RR(A(j, i));
         }
     }
     for (uint64_t j = 0; j < n; j++) {
-        bb[j] = to_RR(b.getAF(j));
+        bb[j] = fixp_to_RR(b.getAT(j));
     }
     vec_RR reps = tAA * bb;
     for (uint64_t i = 0; i < m; i++) {
-        to_fixP(res.getAF(i), reps[i]);
+        to_fixP(res.getAT(i), reps[i]);
     }
 }
 
-void Ab_prod(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
-    Ab_prod_fake(res, A, b);
+void fixp_Ab_prod(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b) {
+    fixp_Ab_prod_fake(res, A, b);
 }
 
-void Ab_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
+void fixp_Ab_prod_fake(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b) {
     const uint64_t n = A.rows;
     const uint64_t m = A.cols;
     assert_dramatically(b.length == m, "wrong dimension");
@@ -247,15 +246,15 @@ void Ab_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
     bb.SetLength(m);
     for (uint64_t i = 0; i < n; i++) {
         for (uint64_t j = 0; j < m; j++) {
-            AA[i][j] = to_RR(A(i, j));
+            AA[i][j] = fixp_to_RR(A(i, j));
         }
     }
     for (uint64_t j = 0; j < m; j++) {
-        bb[j] = to_RR(b.getAF(j));
+        bb[j] = fixp_to_RR(b.getAT(j));
     }
     vec_RR reps = AA * bb;
     for (uint64_t i = 0; i < n; i++) {
-        to_fixP(res.getAF(i), reps[i]);
+        to_fixP(res.getAT(i), reps[i]);
     }
 }
 
