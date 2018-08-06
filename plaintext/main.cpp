@@ -225,9 +225,24 @@ vec_float scaledColSqNorms(const mat_float &A, const vec_float &w) {
     return reps;
 }
 
-float pvalexp(float x) {
+float pvalexp_exact(float x) {
     return 1. + erf(-exp(x/2.) / sqrt(2.));
 }
+
+float pvalexp_approx(float x) {
+    x = exp(x/2.) / sqrt(2.);
+    float a1=.278393;
+    float a2=.230389;
+    float a3=.000972;
+    float a4=.078108;
+
+    float t = (1 + a1 * x + a2 * x*x + a3 * x*x*x + a4 * x*x*x*x);
+    t = t*t*t*t;
+
+    return 1.0/t;
+}
+
+#define pvalexp pvalexp_exact
 
 bool is_binary(float x) {
     return x == 0 || x == 1;
