@@ -3,6 +3,8 @@
 
 #include <memory>
 #include "BigFixP.h"
+#include "BigTorusVector.h"
+#include "BigFixPVector.h"
 
 class TLweParams {
 public:
@@ -28,23 +30,18 @@ public:
 
 
 /** A TLwe is an array of BigTorus elements, with fix point parameters */
-class TLwe {
+class TLwe : public BigFixPVector {
 public:
-    uint64_t *const limbs;
     const TLweParams &params;
-
-    NO_COPY(TLwe);
 
     TLwe(const TLweParams &params);
 
     ~TLwe();
 
-    BigTorusRef getAT(uint64_t i) const; ///< coef a[i] as a BigTorus
-    BigTorusRef getAT(uint64_t i); ///< coef a[i] as a BigTorus
+    NO_COPY(TLwe);
+
     BigTorusRef getBT() const; ///< coef b as a BigTorus
     BigTorusRef getBT(); ///< coef b as a BigTorus
-    BigFixPRef getAF(uint64_t i) const; ///< coef a[i] as a BigFixedPoint
-    BigFixPRef getAF(uint64_t i); ///< coef a[i] as a BigFixedPoint
     BigFixPRef getBF() const; ///< coef b as a BigFixedPoint
     BigFixPRef getBF(); ///< coef b as a BigFixedPoint
 };
@@ -57,8 +54,8 @@ void native_encrypt(TLwe &reps, const BigTorusRef &plaintext, const TLweKey &key
 
 void native_phase(BigTorusRef reps, const TLwe &tlwe, const TLweKey &key, uint64_t alpha_bits = NA);
 
-void slot_encrypt(TLwe &reps, const BigFixPRef &plaintext, const TLweKey &key, uint64_t alpha_bits = NA);
+void slot_encrypt(TLwe &reps, const NTL::RR &plaintext, const TLweKey &key, uint64_t alpha_bits = NA);
 
-void slot_decrypt(BigFixPRef reps, const TLwe &tlwe, const TLweKey &key, uint64_t alpha_bits = NA);
+NTL::RR slot_decrypt(const TLwe &tlwe, const TLweKey &key, uint64_t alpha_bits = NA);
 
 #endif //FHE_TLWE_H

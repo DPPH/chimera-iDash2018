@@ -108,7 +108,7 @@ void fill_matrix_Xy(BigFixPMatrix &X, BigFixPVector &y) {
         iss >> buf; //ignore label
         iss >> rrbuf; //read y
         assert(is_binary(rrbuf)); //y binary
-        to_fixP(y(i), rrbuf);
+        to_fixP(y.getAF(i), rrbuf);
 
         B[0][i] = 1.; //intercept first
         nbels[0]++;
@@ -163,18 +163,18 @@ void sigmoid_vec(BigFixPVector &p, BigFixPVector &w, BigFixPVector &x) {
     assert_dramatically(p.length == x.length && p.length == w.length, "wrong dimensions");
     //this function is bootstrapped, so we will just use the RR conversion
     for (uint64_t i = 0; i < p.length; i++) {
-        RR xx = to_RR(x(i));
+        RR xx = to_RR(x.getAF(i));
         RR sigmo = inv(1 + exp(-xx));
-        to_fixP(p(i), sigmo);
-        to_fixP(w(i), sigmo * (1 - sigmo));
+        to_fixP(p.getAF(i), sigmo);
+        to_fixP(w.getAF(i), sigmo * (1 - sigmo));
     }
 }
 
 void public_scale(BigFixPVector &res, int alpha) {
     const uint64_t length = res.length;
-    const uint64_t nblimbs = res.params->torus_limbs;
+    const uint64_t nblimbs = res.bfp.torus_limbs;
     for (uint64_t i = 0; i < length; i++) {
-        bigTorusRawScale(res.limbs_raw + i * nblimbs, alpha, nblimbs);
+        bigTorusRawScale(res.limbs + i * nblimbs, alpha, nblimbs);
     }
 }
 
@@ -183,7 +183,7 @@ NTL::RR debug_norm(const BigFixPVector &v) {
     RR reps;
     reps = 0;
     for (uint64_t i = 0; i < v.length; i++) {
-        RR xx = to_RR(v(i));
+        RR xx = to_RR(v.getAF(i));
         reps += xx * xx;
     }
     return sqrt(reps);
@@ -193,7 +193,7 @@ std::ostream &operator<<(std::ostream &out, const BigFixPVector &v) {
     //this function is bootstrapped, so we will just use the RR conversion
     out << "[";
     for (uint64_t i = 0; i < v.length; i++) {
-        out << to_double(to_RR(v(i))) << " ";
+        out << to_double(to_RR(v.getAF(i))) << " ";
         if (i == 5 && v.length > 10) {
             out << "... ";
             i = v.length - 6;
@@ -223,11 +223,11 @@ void tAb_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
         }
     }
     for (uint64_t j = 0; j < n; j++) {
-        bb[j] = to_RR(b(j));
+        bb[j] = to_RR(b.getAF(j));
     }
     vec_RR reps = tAA * bb;
     for (uint64_t i = 0; i < m; i++) {
-        to_fixP(res(i), reps[i]);
+        to_fixP(res.getAF(i), reps[i]);
     }
 }
 
@@ -251,11 +251,11 @@ void Ab_prod_fake(BigFixPVector &res, BigFixPMatrix &A, BigFixPVector &b) {
         }
     }
     for (uint64_t j = 0; j < m; j++) {
-        bb[j] = to_RR(b(j));
+        bb[j] = to_RR(b.getAF(j));
     }
     vec_RR reps = AA * bb;
     for (uint64_t i = 0; i < n; i++) {
-        to_fixP(res(i), reps[i]);
+        to_fixP(res.getAF(i), reps[i]);
     }
 }
 

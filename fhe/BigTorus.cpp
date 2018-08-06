@@ -46,40 +46,6 @@ void random(BigTorusRef dest, uint64_t limb_precision) {
     mpn_random(dest.limbs_raw + doffset, limb_precision);
 }
 
-void add(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision) {
-    uint64_t asize = a.params->torus_limbs;
-    uint64_t bsize = b.params->torus_limbs;
-    uint64_t dsize = dest.params->torus_limbs;
-    if (limb_precision == NA) {
-        limb_precision = std::min(std::min(asize, bsize), dsize);
-    } else {
-        assert_dramatically(limb_precision <= dsize, "destination is not precise enough");
-        assert_dramatically(limb_precision <= asize, "source is not precise enough");
-        assert_dramatically(limb_precision <= bsize, "source is not precise enough");
-    }
-    uint64_t aoffset = asize - limb_precision;
-    uint64_t boffset = asize - limb_precision;
-    uint64_t doffset = dsize - limb_precision;
-    mpn_add_n(dest.limbs_raw + doffset, a.limbs_raw + aoffset, b.limbs_raw + boffset, limb_precision);
-}
-
-void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision) {
-    uint64_t asize = a.params->torus_limbs;
-    uint64_t bsize = b.params->torus_limbs;
-    uint64_t dsize = dest.params->torus_limbs;
-    if (limb_precision == NA) {
-        limb_precision = std::min(std::min(asize, bsize), dsize);
-    } else {
-        assert_dramatically(limb_precision <= dsize, "destination is not precise enough");
-        assert_dramatically(limb_precision <= asize, "source is not precise enough");
-        assert_dramatically(limb_precision <= bsize, "source is not precise enough");
-    }
-    uint64_t aoffset = asize - limb_precision;
-    uint64_t boffset = asize - limb_precision;
-    uint64_t doffset = dsize - limb_precision;
-    mpn_sub_n(dest.limbs_raw + doffset, a.limbs_raw + aoffset, b.limbs_raw + boffset, limb_precision);
-}
-
 void add_noise(BigTorusRef dest, uint64_t alpha_bits, uint64_t limb_precision) {
     uint64_t dsize = dest.params->torus_limbs;
     if (limb_precision == NA) {
@@ -102,3 +68,48 @@ void add_noise(BigTorusRef dest, uint64_t alpha_bits, uint64_t limb_precision) {
     }
 }
 
+bigtorus_addsub_params
+prepare_addsub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision) {
+    bigtorus_addsub_params r;
+    r.asize = a.params->torus_limbs;
+    r.bsize = b.params->torus_limbs;
+    r.dsize = dest.params->torus_limbs;
+    if (limb_precision == NA) {
+        r.limb_precision = std::min(std::min(r.asize, r.bsize), r.dsize);
+    } else {
+        assert_dramatically(limb_precision <= r.dsize, "destination is not precise enough");
+        assert_dramatically(limb_precision <= r.asize, "source is not precise enough");
+        assert_dramatically(limb_precision <= r.bsize, "source is not precise enough");
+        r.limb_precision = limb_precision;
+    }
+    r.aoffset = r.asize - r.limb_precision;
+    r.boffset = r.bsize - r.limb_precision;
+    r.doffset = r.dsize - r.limb_precision;
+    return r;
+}
+
+void add_prep(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, const bigtorus_addsub_params &prep) {
+    mpn_add_n(dest.limbs_raw + prep.doffset,
+              a.limbs_raw + prep.aoffset,
+              b.limbs_raw + prep.boffset,
+              prep.limb_precision);
+}
+
+void sub_prep(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, const bigtorus_addsub_params &prep) {
+    mpn_sub_n(dest.limbs_raw + prep.doffset,
+              a.limbs_raw + prep.aoffset,
+              b.limbs_raw + prep.boffset,
+              prep.limb_precision);
+}
+
+void add(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision) {
+    add_prep(dest, a, b, prepare_addsub(dest, a, b, limb_precision));
+}
+
+void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision) {
+    sub_prep(dest, a, b, prepare_addsub(dest, a, b, limb_precision));
+}
+
+void zero(BigTorusRef dest) {
+    mpn_zero(dest.limbs_raw, dest.params->torus_limbs);
+}

@@ -2,6 +2,7 @@
 #define FHE_ARITHMETIC_H
 
 #include "BigFixP.h"
+#include "BigFixPVector.h"
 
 void to_fixP(BigFixPRef reps, const NTL::RR &a);
 

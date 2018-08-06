@@ -4,31 +4,29 @@
 TLweParams::TLweParams(const uint64_t N, const BigFixPParams &fixp_params) : N(N), fixp_params(fixp_params) {}
 
 TLwe::TLwe(const TLweParams &params) :
-        limbs(new uint64_t[(params.N + 1) * params.fixp_params.torus_limbs * sizeof(uint64_t)]),
+        BigFixPVector(params.N + 1, params.fixp_params),
         params(params) {
 }
 
 TLwe::~TLwe() {
-    delete[] limbs;
-}
-
-BigTorusRef TLwe::getAT(uint64_t i) {
-    return BigTorusRef(limbs + i * params.fixp_params.torus_limbs, &params.fixp_params);
-}
-
-BigTorusRef TLwe::getAT(uint64_t i) const {
-    return BigTorusRef(limbs + i * params.fixp_params.torus_limbs, &params.fixp_params);
 }
 
 BigTorusRef TLwe::getBT() {
-    return BigTorusRef(limbs + params.N * params.fixp_params.torus_limbs,
-                       &params.fixp_params);
+    return getAT(params.N);
 }
 
 BigTorusRef TLwe::getBT() const {
-    return BigTorusRef(limbs + params.N * params.fixp_params.torus_limbs,
-                       &params.fixp_params);
+    return getAT(params.N);
 }
+
+BigFixPRef TLwe::getBF() {
+    return getAF(params.N);
+}
+
+BigFixPRef TLwe::getBF() const {
+    return getAF(params.N);
+}
+
 
 TLweKey::TLweKey(const TLweParams &params) :
         key(new int8_t[params.N]),
@@ -60,11 +58,12 @@ void native_encrypt(TLwe &reps, const BigTorusRef &plaintext, const TLweKey &key
     auto b = reps.getBT();
     // b = plaintext + sum s_i a_i
     copy(b, plaintext, alpha_limbs);
+    auto prep = prepare_addsub(b, b, b, alpha_limbs);
     for (uint64_t i = 0; i < N; i++) {
         auto ai = reps.getAT(i);
         random(ai, alpha_limbs);
         if (key.key[i]) {
-            add(b, b, ai, alpha_limbs);
+            add_prep(b, b, ai, prep);
         }
     }
     //randomize below bit alpha (noise)
@@ -76,10 +75,23 @@ void native_phase(BigTorusRef reps, const TLwe &tlwe, const TLweKey &key, uint64
     const uint64_t alpha_limbs = limb_precision(alpha_bits);
     auto b = tlwe.getBT();
     copy(reps, b, alpha_limbs);
+    auto prep = prepare_addsub(reps, reps, b, alpha_limbs);
     for (uint64_t i = 0; i < N; i++) {
         auto ai = tlwe.getAT(i);
         if (key.key[i]) {
-            sub(reps, reps, ai, alpha_limbs);
+            sub_prep(reps, reps, ai, prep);
         }
     }
+}
+
+void slot_encrypt(TLwe &reps, const NTL::RR &plaintext, const TLweKey &key, uint64_t alpha_bits) {
+    BigFixP tmp(&reps.params.fixp_params);
+    to_fixP(tmp, plaintext);
+    native_encrypt(reps, BigTorusRef(tmp.limbs_raw, tmp.params), key, alpha_bits);
+}
+
+NTL::RR slot_decrypt(const TLwe &tlwe, const TLweKey &key, uint64_t alpha_bits) {
+    BigFixP tmp(&tlwe.params.fixp_params);
+    native_phase(BigTorusRef(tmp.limbs_raw, tmp.params), tlwe, key, alpha_bits);
+    return to_RR(tmp);
 }

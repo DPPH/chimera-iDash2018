@@ -416,7 +416,6 @@ int main() {
         cout << "grad: " << iter << " " << sqrt(mgrad * mgrad) << endl;
         //cout << "p: " << p << endl;
     }
-    return 0;
     // p and W
     vec_float w;
     w.SetLength(n);
