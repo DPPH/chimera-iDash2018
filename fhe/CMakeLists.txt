@@ -21,10 +21,12 @@ add_library(chimera-dpph
         BigReal.h
         BigFFT.cpp
         BigFFT.h
+        BigFFT128.cpp
+        BigFFT128.h
         BigComplex.cpp
         BigComplex.h
         TLwe.cpp
-        TLwe.h BigTorusVector.cpp BigTorusVector.h)
+        TLwe.h BigTorusVector.cpp BigTorusVector.h BigTorusPolynomial.cpp BigTorusPolynomial.h TRLwe.cpp TRLwe.h)
 
 add_executable(fhe main.cpp )
 target_link_libraries(fhe chimera-dpph -lntl -lmpfr -lgmp -lm -pthread)

@@ -39,8 +39,6 @@ public:
 
     BigTorusRef getBT() const; ///< coef b as a BigTorus
     BigTorusRef getBT(); ///< coef b as a BigTorus
-    BigTorusRef getBF() const; ///< coef b as a BigFixedPoint
-    BigTorusRef getBF(); ///< coef b as a BigFixedPoint
 };
 
 std::shared_ptr<TLweKey> tlwe_keygen(const TLweParams &params);

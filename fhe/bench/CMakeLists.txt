@@ -11,6 +11,7 @@ add_subdirectory(benchmark EXCLUDE_FROM_ALL)
 set(GOOGLEBENCH_SOURCES
         bench.cpp
         bench_fft.cpp
+        bench_fft128.cpp
         )
 
 #the benchmark applications are compiled with google benchmark framework
