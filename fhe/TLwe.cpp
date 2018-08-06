@@ -4,7 +4,7 @@
 TLweParams::TLweParams(const uint64_t N, const BigFixPParams &fixp_params) : N(N), fixp_params(fixp_params) {}
 
 TLwe::TLwe(const TLweParams &params) :
-        BigTorusVector(params.N + 1, params.fixp_params),
+        BigFixPVector(params.N + 1, params.fixp_params),
         params(params) {
 }
 
@@ -17,6 +17,14 @@ BigTorusRef TLwe::getBT() {
 
 BigTorusRef TLwe::getBT() const {
     return getAT(params.N);
+}
+
+BigFixPRef TLwe::getBF() {
+    return getAF(params.N);
+}
+
+BigFixPRef TLwe::getBF() const {
+    return getAF(params.N);
 }
 
 

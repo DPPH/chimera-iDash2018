@@ -4,6 +4,7 @@
 #include <memory>
 #include "BigFixP.h"
 #include "BigTorusVector.h"
+#include "BigFixPVector.h"
 
 class TLweParams {
 public:
@@ -29,20 +30,18 @@ public:
 
 
 /** A TLwe is an array of BigTorus elements, with fix point parameters */
-class TLwe : public BigTorusVector {
+class TLwe : public BigFixPVector {
 public:
     const TLweParams &params;
-
-    NO_COPY(TLwe);
 
     TLwe(const TLweParams &params);
 
     ~TLwe();
 
+    NO_COPY(TLwe);
+
     BigTorusRef getBT() const; ///< coef b as a BigTorus
     BigTorusRef getBT(); ///< coef b as a BigTorus
-    BigFixPRef getAF(uint64_t i) const; ///< coef a[i] as a BigFixedPoint
-    BigFixPRef getAF(uint64_t i); ///< coef a[i] as a BigFixedPoint
     BigFixPRef getBF() const; ///< coef b as a BigFixedPoint
     BigFixPRef getBF(); ///< coef b as a BigFixedPoint
 };
