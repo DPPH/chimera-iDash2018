@@ -59,32 +59,32 @@ int main() {
 
     BigFixPMatrix X(n, k, &X_params);
     BigFixPMatrix S(n, m, &S_params);
-    BigFixPVector y(n, &y_params);
+    BigFixPVector y(n, y_params);
     fill_matrix_S(S);
     fill_matrix_Xy(X, y);
 
     cout << "y:" << y << endl;
 
     //
-    BigFixPVector p(n, &p_params);
-    BigFixPVector w(n, &w_params);
-    BigFixPVector beta(k, &beta_params);
+    BigFixPVector p(n, p_params);
+    BigFixPVector w(n, w_params);
+    BigFixPVector beta(k, beta_params);
 
     //logistic regression
     clear(beta);
     for (int iter = 0; iter <= ITERS; iter++) {
         cout << "--- iter " << iter << "-----" << endl;
         cout << "beta: " << beta << endl;
-        BigFixPVector XBeta(n, &XBeta_params);
+        BigFixPVector XBeta(n, XBeta_params);
         Ab_prod(XBeta, X, beta);
         cout << "XBeta: " << XBeta << endl;
         sigmoid_vec(p, w, XBeta);
         cout << "p: " << p << endl;
         cout << "w: " << w << endl;
-        BigFixPVector ymp(n, &ymp_params);
+        BigFixPVector ymp(n, ymp_params);
         sub(ymp, y, p);
         cout << "ymp: " << ymp << endl;
-        BigFixPVector mgrad(k, &mgrad_params);
+        BigFixPVector mgrad(k, mgrad_params);
         tAb_prod(mgrad, X, ymp);
         cout << "mgrad: " << mgrad << endl;
         public_scale(mgrad, 4);

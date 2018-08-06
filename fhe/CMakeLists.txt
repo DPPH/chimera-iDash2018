@@ -28,10 +28,10 @@ add_library(chimera-dpph
         TLwe.h BigTorusVector.cpp BigTorusVector.h BigFixPVector.cpp BigFixPVector.h)
 
 add_executable(fhe main.cpp )
-target_link_libraries(fhe chimera-dpph -lntl -lmpfr -lgmp -lm)
+target_link_libraries(fhe chimera-dpph -lntl -lmpfr -lgmp -lm -pthread)
 
 add_executable(unittest test/arithmetic_test.cpp test/fft_test.cpp test/tlwe_test.cpp)
-target_link_libraries(unittest gtest gtest_main chimera-dpph -lntl -lmpfr -lgmp -lm)
+target_link_libraries(unittest gtest gtest_main chimera-dpph -lntl -lmpfr -lgmp -lm -pthread)
 
 enable_testing()
 add_test(unittest unittest)
