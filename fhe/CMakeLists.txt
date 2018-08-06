@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 2.8)
 project(fhe)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "--std=c++17")
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -Wall -Werror")
 set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O9 -DNDEBUG")
