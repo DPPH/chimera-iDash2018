@@ -51,27 +51,6 @@ public:
 };
 
 /**
- * A vector of BigTorus (with shared params), owns its limbs memory space
- */
-class BigTorusVector {
-public:
-    uint64_t *limbs_raw;
-    uint64_t length;
-    BigTorusParams *params;
-};
-
-/**
- * A matrix of BigTorus (with shared params), owns its limbs memory space
- */
-class BigTorusMatrix {
-public:
-    uint64_t *limbs_raw;
-    uint64_t rows;
-    uint64_t cols;
-    BigTorusParams *params;
-};
-
-/**
  * A weak reference to a BigTorus (does not own memory)
  */
 class BigTorusRef {

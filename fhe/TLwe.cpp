@@ -4,31 +4,21 @@
 TLweParams::TLweParams(const uint64_t N, const BigFixPParams &fixp_params) : N(N), fixp_params(fixp_params) {}
 
 TLwe::TLwe(const TLweParams &params) :
-        limbs(new uint64_t[(params.N + 1) * params.fixp_params.torus_limbs * sizeof(uint64_t)]),
+        BigTorusVector(params.N + 1, params.fixp_params),
         params(params) {
 }
 
 TLwe::~TLwe() {
-    delete[] limbs;
-}
-
-BigTorusRef TLwe::getAT(uint64_t i) {
-    return BigTorusRef(limbs + i * params.fixp_params.torus_limbs, &params.fixp_params);
-}
-
-BigTorusRef TLwe::getAT(uint64_t i) const {
-    return BigTorusRef(limbs + i * params.fixp_params.torus_limbs, &params.fixp_params);
 }
 
 BigTorusRef TLwe::getBT() {
-    return BigTorusRef(limbs + params.N * params.fixp_params.torus_limbs,
-                       &params.fixp_params);
+    return getAT(params.N);
 }
 
 BigTorusRef TLwe::getBT() const {
-    return BigTorusRef(limbs + params.N * params.fixp_params.torus_limbs,
-                       &params.fixp_params);
+    return getAT(params.N);
 }
+
 
 TLweKey::TLweKey(const TLweParams &params) :
         key(new int8_t[params.N]),
