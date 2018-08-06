@@ -21,8 +21,7 @@ BigTorusRef TLwe::getBT() const {
 }
 
 TLweKey::TLweKey(const TLweParams &params) :
-        key(new int8_t[params.N]),
-        params(params) {
+        key(new int8_t[params.N]) {
 }
 
 TLweKey::~TLweKey() {
@@ -63,7 +62,7 @@ void native_encrypt(TLwe &reps, const BigTorusRef &plaintext, const TLweKey &key
 }
 
 void native_phase(BigTorusRef reps, const TLwe &tlwe, const TLweKey &key, uint64_t alpha_bits) {
-    const uint64_t N = key.params.N;
+    const uint64_t N = tlwe.params.N;
     const uint64_t alpha_limbs = limb_precision(alpha_bits);
     auto b = tlwe.getBT();
     copy(reps, b, alpha_limbs);

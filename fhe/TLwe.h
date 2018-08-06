@@ -17,7 +17,6 @@ public:
 class TLweKey {
 public:
     int8_t *const key;
-    const TLweParams &params;
 
     NO_COPY(TLweKey);
 
