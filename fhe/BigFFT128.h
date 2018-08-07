@@ -10,6 +10,7 @@ typedef std::complex<Real128> Complex128;
 /**
  * precompute an iFFT structure for logical n (=2*N if we are mod X^N+1) and limb precision nblimbs
  * Although this structure is mostly opaque, in this poc, the returned array contains all complex powers of unity
+ * TODO!
  */
 Complex128 *precomp_iFFT128(int n, uint64_t nblimbs);
 
@@ -20,6 +21,7 @@ void clear_precomp_iFFT128(Complex128 *powomega);
  * precompute an FFT structure for logical n (=2*N if we are mod X^N+1) and limb precision nblimbs
  * Although this structure is mostly opaque, in this poc, the returned array contains all complex powers of unity
  * in reverse order
+ * TODO!
  */
 Complex128 *precomp_FFT128(int n, uint64_t nblimbs);
 
