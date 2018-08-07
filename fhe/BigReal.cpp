@@ -49,13 +49,13 @@ void to_BigReal(BigReal &dest, const BigTorusRef &v) {
         mpn_zero(dest.value->_mp_d, zerofill);
     }
     //negate or copy limbs from v
-    bool vnegative = v.limbs_raw[vsize - 1] >> 63u;
+    bool vnegative = v.limbs[vsize - 1] >> 63u;
     if (vnegative) {
         //v is negative
-        mpn_neg(dest.value->_mp_d + zerofill, v.limbs_raw + vcopyoffset, vcopysize);
+        mpn_neg(dest.value->_mp_d + zerofill, v.limbs + vcopyoffset, vcopysize);
     } else {
         //v is positive
-        mpn_copyi(dest.value->_mp_d + zerofill, v.limbs_raw + vcopyoffset, vcopysize);
+        mpn_copyi(dest.value->_mp_d + zerofill, v.limbs + vcopyoffset, vcopysize);
     }
     //find the right size
     int dl;

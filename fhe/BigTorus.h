@@ -19,30 +19,32 @@
  */
 class BigTorusParams {
 public:
-    uint64_t torus_limbs; ///< total number of limbs
+    const uint64_t torus_limbs; ///< total number of limbs
+    const int64_t plaintext_expo;  ///< plaintext exponent
+    const int64_t level_expo;      ///< level exponent
 
-    BigTorusParams(uint64_t torus_limbs);
+    BigTorusParams(uint64_t torus_limbs, int64_t plaintext_expo = 0, int64_t level_expo = 0);
 };
 
-static_assert(sizeof(BigTorusParams) == 8, "Bad compiler");
+static_assert(sizeof(BigTorusParams) == 24, "Bad compiler");
 
 /**
  * A standalone BigTorus (owns its limbs memory space)
  */
 class BigTorus {
 public:
-    uint64_t *limbs_raw; ///< limbs
+    uint64_t *limbs; ///< limbs
     const BigTorusParams *const params; ///< parameters
 
     /** constructs new BigTorus */
     BigTorus(const BigTorusParams *params) :
             params(params) {
-        limbs_raw = new uint64_t[params->torus_limbs];
+        limbs = new uint64_t[params->torus_limbs];
     }
 
     /** deletes a bigtorus */
     ~BigTorus() {
-        delete[] limbs_raw;
+        delete[] limbs;
     }
 
     BigTorus(const BigTorus &) = delete;
@@ -55,10 +57,10 @@ public:
  */
 class BigTorusRef {
 public:
-    uint64_t *limbs_raw;
+    uint64_t *limbs;
     const BigTorusParams *const params;
 
-    BigTorusRef(uint64_t *limbs_raw, const BigTorusParams *params);
+    BigTorusRef(uint64_t *limbs, const BigTorusParams *params);
 
     BigTorusRef(const BigTorus &torus);
 
@@ -112,6 +114,71 @@ void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t 
 void to_torus(BigTorusRef reps, const NTL::RR &a);
 
 NTL::RR to_RR(const BigTorusRef &a);
+
+// ***********************
+
+struct fixp_add_params {
+    int64_t ia_limbs;   //total limbs in a
+    int64_t ib_limbs;   //total limbs in b
+    int64_t ic_limbs;   //total limbs in c
+    int64_t oc_limbs;   //significant limbs in c's output
+    int64_t sa;         // shift in bits to apply to a
+    int64_t sb;         // shift in bits to apply to b
+    uint64_t *tmp_a; //buffer of size oc_limbs+1
+    uint64_t *tmp_b; //buffer of size oc_limbs+1
+
+    fixp_add_params();
+};
+
+
+void fixp_prepareAdd(fixp_add_params &out,
+                     const BigTorusParams &pres, const BigTorusParams &pa, const BigTorusParams &pb,
+                     int64_t out_precision_bits
+);
+
+void fixp_releaseAdd(fixp_add_params &out);
+
+/**
+ * left shift a by bit_shift bits, and write the out_limbs msb of the result to out.
+ * Warning: out must have physical size at least out_limbs+1
+ *
+ * @param out output torus fractional buffer of size out_limbs (physical out_limbs+1)
+ * @param a torus fractional buffer of size a_limbs
+ * @param out_limbs
+ * @param a_limbs
+ * @param bit_shift left shift in bits
+ */
+void fixp_special_add_lshift(uint64_t *out, uint64_t *a,
+                             int64_t out_limbs, int64_t a_limbs, int64_t bit_shift);
+
+/**
+ * Performs the raw fixed point addition on the torus buffers a and b
+ *
+ * @param reps torus buffer for the result
+ * @param a torus buffer of a
+ * @param b torus buffer of b
+ * @param params the addition parameters
+ */
+void fixp_raw_add(uint64_t *reps, uint64_t *a, uint64_t *b, const fixp_add_params &params);
+
+/**
+ * Performs the raw fixed point subtraction on the torus buffers a and b
+ *
+ * @param reps torus buffer for the result
+ * @param a torus buffer of a
+ * @param b torus buffer of b
+ * @param params the addition parameters
+ */
+void fixp_raw_sub(uint64_t *reps, uint64_t *a, uint64_t *b, const fixp_add_params &params);
+
+/**
+ * zero
+ */
+void fixPRawClear(uint64_t *reps, const uint64_t limbs_size);
+
+void fixp_add(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, uint64_t out_precision_bits = NA);
+
+void fixp_sub(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, uint64_t out_precision_bits = NA);
 
 
 #endif //FHE_BIGTORUS_H

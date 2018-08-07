@@ -2,16 +2,14 @@
 #define FHE_TLWE_H
 
 #include <memory>
-#include "BigFixP.h"
 #include "BigTorusVector.h"
-#include "BigFixPVector.h"
 
 class TLweParams {
 public:
     const uint64_t N;  ///< key size
-    const BigFixPParams fixp_params; ///< fixp_params;
+    const BigTorusParams fixp_params; ///< fixp_params;
 
-    TLweParams(const uint64_t N, const BigFixPParams &fixp_params);
+    TLweParams(const uint64_t N, const BigTorusParams &fixp_params);
 };
 
 
@@ -19,7 +17,6 @@ public:
 class TLweKey {
 public:
     int8_t *const key;
-    const TLweParams &params;
 
     NO_COPY(TLweKey);
 
@@ -30,7 +27,7 @@ public:
 
 
 /** A TLwe is an array of BigTorus elements, with fix point parameters */
-class TLwe : public BigFixPVector {
+class TLwe : public BigTorusVector {
 public:
     const TLweParams &params;
 
@@ -42,8 +39,6 @@ public:
 
     BigTorusRef getBT() const; ///< coef b as a BigTorus
     BigTorusRef getBT(); ///< coef b as a BigTorus
-    BigFixPRef getBF() const; ///< coef b as a BigFixedPoint
-    BigFixPRef getBF(); ///< coef b as a BigFixedPoint
 };
 
 std::shared_ptr<TLweKey> tlwe_keygen(const TLweParams &params);

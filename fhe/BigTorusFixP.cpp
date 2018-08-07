@@ -1,12 +1,15 @@
-#include "BigFixP.h"
+#include <gmp.h>
+#include <cassert>
+#include "BigTorus.h"
 
-BigFixPAddParams::BigFixPAddParams() :
+fixp_add_params::fixp_add_params() :
         ia_limbs(0), ib_limbs(0), ic_limbs(0),
         oc_limbs(0), sa(0), sb(0),
         tmp_a(nullptr), tmp_b(nullptr) {}
 
-void prepareAdd(BigFixPAddParams &out, const BigFixPParams &pres, const BigFixPParams &pa, const BigFixPParams &pb,
-                int64_t out_precision_bits) {
+void fixp_prepareAdd(fixp_add_params &out, const BigTorusParams &pres, const BigTorusParams &pa,
+                     const BigTorusParams &pb,
+                     int64_t out_precision_bits) {
     out.ia_limbs = pa.torus_limbs;
     out.ib_limbs = pb.torus_limbs;
     out.ic_limbs = pres.torus_limbs;
@@ -38,12 +41,12 @@ void prepareAdd(BigFixPAddParams &out, const BigFixPParams &pres, const BigFixPP
     out.tmp_b = new uint64_t[out.oc_limbs + 1];
 }
 
-void releaseAdd(BigFixPAddParams &out) {
+void fixp_releaseAdd(fixp_add_params &out) {
     delete[] out.tmp_a;
     delete[] out.tmp_b;
 }
 
-void special_add_lshift(uint64_t *out, uint64_t *a, int64_t out_limbs, int64_t a_limbs, int64_t bit_shift) {
+void fixp_special_add_lshift(uint64_t *out, uint64_t *a, int64_t out_limbs, int64_t a_limbs, int64_t bit_shift) {
     int64_t sbits = bit_shift % BITS_PER_LIMBS;
     int64_t slimbs = bit_shift / BITS_PER_LIMBS;
     int64_t oc = out_limbs;
@@ -109,60 +112,46 @@ void special_add_lshift(uint64_t *out, uint64_t *a, int64_t out_limbs, int64_t a
     }
 }
 
-void fixPRawAdd(uint64_t *reps, uint64_t *a, uint64_t *b, const BigFixPAddParams &params) {
+void fixp_raw_add(uint64_t *reps, uint64_t *a, uint64_t *b, const fixp_add_params &params) {
     uint64_t *tmp_a = params.tmp_a;
     uint64_t *tmp_b = params.tmp_b;
     uint64_t *c = reps + params.ic_limbs - params.oc_limbs;
 
     //left shift a by sa positions and keep oc limbs
-    special_add_lshift(tmp_a, a, params.oc_limbs, params.ia_limbs, params.sa);
+    fixp_special_add_lshift(tmp_a, a, params.oc_limbs, params.ia_limbs, params.sa);
     //left shift b by sb positions and keep oc limbs
-    special_add_lshift(tmp_b, b, params.oc_limbs, params.ib_limbs, params.sb);
+    fixp_special_add_lshift(tmp_b, b, params.oc_limbs, params.ib_limbs, params.sb);
     //add a,b (on oc_limbs)
     mpn_add_n(c, tmp_a, tmp_b, params.oc_limbs);
 }
 
-void fixPRawSub(uint64_t *reps, uint64_t *a, uint64_t *b, const BigFixPAddParams &params) {
+void fixp_raw_sub(uint64_t *reps, uint64_t *a, uint64_t *b, const fixp_add_params &params) {
     uint64_t *tmp_a = params.tmp_a;
     uint64_t *tmp_b = params.tmp_b;
     uint64_t *c = reps + params.ic_limbs - params.oc_limbs;
 
     //left shift a by sa positions and keep oc limbs
-    special_add_lshift(tmp_a, a, params.oc_limbs, params.ia_limbs, params.sa);
+    fixp_special_add_lshift(tmp_a, a, params.oc_limbs, params.ia_limbs, params.sa);
     //left shift b by sb positions and keep oc limbs
-    special_add_lshift(tmp_b, b, params.oc_limbs, params.ib_limbs, params.sb);
+    fixp_special_add_lshift(tmp_b, b, params.oc_limbs, params.ib_limbs, params.sb);
     //add a,b (on oc_limbs)
     mpn_sub_n(c, tmp_a, tmp_b, params.oc_limbs);
 }
 
-void clear(BigFixP &reps) {
-    fixPRawClear(reps.limbs_raw, reps.params->torus_limbs);
-}
 
-void fixPRawClear(uint64_t *reps, const uint64_t limbs_size) {
-    mpn_zero(reps, limbs_size);
-}
-
-void add(BigFixP &reps, const BigFixP &a, const BigFixP &b, uint64_t out_precision_bits) {
-    BigFixPAddParams addParams;
+void fixp_add(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, uint64_t out_precision_bits) {
+    fixp_add_params addParams;
     if (out_precision_bits == NA) out_precision_bits = reps.params->torus_limbs * BITS_PER_LIMBS;
-    prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
-    fixPRawAdd(reps.limbs_raw, a.limbs_raw, b.limbs_raw, addParams);
-    releaseAdd(addParams);
+    fixp_prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
+    fixp_raw_add(reps.limbs, a.limbs, b.limbs, addParams);
+    fixp_releaseAdd(addParams);
 }
 
-void sub(BigFixP &reps, const BigFixP &a, const BigFixP &b, uint64_t out_precision_bits) {
-    BigFixPAddParams addParams;
+void fixp_sub(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, uint64_t out_precision_bits) {
+    fixp_add_params addParams;
     if (out_precision_bits == NA) out_precision_bits = reps.params->torus_limbs * BITS_PER_LIMBS;
-    prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
-    fixPRawSub(reps.limbs_raw, a.limbs_raw, b.limbs_raw, addParams);
-    releaseAdd(addParams);
+    fixp_prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
+    fixp_raw_sub(reps.limbs, a.limbs, b.limbs, addParams);
+    fixp_releaseAdd(addParams);
 }
-
-BigFixPRef::BigFixPRef(const BigFixP &a) : limbs_raw(a.limbs_raw), params(a.params) {}
-
-BigFixPRef::BigFixPRef(uint64_t *limbs, const BigFixPParams *params) : limbs_raw(limbs), params(params) {}
-
-BigFixPParams::BigFixPParams(const BigTorusParams &torus_params, int64_t plaintext_expo, int64_t level_expo)
-        : BigTorusParams(torus_params), plaintext_expo(plaintext_expo), level_expo(level_expo) {}
 
