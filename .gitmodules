@@ -4,7 +4,10 @@
 [submodule "benchmark"]
 	path = fhe/bench/benchmark
 	url = https://github.com/google/benchmark.git
+[submodule "cxxopts"]
+	path = log_regr/external/cxxopts
+	url = https://github.com/jarro2783/cxxopts.git
 [submodule "tfhe_torus_generic"]
-	path = log_regr/tfhe_torus_generic
+	path = log_regr/external/tfhe_torus_generic
 	url = git@github.com:tfhe/tfhe.git
 	branch = torus_generic

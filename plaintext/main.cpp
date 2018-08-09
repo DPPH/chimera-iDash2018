@@ -1,4 +1,5 @@
 #include <io.h>
+#include <common.h>
 
 #include <NTL/LLL.h>
 #include <NTL/ZZ_limbs.h>
@@ -9,10 +10,6 @@ NTL_CLIENT;
 typedef NTL::Vec<float> vec_float;
 typedef NTL::Mat<float> mat_float;
 
-
-float sigmoid(float x) {
-    return 1. / (1 + exp(-x));
-}
 
 vec_float sigmoid_vec(const vec_float &x) {
     const int n = x.length();
