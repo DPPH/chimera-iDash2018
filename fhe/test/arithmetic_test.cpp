@@ -148,3 +148,61 @@ TEST(BIGTORUS_ARITHMETIC, submul128) {
         }
     }
 }
+
+TEST(BIGTORUS_ARITHMETIC, mul64) {
+    for (int64_t limb_prec:  {1, 3, 5, 7}) {
+        for (int64_t out_nblimbs: {limb_prec, limb_prec + 1, limb_prec + 3}) {
+            int64_t in_nblimbs = out_nblimbs;
+            for (bool positive: {true, false}) {
+                for (int64_t bitsOfA: {1, 2, 10, 30, 63}) {
+                    BigTorusParams in_params(in_nblimbs);
+                    BigTorusParams out_params(out_nblimbs);
+
+                    BigTorus a(&in_params);
+                    zero(a);
+                    random(a, in_nblimbs);
+                    RR::SetPrecision((in_nblimbs) * BITS_PER_LIMBS);
+                    RR aa = to_RR(a);
+
+                    RR::SetOutputPrecision(100);
+
+                    //cout << endl;
+                    //cout << "aa: " << aa << endl;
+
+                    BigTorus out(&out_params);
+                    //RR::SetPrecision((in_nblimbs+0) * BITS_PER_LIMBS);
+                    //RR oout = (random_RR() - 0.5);
+                    //to_torus(out, oout);
+
+                    //cout << "oout: " << oout << endl;
+
+
+                    //test positive first
+                    ZZ coef_zz = RandomBits_ZZ(bitsOfA);
+                    int64_t coef = to_long(coef_zz);
+                    if (!positive) {
+                        coef = -coef;
+                        coef_zz = -coef_zz;
+                    }
+
+                    //cout << "coef_zz: " << coef_zz << endl;
+
+                    mul64(out, coef, a, limb_prec);
+
+                    //test that out = a * coef modulo 1
+                    RR::SetPrecision((in_nblimbs + 1) * BITS_PER_LIMBS);
+                    RR target = centerMod1(to_RR(coef_zz) * aa);
+                    RR actual = to_RR(out);
+
+                    //cout << "actual: " << actual << endl;
+                    //cout << "target: " << target << endl;
+
+                    RR distance = centerMod1(target - actual);
+                    //cout << "distance: " << distance << endl;
+
+                    ASSERT_LE(log2DiffMod1(target, actual), -limb_prec * BITS_PER_LIMBS + bitsOfA);
+                }
+            }
+        }
+    }
+}
