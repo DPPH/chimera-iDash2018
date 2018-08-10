@@ -114,6 +114,9 @@ void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, UINT64 li
 /** @brief compute the bigtorus equal to out= out-a.in */
 void subMul(BigTorusRef out, __int128 a, const BigTorusRef &in, UINT64 out_limb_prec);
 
+/** @brief compute out = a * in */
+void mul64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 out_limb_prec);
+
 void to_torus(BigTorusRef reps, const NTL::RR &a);
 
 NTL::RR to_RR(const BigTorusRef &a);
