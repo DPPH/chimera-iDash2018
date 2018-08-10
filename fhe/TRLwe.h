@@ -6,13 +6,19 @@
 #include "TLwe.h"
 
 class TRLweParams: public TLweParams {
-
+public:
+    TRLweParams(const UINT64 N, const BigTorusParams &fixp_params);
+    ~TRLweParams() = default;
 };
 
 class TRLwe {
 public:
     const TRLweParams& params;
-    BigTorusPolynomial a[2];
+    BigTorusPolynomial* const a;
+
+    TRLwe(const TRLweParams& params);
+
+    ~TRLwe();
 };
 
 

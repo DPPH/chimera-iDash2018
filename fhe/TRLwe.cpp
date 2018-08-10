@@ -2,17 +2,17 @@
 
 void pubKS(TRLwe &out, TLwe &in, pubKsKey &ks) {
     //const TRLweParams& out_params = out.params;
-    const TLweParams& in_params = in.params;
+    const TLweParams &in_params = in.params;
     const int64_t out_prec_limbs = ks.out_prec_limbs;
     //const int64_t ks_prec_limbs = out_prec_limbs+2; //ks has 128-bit more precision
-    const BigTorus& bitDecomp_in_offset = ks.bitDecomp_in_offset; // sum Bg/2 Bg^i
+    const BigTorus &bitDecomp_in_offset = ks.bitDecomp_in_offset; // sum Bg/2 Bg^i
     __int128 bitDecomp_out_offset = ks.bitDecomp_out_offset; // -Bg/2
 
     BigTorus tmpDec(&in_params.fixp_params); //temp variable
 
     // out = trivial(b)
     trivial(out, in.getBT(), out_prec_limbs);
-    for (UINT64 i=0; i<in_params.N; i++) {
+    for (UINT64 i = 0; i < in_params.N; i++) {
         add(tmpDec, in.getAT(i), bitDecomp_in_offset);
         for (UINT64 j = 1; j <= ks.l_dec; ++j) {
             // coef aij of the decomposition
@@ -41,4 +41,19 @@ void trivial(TRLwe &out, const BigTorusRef &in, const UINT64 out_limb_prec) {
 void subMul(TRLwe &out, __int128 aij, const TRLwe &in, const UINT64 out_limb_prec) {
     subMul(out.a[0], aij, in.a[0], out_limb_prec);
     subMul(out.a[1], aij, in.a[1], out_limb_prec);
+}
+
+TRLweParams::TRLweParams(const UINT64 N, const BigTorusParams &fixp_params) :
+        TLweParams(N, fixp_params) {}
+
+TRLwe::TRLwe(const TRLweParams &params) :
+        params(params),
+        a((BigTorusPolynomial*) malloc(2* sizeof(BigTorusPolynomial))) {
+    new (a) BigTorusPolynomial(params.N, params.fixp_params);
+    new (a+1) BigTorusPolynomial(params.N, params.fixp_params);
+}
+
+TRLwe::~TRLwe() {
+    a->~BigTorusPolynomial();
+    (a+1)->~BigTorusPolynomial();
 }
