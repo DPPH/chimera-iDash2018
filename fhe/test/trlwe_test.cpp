@@ -65,7 +65,7 @@ TEST(TRLWE_TEST, trlwe_encrypt_decrypt_native) {
                 //cout << p1 << endl;
                 //cout << p2 << endl;
                 ASSERT_LE(log2Diff(p1, p2), -noise_bits + 5);
-                ASSERT_GE(log2Diff(p1, p2), -noise_bits - 5);
+                ASSERT_GE(log2Diff(p1, p2), -noise_bits - 12);
             }
         }
     }

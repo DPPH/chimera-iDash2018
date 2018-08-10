@@ -60,6 +60,10 @@ void random(BigTorusVector &out, UINT64 out_limbs_prec);
 
 /** @brief add a noise to out  of alpha bits*/
 void add_noise(BigTorusVector &out, UINT64 alpha_bits, UINT64 out_limbs_prec);
-#endif //FHE_BIGTORUSVECTOR_H
 
 void sub(BigTorusVector &out, const BigTorusVector &a, const BigTorusVector &b, UINT64 out_limbs_prec);
+
+void add(BigTorusVector &out, const BigTorusVector &a, const BigTorusVector &b, UINT64 out_limbs_prec);
+
+#endif //FHE_BIGTORUSVECTOR_H
+

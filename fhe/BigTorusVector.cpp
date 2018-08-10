@@ -85,6 +85,12 @@ void sub(BigTorusVector &out, const BigTorusVector &a, const BigTorusVector &b, 
     }
 }
 
+void add(BigTorusVector &out, const BigTorusVector &a, const BigTorusVector &b, UINT64 out_limbs_prec) {
+    for (UINT64 i = 0; i < out.length; i++) {
+        add(out.getAT(i), a.getAT(i), b.getAT(i), out_limbs_prec);
+    }
+}
+
 
 BigTorusMatrix::BigTorusMatrix(UINT64 rows, UINT64 cols, const BigTorusParams *params) :
         rows(rows), cols(cols), params(params) {
