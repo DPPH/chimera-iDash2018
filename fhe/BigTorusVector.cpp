@@ -53,6 +53,14 @@ void fixp_sub(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVecto
     fixp_releaseAdd(addParams);
 }
 
+void subMul(BigTorusVector &out, __int128 a, const BigTorusVector &in, const UINT64 out_limb_prec) {
+    assert_dramatically(in.length == out.length, "not the good size");
+    for (int i = 0; i < in.length; i++) {
+        subMul(out.getAT(i), a, in.getAT(i), out_limb_prec);
+    }
+
+}
+
 
 BigTorusMatrix::BigTorusMatrix(UINT64 rows, UINT64 cols, const BigTorusParams *params) :
         rows(rows), cols(cols), params(params) {

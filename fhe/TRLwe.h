@@ -33,6 +33,7 @@ void trivial(TRLwe& out, const BigTorusRef& in, const UINT64 out_limb_prec);
 // (the output can be signed, we don't care)
 __int128 bitdecomp_coef128(const BigTorusRef& tmpDec, UINT64 j, const UINT64 limb_prec);
 
+
 // out = out - aij * in
 // WARNING: input limb precision = out_limb_prec + 2
 void subMul(TRLwe& out, __int128 aij, const TRLwe& in, const UINT64 out_limb_prec);

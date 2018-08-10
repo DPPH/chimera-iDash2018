@@ -10,5 +10,7 @@ class BigTorusPolynomial : public BigTorusVector {
     ~BigTorusPolynomial();
 };
 
+/** @brief generate a constant polynomial equal to in */
+void const_poly(BigTorusPolynomial &out, const BigTorusRef &in, UINT64 out_limb_prec);
 
 #endif //FHE_BIGTORUSPOLYNOMIAL_H

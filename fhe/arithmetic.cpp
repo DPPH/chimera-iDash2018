@@ -9,6 +9,8 @@
 #include <sstream>
 #include "arithmetic.h"
 #include "commons.h"
+#include "BigTorus.h"
+
 
 NTL_CLIENT;
 
@@ -54,6 +56,11 @@ NTL::RR to_RR(const BigTorusRef &a) {
     }
     if (reps >= 0.5) reps -= 1;
     return reps;
+}
+
+void subMul(BigTorusRef out, __int128 a, const BigTorusRef &in, UINT64 out_limb_prec) {
+
+
 }
 
 
