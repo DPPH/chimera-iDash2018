@@ -1,14 +1,8 @@
-#ifndef LRPARAMS_H
-#define LRPARAMS_H
+#ifndef PARAMS_H
+#define PARAMS_H
 
 #include <cmath>
 #include <stdio.h>
-
-#define Torus Torus64
-
-struct TfheParams {
-
-};
 
 struct LRParams
 {
@@ -17,7 +11,7 @@ struct LRParams
     int k;          // number X cols
     int m;          // number SNPs
 
-    int bc_x = 8;
+    int X_precbit = 8;
 
     //
     int nb_iters;
@@ -30,7 +24,9 @@ struct LRParams
     double sigm_in_max = 2.0;
     double scale = 1.0 / 2;
 
-    double alpha_test_poly = pow(2., -50);
+    const char* const params_filename = "params.bin";
+    const char* const secret_keyset_filename = "secret_keyset.bin";
+    const char* const cloud_keyset_filename = "cloud_keyset.bin";
 
     /**
      * @brief Update computed options

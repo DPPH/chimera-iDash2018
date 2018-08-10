@@ -33,3 +33,6 @@
 
 cmake-build-*
 .idea
+/fhe/build/*
+/log_regr/build/*
+/plaintext/build/*

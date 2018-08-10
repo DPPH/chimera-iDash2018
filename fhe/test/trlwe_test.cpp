@@ -1,6 +1,12 @@
 #include <include/gtest/gtest.h>
+#include <NTL/RR.h>
 #include "../commons.h"
 #include "../TRLwe.h"
+#include "../arithmetic.h"
+
+NTL_CLIENT;
+
+double log2Diff(const RR &a, const RR &b);
 
 TEST(TRLWE_TEST, trlwe_zero) {
     for (UINT64 nblimbs : {1, 2, 5}) {
@@ -28,7 +34,7 @@ TEST(TRLWE_TEST, trlwe_encrypt_decrypt_native) {
     for (UINT64 nblimbs : {1, 2, 5}) {
         int64_t pubexpo = 1;
         int64_t levexpo = 2;
-        for (UINT64 N : {300, 400, 500}) {
+        for (UINT64 N : {256, 512, 1024}) {
             TRLweParams params(N, {nblimbs, pubexpo, levexpo});
 
             std::shared_ptr<TLweKey> key = tlwe_keygen(params);
@@ -37,28 +43,30 @@ TEST(TRLWE_TEST, trlwe_encrypt_decrypt_native) {
             BigTorusPolynomial plaintext(N, params.fixp_params);
             BigTorusPolynomial plaintext2(N, params.fixp_params);
 
-            random(plaintext);
+            random(plaintext, nblimbs);
 
             int64_t noise_bits = UINT64(0.75 * nblimbs * BITS_PER_LIMBS);
             native_encrypt(c, plaintext, *key, noise_bits);
 
-            //check randomness
+            //check randomness of a
             std::set<UINT64> dist;
             for (UINT64 i = 0; i < N; i++) {
-                dist.insert(c.getAT(i).limbs[nblimbs - 1]);
+                dist.insert(c.a[0].getAT(i).limbs[nblimbs - 1]);
             }
             ASSERT_GE(dist.size(), 9 * N / 10);
 
             //check decryption
-            native_phase(plaintext2, c, *key);
+            native_phase(plaintext2, c, *key, nblimbs);
 
-            RR::SetPrecision(nblimbs * BITS_PER_LIMBS);
-            RR p1 = fixp_to_RR(plaintext);
-            RR p2 = fixp_to_RR(plaintext2);
-            //cout << p1 << endl;
-            //cout << p2 << endl;
-            ASSERT_LE(log2Diff(p1, p2), -noise_bits + 5);
-            ASSERT_GE(log2Diff(p1, p2), -noise_bits - 5);
+            for (UINT64 i = 0; i < N; i++) {
+                RR::SetPrecision(nblimbs * BITS_PER_LIMBS);
+                RR p1 = to_RR(plaintext.getAT(i));
+                RR p2 = to_RR(plaintext2.getAT(i));
+                //cout << p1 << endl;
+                //cout << p2 << endl;
+                ASSERT_LE(log2Diff(p1, p2), -noise_bits + 5);
+                ASSERT_GE(log2Diff(p1, p2), -noise_bits - 5);
+            }
         }
     }
 }

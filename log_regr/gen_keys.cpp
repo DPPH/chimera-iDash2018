@@ -1,56 +1,77 @@
-#include <iostream>
-#include <fstream>
-
 #include "tfhe_core.h"
-#include "tfhe_io.h"
 #include "tfhe_garbage_collector.h"
+
+#include "params.h"
+#include "keyset.h"
 
 using namespace std;
 
-constexpr inline double mulBySqrtTwoOverPi(double x) { return x*sqrt(2./M_PI); }
+// constexpr inline double mulBySqrtTwoOverPi(double x) { return x*sqrt(2./M_PI); }
 
-TFheGateBootstrappingParameterSet<Torus>* new_bootstrapping_parameters() {
-    // const int N = 1024;
-    const int N = 1024*16;
+
+TfheParamSet *new_parameters() {
+    const int n_l0 = 500;
+    const int n_l1 = 2048;
+    const int n_l2 = 8192;
     const int k = 1;
-    const int n = 500;
 
-    const int bk_l = 8;
-    const int bk_Bgbit = 6;
+    const double stddev_l0 = pow(2., -15);
+    const double stddev_l1 = pow(2., -48);
+    const double stddev_l2 = pow(2., -48);
 
-    const int ks_t = 24;
-    const int ks_basebit = 1;
+    const int l1_l = 8;
+    const int l1_Bgbit = 6;
 
-    const double ks_stdev = pow(2.,-33);   //standard deviation
-    const double bk_stdev = pow(2.,-50);          //standard deviation
-    const double max_stdev = mulBySqrtTwoOverPi(pow(2.,-8)/4.);
+    const int l2_l = 8;
+    const int l2_Bgbit = 6;
 
-    LweParams<Torus>* params_in_out = new_obj<LweParams<Torus>>(n, ks_stdev, max_stdev);
-    TLweParams<Torus>* params_accum = new_obj<TLweParams<Torus>>(N, k, bk_stdev, max_stdev);
-    TGswParams<Torus>* params_bk = new_obj<TGswParams<Torus>>(bk_l, bk_Bgbit, params_accum);
 
-    TfheGarbageCollector<Torus>::register_param(params_in_out);
-    TfheGarbageCollector<Torus>::register_param(params_accum);
-    TfheGarbageCollector<Torus>::register_param(params_bk);
+    LweParams<Torus>* tlwe_params_l0 = new_obj<LweParams<Torus>>(n_l0, stddev_l0, -1);
 
-    return new TFheGateBootstrappingParameterSet<Torus>(ks_t, ks_basebit, params_in_out, params_bk);
+    TLweParams<Torus>* trlwe_params_l1 = new_obj<TLweParams<Torus>>(n_l1, k, stddev_l1, -1);
+    TGswParams<Torus>* trgsw_params_l1 = new_obj<TGswParams<Torus>>(l1_l, l1_Bgbit, trlwe_params_l1);
+
+    TLweParams<Torus>* trlwe_params_l2 = new_obj<TLweParams<Torus>>(n_l2, k, stddev_l2, -1);
+    TGswParams<Torus>* trgsw_params_l2 = new_obj<TGswParams<Torus>>(l2_l, l2_Bgbit, trlwe_params_l2);
+
+    return new TfheParamSet(tlwe_params_l0, trgsw_params_l1, trgsw_params_l2);
+}
+
+TfheSecretKeySet* new_random(const TfheParamSet *params) {
+    LweKey<Torus>* tlwe_key_l0 = new_LweKey<Torus>(params->tlwe_params_l0);
+    lweKeyGen(tlwe_key_l0);
+
+    TGswKey<Torus>* trgsw_key_l1 = new_TGswKey<Torus>(params->trgsw_params_l1);
+    tGswKeyGen(trgsw_key_l1);
+
+    TGswKey<Torus>* trgsw_key_l2 = new_TGswKey<Torus>(params->trgsw_params_l2);
+    tGswKeyGen(trgsw_key_l2);
+
+    // LweBootstrappingKey<Torus>* bk = new_LweBootstrappingKey<Torus>(params->ks_t, params->ks_basebit, params->in_out_params, params->tgsw_params);
+    // tfhe_createLweBootstrappingKey(bk, lwe_key, tgsw_key);
+    // LweBootstrappingKeyFFT<Torus>* bkFFT = new_LweBootstrappingKeyFFT<Torus>(bk);
+
+
+    return new TfheSecretKeySet(params, tlwe_key_l0, trgsw_key_l1, trgsw_key_l2);
 }
 
 int main(int argc, char const *argv[]) {
-  uint32_t values[2];
-  values[0] = time(NULL)>>32;
-  values[1] = time(NULL);
-  RandomGen::set_seed(values, 2);
+    uint32_t values[2];
+    values[0] = time(NULL)>>32;
+    values[1] = time(NULL);
+    RandomGen::set_seed(values, 2);
 
-  // generate params
-  TFheGateBootstrappingParameterSet<Torus>* params = new_bootstrapping_parameters();
+    LRParams lr_params;
 
-  // generate the secret keyset and obtain cloud keyset
-  TFheGateBootstrappingSecretKeySet<Torus>* secret_keyset = TFheGateBootstrappingSecretKeySet<Torus>::new_random(params);
-  const TFheGateBootstrappingCloudKeySet<Torus>* cloud_keyset = &(secret_keyset->cloud);
+    // generate params
+    TfheParamSet* params = new_parameters();
+    TfheParamSet::write(lr_params.params_filename, params);
 
-  ofstream f1("secret.key", ofstream::binary);
-  export_tfheGateBootstrappingSecretKeySet_toStream(f1, secret_keyset, true);
-  ofstream f2("cloud.key", ofstream::binary);
-  IOFunctions<Torus>::write_tfheGateBootstrappingCloudKeySet(to_Ostream(f2), cloud_keyset, true);
+    // generate the secret keyset
+    const TfheSecretKeySet *secret_keyset = new_random(params);
+    TfheSecretKeySet::write(lr_params.secret_keyset_filename, secret_keyset);
+
+    // generate the cloud keyset
+    const TfheCloudKeySet *cloud_keyset = new TfheCloudKeySet(secret_keyset);
+    TfheCloudKeySet::write(lr_params.cloud_keyset_filename, cloud_keyset);
 }

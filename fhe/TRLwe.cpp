@@ -48,12 +48,59 @@ TRLweParams::TRLweParams(const UINT64 N, const BigTorusParams &fixp_params) :
 
 TRLwe::TRLwe(const TRLweParams &params) :
         params(params),
-        a((BigTorusPolynomial*) malloc(2* sizeof(BigTorusPolynomial))) {
-    new (a) BigTorusPolynomial(params.N, params.fixp_params);
-    new (a+1) BigTorusPolynomial(params.N, params.fixp_params);
+        a((BigTorusPolynomial *) malloc(2 * sizeof(BigTorusPolynomial))) {
+    new(a) BigTorusPolynomial(params.N, params.fixp_params);
+    new(a + 1) BigTorusPolynomial(params.N, params.fixp_params);
 }
 
 TRLwe::~TRLwe() {
     a->~BigTorusPolynomial();
-    (a+1)->~BigTorusPolynomial();
+    (a + 1)->~BigTorusPolynomial();
+}
+
+void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLweKey &key, UINT64 alpha_bits) {
+
+    const UINT64 N = reps.params.N;
+    const UINT64 alpha_limbs = limb_precision(alpha_bits);
+
+    BigTorusPolynomial &b = reps.a[1];
+    // b = plaintext + sum s_i a_i
+    copy(b, plaintext, alpha_limbs);
+    random(reps.a[0], alpha_limbs);
+    BigTorusPolynomial temp(N, alpha_limbs);
+    int64_t *K = new int64_t[N];
+
+    for (UINT64 i = 0; i < N; i++) {
+        K[i] = key.key[i];
+    }
+    naive_external_product(temp, K, reps.a[0], alpha_limbs);
+    //randomize below bit alpha (noise)
+    add_noise(b, alpha_bits, alpha_limbs);
+    delete[] K;
+}
+
+
+void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, UINT64 alpha_bits) {
+    const UINT64 N = c.params.N;
+    const UINT64 alpha_limbs = limb_precision(alpha_bits);
+
+    const BigTorusPolynomial &b = c.a[1];
+    copy(reps, b, alpha_limbs);
+
+    BigTorusPolynomial temp(N, alpha_limbs);
+    int64_t *K = new int64_t[N];
+
+
+    for (UINT64 i = 0; i < N; i++) {
+        K[i] = key.key[i];
+    }
+
+    naive_external_product(temp, K, c.a[0], alpha_limbs);
+    sub(reps, b, temp, alpha_limbs);
+    delete[] K;
+}
+
+void zero(TRLwe &out) {
+    zero(out.a[0]);
+    zero(out.a[1]);
 }

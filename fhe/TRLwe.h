@@ -47,5 +47,10 @@ __int128 bitdecomp_coef128(const BigTorusRef& tmpDec, UINT64 j, const UINT64 lim
  *  WARNING: input limb precision = out_limb_prec + 2 */
 void subMul(TRLwe& out, __int128 aij, const TRLwe& in, const UINT64 out_limb_prec);
 
+void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLweKey &key, UINT64 alpha_bits);
+
+void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, UINT64 alpha_bits);
+
+void zero(TRLwe &out);
 
 #endif //FHE_TRLWE_H

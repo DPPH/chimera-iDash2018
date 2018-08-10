@@ -1,0 +1,136 @@
+From b423a29d8956fef235d198f36ff9c4d76336aef9 Mon Sep 17 00:00:00 2001
+From: Sergiu Carpov <ssmiler@gmail.com>
+Date: Fri, 10 Aug 2018 18:38:02 +0200
+Subject: [PATCH] fft processors different size
+
+---
+ .../spqlios/fft_processor_spqlios.cpp              | 25 ++++++++++++++--------
+ .../fft_processors/spqlios/lagrangehalfc_impl.cpp  |  6 +++---
+ .../fft_processors/spqlios/lagrangehalfc_impl.h    |  5 ++++-
+ 3 files changed, 23 insertions(+), 13 deletions(-)
+
+diff --git a/src/libtfhe/fft_processors/spqlios/fft_processor_spqlios.cpp b/src/libtfhe/fft_processors/spqlios/fft_processor_spqlios.cpp
+index e29b723..61d517d 100644
+--- a/src/libtfhe/fft_processors/spqlios/fft_processor_spqlios.cpp
++++ b/src/libtfhe/fft_processors/spqlios/fft_processor_spqlios.cpp
+@@ -15,7 +15,7 @@ int rev(int x, int M) {
+     return reps;
+ }
+ 
+-FFT_Processor_Spqlios::FFT_Processor_Spqlios(const int N): _2N(2*N),N(N),Ns2(N/2) {
++FFT_Processor_Spqlios::FFT_Processor_Spqlios(const int N): _2N(2*N),N(N),Ns2(N/2),_2sN(double(2)/double(N)) {
+     tables_direct = new_fft_table(N);
+     tables_reverse = new_ifft_table(N);
+     real_inout_direct = fft_table_get_buffer(tables_direct);
+@@ -93,7 +93,6 @@ void FFT_Processor_Spqlios::execute_reverse_torus64(double* res, const int64_t*
+ }
+ 
+ void FFT_Processor_Spqlios::execute_direct_torus32(Torus32* res, const double* a) {
+-    static const double _2sN = double(2)/double(N);
+     //for (int i=0; i<N; i++) real_inout_direct[i]=a[i]*_2sn;
+     {
+     	double* dst = real_inout_direct;
+@@ -121,7 +120,6 @@ void FFT_Processor_Spqlios::execute_direct_torus32(Torus32* res, const double* a
+ }
+ 
+ void FFT_Processor_Spqlios::execute_direct_torus64(int64_t* res, const double* a) {
+-  static const double _2sN = double(2)/double(N);
+   //static const double _2p64 = pow(2.,64);
+   // for (int i=0; i<N; i++) real_inout_direct[i]=a[i]*_2sN;
+   {
+@@ -180,31 +178,40 @@ FFT_Processor_Spqlios::~FFT_Processor_Spqlios() {
+     delete[] cosomegaxminus1;
+ }
+ 
+-thread_local FFT_Processor_Spqlios fftp1024(1024*16);
++// thread_local FFT_Processor_Spqlios fftp1024(1024*8);
++// thread_local FFT_Processor_Spqlios fftp8192(1024*8);
++
++thread_local FFT_Processor_Spqlios fftp_L1(2048);
++thread_local FFT_Processor_Spqlios fftp_L2(8192);
+ 
+ /**
+  * FFT functions
+  */
+ void IntPolynomial_ifft(LagrangeHalfCPolynomial* result, const IntPolynomial* p) {
+-    fftp1024.execute_reverse_int(((LagrangeHalfCPolynomial_IMPL*)result)->coefsC, p->coefs);
++    LagrangeHalfCPolynomial_IMPL *impl = (LagrangeHalfCPolynomial_IMPL*) result;
++    impl->proc->execute_reverse_int(impl->coefsC, p->coefs);
+ }
+ 
+ template<>
+ void TorusPolynomial_ifft<Torus32>(LagrangeHalfCPolynomial* result, const TorusPolynomial<Torus32>* p) {
+-    fftp1024.execute_reverse_torus32(((LagrangeHalfCPolynomial_IMPL*)result)->coefsC, p->coefsT);
++    LagrangeHalfCPolynomial_IMPL *impl = (LagrangeHalfCPolynomial_IMPL*) result;
++    impl->proc->execute_reverse_torus32(impl->coefsC, p->coefsT);
+ }
+ 
+ template<>
+ void TorusPolynomial_fft<Torus32>(TorusPolynomial<Torus32>* result, const LagrangeHalfCPolynomial* p) {
+-    fftp1024.execute_direct_torus32(result->coefsT, ((LagrangeHalfCPolynomial_IMPL*)p)->coefsC);
++    LagrangeHalfCPolynomial_IMPL *impl = (LagrangeHalfCPolynomial_IMPL*) p;
++    impl->proc->execute_direct_torus32(result->coefsT, impl->coefsC);
+ }
+ 
+ template<>
+ void TorusPolynomial_ifft<Torus64>(LagrangeHalfCPolynomial* result, const TorusPolynomial<Torus64>* p) {
+-    fftp1024.execute_reverse_torus64(((LagrangeHalfCPolynomial_IMPL*)result)->coefsC, p->coefsT);
++    LagrangeHalfCPolynomial_IMPL *impl = (LagrangeHalfCPolynomial_IMPL*) result;
++    impl->proc->execute_reverse_torus64(impl->coefsC, p->coefsT);
+ }
+ 
+ template<>
+ void TorusPolynomial_fft<Torus64>(TorusPolynomial<Torus64>* result, const LagrangeHalfCPolynomial* p) {
+-    fftp1024.execute_direct_torus64(result->coefsT, ((LagrangeHalfCPolynomial_IMPL*)p)->coefsC);
++    LagrangeHalfCPolynomial_IMPL *impl = (LagrangeHalfCPolynomial_IMPL*) p;
++    impl->proc->execute_direct_torus64(result->coefsT, impl->coefsC);
+ }
+diff --git a/src/libtfhe/fft_processors/spqlios/lagrangehalfc_impl.cpp b/src/libtfhe/fft_processors/spqlios/lagrangehalfc_impl.cpp
+index 5fbdf66..8204ae8 100644
+--- a/src/libtfhe/fft_processors/spqlios/lagrangehalfc_impl.cpp
++++ b/src/libtfhe/fft_processors/spqlios/lagrangehalfc_impl.cpp
+@@ -5,9 +5,9 @@ using namespace std;
+ 
+ 
+ LagrangeHalfCPolynomial_IMPL::LagrangeHalfCPolynomial_IMPL(const int N) {
+-  // assert(N==1024);
++  assert(N==2048 or N==8192);
+   coefsC = new double[N];
+-  proc = &fftp1024;
++  proc = (N==2048) ? &fftp_L1 : &fftp_L2; // very "good" way to code
+ }
+ 
+ LagrangeHalfCPolynomial_IMPL::~LagrangeHalfCPolynomial_IMPL() {
+@@ -189,4 +189,4 @@ void LagrangeHalfCPolynomialSubMul(
+   const LagrangeHalfCPolynomial* b)
+ {
+   LagrangeHalfCPolynomialSubMul_asm(accum, a, b);
+-}
+\ No newline at end of file
++}
+diff --git a/src/libtfhe/fft_processors/spqlios/lagrangehalfc_impl.h b/src/libtfhe/fft_processors/spqlios/lagrangehalfc_impl.h
+index 9e47f39..a21fade 100644
+--- a/src/libtfhe/fft_processors/spqlios/lagrangehalfc_impl.h
++++ b/src/libtfhe/fft_processors/spqlios/lagrangehalfc_impl.h
+@@ -18,6 +18,8 @@ private:
+   double* imag_inout_rev;
+   void* tables_direct;
+   void* tables_reverse;
++  const double _2sN;
++
+ public:
+   double* cosomegaxminus1;
+   double* sinomegaxminus1;
+@@ -36,7 +38,8 @@ public:
+   ~FFT_Processor_Spqlios();
+ };
+ 
+-extern thread_local FFT_Processor_Spqlios fftp1024;
++extern thread_local FFT_Processor_Spqlios fftp_L1;
++extern thread_local FFT_Processor_Spqlios fftp_L2;
+ 
+ /**
+  * structure that represents a real polynomial P mod X^N+1
+-- 
+2.7.4
+
