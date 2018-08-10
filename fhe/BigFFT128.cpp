@@ -1,3 +1,6 @@
+#ifndef __APPLE__
+//this is not available on mac
+
 #include <mpfr.h>
 #include "BigFFT128.h"
 
@@ -127,3 +130,5 @@ void FFT(Real128 *out, Complex128 *in, int n, const Complex128 *powombar) {
         //out[j + ns4] = in[j].imag >> LOG2Ns4;  // /ns4; //divide by N/2
     }
 }
+
+#endif

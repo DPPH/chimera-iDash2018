@@ -1,6 +1,9 @@
 #ifndef FHE_BIGFFT128_H
 #define FHE_BIGFFT128_H
 
+#ifndef __APPLE__
+//this is not available on mac
+
 #include <complex>
 #include "commons.h"
 
@@ -51,5 +54,7 @@ void iFFT(Complex128 *out, const Real128 *in, int n, const Complex128 *powomega)
  * @param powombar the precomputed FFT structure
  */
 void FFT(Real128 *out, Complex128 *in, int n, const Complex128 *powombar);
+
+#endif
 
 #endif //FHE_BIGFFT128_H

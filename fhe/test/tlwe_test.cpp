@@ -13,7 +13,7 @@ TEST(TLWE_TEST, tlwe_keygen) {
     int64_t pubexpo = 1;
     int64_t levexpo = 2;
     for (UINT64 N : {300, 400, 500}) {
-        TLweParams params(N, {{nblimbs}, pubexpo, levexpo});
+        TLweParams params(N, {nblimbs, pubexpo, levexpo});
 
         std::shared_ptr<TLweKey> key = tlwe_keygen(params);
 
@@ -31,7 +31,7 @@ TEST(TLWE_TEST, tlwe_zero) {
         int64_t pubexpo = 1;
         int64_t levexpo = 2;
         for (UINT64 N : {300, 400, 500}) {
-            TLweParams params(N, {{nblimbs}, pubexpo, levexpo});
+            TLweParams params(N, {nblimbs, pubexpo, levexpo});
 
             TLwe c(params);
 
@@ -52,7 +52,7 @@ TEST(TLWE_TEST, tlwe_encrypt_decrypt_native) {
         int64_t pubexpo = 1;
         int64_t levexpo = 2;
         for (UINT64 N : {300, 400, 500}) {
-            TLweParams params(N, {{nblimbs}, pubexpo, levexpo});
+            TLweParams params(N, {nblimbs, pubexpo, levexpo});
 
             std::shared_ptr<TLweKey> key = tlwe_keygen(params);
 

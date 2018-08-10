@@ -34,7 +34,7 @@ void to_torus(BigTorusRef reps, const NTL::RR &a) {
 NTL::RR fixp_to_RR(const BigTorusRef &a) {
     BigTorusRef ta(a.limbs, a.params);
     RR reps = to_RR(ta);
-    reps *= NTL::pow(to_RR(2), to_RR(a.params->level_expo + a.params->plaintext_expo));
+    reps *= NTL::pow(to_RR(2), to_RR(long(a.params->level_expo + a.params->plaintext_expo)));
     return reps;
 }
 

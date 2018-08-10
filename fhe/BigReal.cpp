@@ -99,13 +99,13 @@ NTL::RR to_RR(const BigReal &v) {
         ZZ_limbs_set(vv, v.value->_mp_d, -v.value->_mp_size);
         negate(vv, vv);
     }
-    return to_RR(vv) / pow(to_RR(2), to_RR(v.nblimbs * BITS_PER_LIMBS));
+    return to_RR(vv) / pow(to_RR(2), to_RR(long(v.nblimbs * BITS_PER_LIMBS)));
 }
 
 void to_BigReal(BigReal &dest, const NTL::RR &v) {
     assert_dramatically(abs(v) <= 1, "Bad range for BigReal");
     RR::SetPrecision(dest.nblimbs * BITS_PER_LIMBS);
-    ZZ vv = RoundToZZ(v * pow(to_RR(2), to_RR(dest.nblimbs * BITS_PER_LIMBS)));
+    ZZ vv = RoundToZZ(v * pow(to_RR(2), to_RR(long(dest.nblimbs * BITS_PER_LIMBS))));
     bool vneg = vv < 0;
     int64_t vsize = vv.size();
     if (vneg) negate(vv, vv);

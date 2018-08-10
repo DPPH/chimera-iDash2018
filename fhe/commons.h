@@ -4,7 +4,7 @@
 #include <NTL/LLL.h>
 
 #if __APPLE__
-typedef unsigned long long UINT64;
+typedef unsigned long UINT64;
 #else
 typedef uint64_t UINT64;
 #endif
