@@ -45,5 +45,6 @@ void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLwe
 
 void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, UINT64 alpha_bits);
 
+void zero(TRLwe &out);
 
 #endif //FHE_TRLWE_H

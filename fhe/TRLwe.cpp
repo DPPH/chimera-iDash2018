@@ -84,3 +84,8 @@ void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, 
     sub(reps, b, temp, alpha_limbs);
     delete[] K;
 }
+
+void zero(TRLwe &out) {
+    zero(out.a[0]);
+    zero(out.a[1]);
+}
