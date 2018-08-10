@@ -9,6 +9,8 @@
 #include <sstream>
 #include "arithmetic.h"
 #include "commons.h"
+#include "BigTorus.h"
+
 
 NTL_CLIENT;
 
@@ -25,7 +27,7 @@ void to_torus(BigTorusRef reps, const NTL::RR &a) {
     RR::SetPrecision(n * BITS_PER_LIMBS + 2);
     ZZ az = RoundToZZ((a + 2) * pow(2, n * BITS_PER_LIMBS));
     //cout << "az:" << az << endl;
-    const uint64_t *limbs = ZZ_limbs_get(az);
+    const UINT64 *limbs = ZZ_limbs_get(az);
     for (int64_t i = 0; i < n; i++) {
         mpn_copyi(reps.limbs, limbs, n);
     }
@@ -34,19 +36,19 @@ void to_torus(BigTorusRef reps, const NTL::RR &a) {
 NTL::RR fixp_to_RR(const BigTorusRef &a) {
     BigTorusRef ta(a.limbs, a.params);
     RR reps = to_RR(ta);
-    reps *= NTL::pow(to_RR(2), to_RR(a.params->level_expo + a.params->plaintext_expo));
+    reps *= NTL::pow(to_RR(2), to_RR(long(a.params->level_expo + a.params->plaintext_expo)));
     return reps;
 }
 
 NTL::RR to_RR(const BigTorusRef &a) {
     const long n = a.params->torus_limbs;
     NTL::RR pow2m32 = NTL::pow(to_RR(2), to_RR(-32));
-    static const uint64_t mask32 = 0xFFFFFFFFul;
+    static const UINT64 mask32 = 0xFFFFFFFFul;
     NTL::RR::SetPrecision(n * BITS_PER_LIMBS + 2);
     NTL::RR reps;
     reps = 0;
     for (long i = 0; i < n; i++) {
-        uint64_t limb = a.limbs[i];
+        UINT64 limb = a.limbs[i];
         reps += (limb & mask32);
         reps *= pow2m32;
         reps += (limb >> 32u);
@@ -80,8 +82,8 @@ void fill_matrix_S(BigTorusMatrix &S) {
 }
 
 void fill_matrix_Xy(BigTorusMatrix &X, BigTorusVector &y) {
-    const uint64_t n = X.rows;
-    const uint64_t k = X.cols;
+    const UINT64 n = X.rows;
+    const UINT64 k = X.cols;
     assert_dramatically(y.length == n, "dimension of X, y are wrong");
     basic_ifstream<char> ifs("data/covariates.csv");
     assert(ifs);
@@ -98,7 +100,7 @@ void fill_matrix_Xy(BigTorusMatrix &X, BigTorusVector &y) {
     string buf;
     RR rrbuf;
     std::getline(ifs, line); //ignore first header line
-    for (uint64_t i = 0; i < n; i++) {
+    for (UINT64 i = 0; i < n; i++) {
         std::getline(ifs, line);
         for (int j = 0; j < int(line.size()); j++) {
             if (line[j] == ',') line[j] = ' ';
@@ -111,7 +113,7 @@ void fill_matrix_Xy(BigTorusMatrix &X, BigTorusVector &y) {
 
         B[0][i] = 1.; //intercept first
         nbels[0]++;
-        for (uint64_t j = 1; j < k; j++) {
+        for (UINT64 j = 1; j < k; j++) {
             iss >> buf;
             if (buf == "NA") {
                 B[j][i] = -1e80;
@@ -128,20 +130,20 @@ void fill_matrix_Xy(BigTorusMatrix &X, BigTorusVector &y) {
     //replace all NANs by average
     //cout << B << endl;
     //cout << nbels << endl;
-    for (uint64_t j = 0; j < k; j++) {
+    for (UINT64 j = 0; j < k; j++) {
         sums[j] /= nbels[j];
     }
-    for (uint64_t i = 0; i < n; i++) {
-        for (uint64_t j = 0; j < k; j++) {
+    for (UINT64 i = 0; i < n; i++) {
+        for (UINT64 j = 0; j < k; j++) {
             if (B[j][i] < 1e-75) {
                 B[j][i] = sums[j];
             }
         }
     }
     //orthogonalize B
-    for (uint64_t i = 0; i < k; i++) {
+    for (UINT64 i = 0; i < k; i++) {
         //remove component on previous vectors
-        for (uint64_t j = 0; j < i; j++) {
+        for (UINT64 j = 0; j < i; j++) {
             B[i] -= (B[i] * B[j]) * B[j];
         }
         //normalize B[i]
@@ -151,8 +153,8 @@ void fill_matrix_Xy(BigTorusMatrix &X, BigTorusVector &y) {
     //cout << B << endl;
     //cout << B*transpose(B) << endl;
     //put B in X
-    for (uint64_t i = 0; i < n; i++) {
-        for (uint64_t j = 0; j < k; j++) {
+    for (UINT64 i = 0; i < n; i++) {
+        for (UINT64 j = 0; j < k; j++) {
             to_fixP(X(i, j), B[j][i]);
         }
     }
@@ -161,7 +163,7 @@ void fill_matrix_Xy(BigTorusMatrix &X, BigTorusVector &y) {
 void fixp_sigmoid_vec(BigTorusVector &p, BigTorusVector &w, BigTorusVector &x) {
     assert_dramatically(p.length == x.length && p.length == w.length, "wrong dimensions");
     //this function is bootstrapped, so we will just use the RR conversion
-    for (uint64_t i = 0; i < p.length; i++) {
+    for (UINT64 i = 0; i < p.length; i++) {
         RR xx = fixp_to_RR(x.getAT(i));
         RR sigmo = inv(1 + exp(-xx));
         to_fixP(p.getAT(i), sigmo);
@@ -170,9 +172,9 @@ void fixp_sigmoid_vec(BigTorusVector &p, BigTorusVector &w, BigTorusVector &x) {
 }
 
 void fixp_public_scale(BigTorusVector &res, int alpha) {
-    const uint64_t length = res.length;
-    const uint64_t nblimbs = res.btp.torus_limbs;
-    for (uint64_t i = 0; i < length; i++) {
+    const UINT64 length = res.length;
+    const UINT64 nblimbs = res.btp.torus_limbs;
+    for (UINT64 i = 0; i < length; i++) {
         bigTorusRawScale(res.limbs + i * nblimbs, alpha, nblimbs);
     }
 }
@@ -181,7 +183,7 @@ NTL::RR fixp_debug_norm(const BigTorusVector &v) {
     //this function is bootstrapped, so we will just use the RR conversion
     RR reps;
     reps = 0;
-    for (uint64_t i = 0; i < v.length; i++) {
+    for (UINT64 i = 0; i < v.length; i++) {
         RR xx = fixp_to_RR(v.getAT(i));
         reps += xx * xx;
     }
@@ -191,7 +193,7 @@ NTL::RR fixp_debug_norm(const BigTorusVector &v) {
 std::ostream &operator<<(std::ostream &out, const BigTorusVector &v) {
     //this function is bootstrapped, so we will just use the RR conversion
     out << "[";
-    for (uint64_t i = 0; i < v.length; i++) {
+    for (UINT64 i = 0; i < v.length; i++) {
         out << to_double(fixp_to_RR(v.getAT(i))) << " ";
         if (i == 5 && v.length > 10) {
             out << "... ";
@@ -207,8 +209,8 @@ void fixp_tAb_prod(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b) {
 }
 
 void fixp_tAb_prod_fake(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b) {
-    const uint64_t n = A.rows;
-    const uint64_t m = A.cols;
+    const UINT64 n = A.rows;
+    const UINT64 m = A.cols;
     assert_dramatically(b.length == n, "wrong dimension");
     assert_dramatically(res.length == m, "wrong dimension");
     //this function is bootstrapped, so we will just use the RR conversion
@@ -216,16 +218,16 @@ void fixp_tAb_prod_fake(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &
     tAA.SetDims(m, n);
     vec_RR bb;
     bb.SetLength(n);
-    for (uint64_t i = 0; i < m; i++) {
-        for (uint64_t j = 0; j < n; j++) {
+    for (UINT64 i = 0; i < m; i++) {
+        for (UINT64 j = 0; j < n; j++) {
             tAA[i][j] = fixp_to_RR(A(j, i));
         }
     }
-    for (uint64_t j = 0; j < n; j++) {
+    for (UINT64 j = 0; j < n; j++) {
         bb[j] = fixp_to_RR(b.getAT(j));
     }
     vec_RR reps = tAA * bb;
-    for (uint64_t i = 0; i < m; i++) {
+    for (UINT64 i = 0; i < m; i++) {
         to_fixP(res.getAT(i), reps[i]);
     }
 }
@@ -235,8 +237,8 @@ void fixp_Ab_prod(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b) {
 }
 
 void fixp_Ab_prod_fake(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b) {
-    const uint64_t n = A.rows;
-    const uint64_t m = A.cols;
+    const UINT64 n = A.rows;
+    const UINT64 m = A.cols;
     assert_dramatically(b.length == m, "wrong dimension");
     assert_dramatically(res.length == n, "wrong dimension");
     //this function is bootstrapped, so we will just use the RR conversion
@@ -244,16 +246,16 @@ void fixp_Ab_prod_fake(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &b
     AA.SetDims(n, m);
     vec_RR bb;
     bb.SetLength(m);
-    for (uint64_t i = 0; i < n; i++) {
-        for (uint64_t j = 0; j < m; j++) {
+    for (UINT64 i = 0; i < n; i++) {
+        for (UINT64 j = 0; j < m; j++) {
             AA[i][j] = fixp_to_RR(A(i, j));
         }
     }
-    for (uint64_t j = 0; j < m; j++) {
+    for (UINT64 j = 0; j < m; j++) {
         bb[j] = fixp_to_RR(b.getAT(j));
     }
     vec_RR reps = AA * bb;
-    for (uint64_t i = 0; i < n; i++) {
+    for (UINT64 i = 0; i < n; i++) {
         to_fixP(res.getAT(i), reps[i]);
     }
 }
@@ -262,8 +264,8 @@ uint8_t random_bit() {
     return uint8_t(random_uint64_t() % 2);
 }
 
-uint64_t random_uint64_t() {
-    uint64_t buf;
+UINT64 random_uint64_t() {
+    UINT64 buf;
     mpn_random(&buf, 1);
     return buf;
 }

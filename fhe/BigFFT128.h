@@ -1,7 +1,11 @@
 #ifndef FHE_BIGFFT128_H
 #define FHE_BIGFFT128_H
 
+#ifndef __APPLE__
+//this is not available on mac
+
 #include <complex>
+#include "commons.h"
 
 typedef __float128 Real128;
 typedef std::complex<Real128> Complex128;
@@ -10,8 +14,9 @@ typedef std::complex<Real128> Complex128;
 /**
  * precompute an iFFT structure for logical n (=2*N if we are mod X^N+1) and limb precision nblimbs
  * Although this structure is mostly opaque, in this poc, the returned array contains all complex powers of unity
+ * TODO!
  */
-Complex128 *precomp_iFFT128(int n, uint64_t nblimbs);
+Complex128 *precomp_iFFT128(int n, UINT64 nblimbs);
 
 /** releases the precomputed an iFFT structure */
 void clear_precomp_iFFT128(Complex128 *powomega);
@@ -20,8 +25,9 @@ void clear_precomp_iFFT128(Complex128 *powomega);
  * precompute an FFT structure for logical n (=2*N if we are mod X^N+1) and limb precision nblimbs
  * Although this structure is mostly opaque, in this poc, the returned array contains all complex powers of unity
  * in reverse order
+ * TODO!
  */
-Complex128 *precomp_FFT128(int n, uint64_t nblimbs);
+Complex128 *precomp_FFT128(int n, UINT64 nblimbs);
 
 /** releases the precomputed an iFFT structure */
 void clear_precomp_FFT128(Complex128 *powombar);
@@ -48,5 +54,7 @@ void iFFT(Complex128 *out, const Real128 *in, int n, const Complex128 *powomega)
  * @param powombar the precomputed FFT structure
  */
 void FFT(Real128 *out, Complex128 *in, int n, const Complex128 *powombar);
+
+#endif
 
 #endif //FHE_BIGFFT128_H

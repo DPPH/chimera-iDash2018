@@ -1,5 +1,9 @@
+#ifndef __APPLE__
+//NOT AVAILABLE ON MAC
+
 #include <benchmark/benchmark.h>
 #include "../BigFFT128.h"
+
 
 static void RangesAll(benchmark::internal::Benchmark *b) {
     for (int n = 9; n < 16; ++n) {
@@ -123,3 +127,5 @@ BENCHMARK_REGISTER_F(iFFT128_Bench, iFFT
 Apply(RangesAll)
 ->
 Unit(benchmark::kMicrosecond);
+
+#endif

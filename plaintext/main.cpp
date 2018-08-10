@@ -324,6 +324,7 @@ int main() {
         cout << "beta: " << beta << endl;
         vec_float XBeta = X*beta;
         cout << "XBeta: " << XBeta << endl;
+        draw_histogram(string("X_Beta_")+to_string(iter), XBeta);
         p = sigmoid_vec(X * beta);
         cout << "p: " << p << endl;
         vec_float ymp = y-p;

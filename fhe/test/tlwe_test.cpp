@@ -9,16 +9,16 @@ double log2Diff(const RR &a, const RR &b);
 
 
 TEST(TLWE_TEST, tlwe_keygen) {
-    uint64_t nblimbs = 5;
+    UINT64 nblimbs = 5;
     int64_t pubexpo = 1;
     int64_t levexpo = 2;
-    for (uint64_t N : {300, 400, 500}) {
-        TLweParams params(N, {{nblimbs}, pubexpo, levexpo});
+    for (UINT64 N : {300, 400, 500}) {
+        TLweParams params(N, {nblimbs, pubexpo, levexpo});
 
         std::shared_ptr<TLweKey> key = tlwe_keygen(params);
 
-        uint64_t count = 0;
-        for (uint64_t i = 0; i < N; i++) {
+        UINT64 count = 0;
+        for (UINT64 i = 0; i < N; i++) {
             if (key->key[i]) count++;
         }
         ASSERT_LE(count, 3 * N / 4);
@@ -27,19 +27,19 @@ TEST(TLWE_TEST, tlwe_keygen) {
 }
 
 TEST(TLWE_TEST, tlwe_zero) {
-    for (uint64_t nblimbs : {1, 2, 5}) {
+    for (UINT64 nblimbs : {1, 2, 5}) {
         int64_t pubexpo = 1;
         int64_t levexpo = 2;
-        for (uint64_t N : {300, 400, 500}) {
-            TLweParams params(N, {{nblimbs}, pubexpo, levexpo});
+        for (UINT64 N : {300, 400, 500}) {
+            TLweParams params(N, {nblimbs, pubexpo, levexpo});
 
             TLwe c(params);
 
             zero(c);
 
             //check zero
-            for (uint64_t i = 0; i < N; ++i) {
-                for (uint64_t j = 0; j < nblimbs; ++j) {
+            for (UINT64 i = 0; i < N; ++i) {
+                for (UINT64 j = 0; j < nblimbs; ++j) {
                     ASSERT_EQ(c.getAT(i).limbs[j], 0u);
                 }
             }
@@ -48,11 +48,11 @@ TEST(TLWE_TEST, tlwe_zero) {
 }
 
 TEST(TLWE_TEST, tlwe_encrypt_decrypt_native) {
-    for (uint64_t nblimbs : {1, 2, 5}) {
+    for (UINT64 nblimbs : {1, 2, 5}) {
         int64_t pubexpo = 1;
         int64_t levexpo = 2;
-        for (uint64_t N : {300, 400, 500}) {
-            TLweParams params(N, {{nblimbs}, pubexpo, levexpo});
+        for (UINT64 N : {300, 400, 500}) {
+            TLweParams params(N, {nblimbs, pubexpo, levexpo});
 
             std::shared_ptr<TLweKey> key = tlwe_keygen(params);
 
@@ -62,12 +62,12 @@ TEST(TLWE_TEST, tlwe_encrypt_decrypt_native) {
 
             random(plaintext);
 
-            int64_t noise_bits = uint64_t(0.75 * nblimbs * BITS_PER_LIMBS);
+            int64_t noise_bits = UINT64(0.75 * nblimbs * BITS_PER_LIMBS);
             native_encrypt(c, plaintext, *key, noise_bits);
 
             //check randomness
-            std::set<uint64_t> dist;
-            for (uint64_t i = 0; i < N; i++) {
+            std::set<UINT64> dist;
+            for (UINT64 i = 0; i < N; i++) {
                 dist.insert(c.getAT(i).limbs[nblimbs - 1]);
             }
             ASSERT_GE(dist.size(), 9 * N / 10);

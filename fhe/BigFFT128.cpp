@@ -1,8 +1,11 @@
+#ifndef __APPLE__
+//this is not available on mac
+
 #include <mpfr.h>
 #include "BigFFT128.h"
 
 
-Complex128 *precomp_iFFT128(int n, uint64_t nblimbs) {
+Complex128 *precomp_iFFT128(int n, UINT64 nblimbs) {
     Complex128 *buf = (Complex128 *) malloc((n + 1) * sizeof(Complex128));
     int32_t *nn = (int32_t *) (buf);
     Complex128 *powomega = buf + 1;
@@ -29,7 +32,7 @@ void clear_precomp_iFFT128(Complex128 *powomega) {
     free(buf);
 }
 
-Complex128 *precomp_FFT128(int n, uint64_t nblimbs) {
+Complex128 *precomp_FFT128(int n, UINT64 nblimbs) {
     Complex128 *buf = (Complex128 *) malloc((n + 1) * sizeof(Complex128));
     int32_t *nn = (int32_t *) (buf);
     Complex128 *powombar = buf + 1;
@@ -96,7 +99,7 @@ void FFT(Real128 *out, Complex128 *in, int n, const Complex128 *powombar) {
 
     //const int N = n/2;
     const int ns4 = n / 4;
-    //const uint64_t LOG2Ns4 = logPow2(ns4);
+    //const UINT64 LOG2Ns4 = logPow2(ns4);
 
 
 
@@ -127,3 +130,5 @@ void FFT(Real128 *out, Complex128 *in, int n, const Complex128 *powombar) {
         //out[j + ns4] = in[j].imag >> LOG2Ns4;  // /ns4; //divide by N/2
     }
 }
+
+#endif

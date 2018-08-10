@@ -1,7 +1,7 @@
 #include <cassert>
 #include "BigReal.h"
 
-BigReal::BigReal(uint64_t nblimbs) : nblimbs(nblimbs) {
+BigReal::BigReal(UINT64 nblimbs) : nblimbs(nblimbs) {
     mpz_init(value);
 }
 
@@ -30,7 +30,7 @@ void mul(BigReal &dest, const BigReal &a, const BigReal &b) {
     mpz_cdiv_q_2exp(dest.value, dest.value, dest.nblimbs * BITS_PER_LIMBS);
 }
 
-void div2ui(BigReal &dest, const BigReal &a, uint64_t b) {
+void div2ui(BigReal &dest, const BigReal &a, UINT64 b) {
     mpz_cdiv_q_2exp(dest.value, a.value, b);
 }
 
@@ -69,16 +69,16 @@ void copy(BigReal &dest, const BigReal &a) {
     mpz_set(dest.value, a.value);
 }
 
-BigReal *new_BigReal_array(uint64_t n, uint64_t nblimbs) {
+BigReal *new_BigReal_array(UINT64 n, UINT64 nblimbs) {
     BigReal *reps = (BigReal *) malloc(n * sizeof(BigReal));
-    for (uint64_t i = 0; i < n; i++) {
+    for (UINT64 i = 0; i < n; i++) {
         new(reps + i) BigReal(nblimbs);
     }
     return reps;
 }
 
-void delete_BigReal_array(uint64_t n, BigReal *array) {
-    for (uint64_t i = 0; i < n; i++) {
+void delete_BigReal_array(UINT64 n, BigReal *array) {
+    for (UINT64 i = 0; i < n; i++) {
         (array + i)->~BigReal();
     }
     free(array);
@@ -99,13 +99,13 @@ NTL::RR to_RR(const BigReal &v) {
         ZZ_limbs_set(vv, v.value->_mp_d, -v.value->_mp_size);
         negate(vv, vv);
     }
-    return to_RR(vv) / pow(to_RR(2), to_RR(v.nblimbs * BITS_PER_LIMBS));
+    return to_RR(vv) / pow(to_RR(2), to_RR(long(v.nblimbs * BITS_PER_LIMBS)));
 }
 
 void to_BigReal(BigReal &dest, const NTL::RR &v) {
     assert_dramatically(abs(v) <= 1, "Bad range for BigReal");
     RR::SetPrecision(dest.nblimbs * BITS_PER_LIMBS);
-    ZZ vv = RoundToZZ(v * pow(to_RR(2), to_RR(dest.nblimbs * BITS_PER_LIMBS)));
+    ZZ vv = RoundToZZ(v * pow(to_RR(2), to_RR(long(dest.nblimbs * BITS_PER_LIMBS))));
     bool vneg = vv < 0;
     int64_t vsize = vv.size();
     if (vneg) negate(vv, vv);

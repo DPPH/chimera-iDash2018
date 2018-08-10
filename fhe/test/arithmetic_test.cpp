@@ -10,6 +10,16 @@ double log2Diff(const RR &a, const RR &b) {
     return to_double(log(abs(a - b))) / log(2.);
 }
 
+RR centerMod1(const RR &a) {
+    return a - to_RR(RoundToZZ(a));
+}
+
+double log2DiffMod1(const RR &a, const RR &b) {
+    RR dist = centerMod1(a - b);
+    if (dist == 0) return -INFINITY;
+    return to_double(log(abs(dist))) / log(2.);
+}
+
 TEST(BIGTORUS_ARITHMETIC, convRR) {
     for (int torus_limbs: {5, 10, 15}) {
         BigTorusParams params(torus_limbs);
@@ -76,5 +86,123 @@ TEST(BIGTORUS_ARITHMETIC, addFixP) {
         //cout << testa+testb << endl;
         //cout << testc << endl;
         ASSERT_LE(log2Diff(testa + testb, testc), -500);
+    }
+}
+
+#include <NTL/ZZ_limbs.h>
+
+TEST(BIGTORUS_ARITHMETIC, submul128) {
+    for (int64_t limb_prec:  {1, 3, 5, 7}) {
+        for (int64_t out_nblimbs: {limb_prec, limb_prec + 1, limb_prec + 3}) {
+            for (int64_t in_nblimbs: {limb_prec + 2, limb_prec + 3, limb_prec + 5}) {
+                for (bool positive: {true, false}) {
+
+
+                    BigTorusParams in_params(in_nblimbs);
+                    BigTorusParams out_params(out_nblimbs);
+
+                    BigTorus a(&in_params);
+                    RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
+                    RR aa = (random_RR() - 0.5);
+                    to_torus(a, aa);
+
+                    RR::SetOutputPrecision(100);
+
+                    //cout << endl;
+                    //cout << "aa: " << aa << endl;
+
+                    BigTorus out(&out_params);
+                    RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
+                    RR oout = (random_RR() - 0.5);
+                    to_torus(out, oout);
+
+                    //cout << "oout: " << oout << endl;
+
+
+                    //test positive first
+                    ZZ coef_zz = RandomBits_ZZ(127);
+                    __int128 coef = *(__int128 *) ZZ_limbs_get(coef_zz);
+                    if (!positive) {
+                        coef = -coef;
+                        coef_zz = -coef_zz;
+                    }
+
+                    //cout << "coef_zz: " << coef_zz << endl;
+
+                    subMul(out, coef, a, limb_prec);
+
+                    //test that out = oldout - a * coef modulo 1
+                    RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
+                    RR target = centerMod1(oout - to_RR(coef_zz) * aa);
+                    RR actual = to_RR(out);
+
+                    //cout << "actual: " << actual << endl;
+                    //cout << "target: " << target << endl;
+
+                    RR distance = centerMod1(target - actual);
+                    //cout << "distance: " << distance << endl;
+
+                    ASSERT_LE(log2DiffMod1(target, actual), -limb_prec * BITS_PER_LIMBS + 1);
+                }
+            }
+        }
+    }
+}
+
+TEST(BIGTORUS_ARITHMETIC, mul64) {
+    for (int64_t limb_prec:  {1, 3, 5, 7}) {
+        for (int64_t out_nblimbs: {limb_prec, limb_prec + 1, limb_prec + 3}) {
+            int64_t in_nblimbs = out_nblimbs;
+            for (bool positive: {true, false}) {
+                for (int64_t bitsOfA: {1, 2, 10, 30, 63}) {
+                    BigTorusParams in_params(in_nblimbs);
+                    BigTorusParams out_params(out_nblimbs);
+
+                    BigTorus a(&in_params);
+                    zero(a);
+                    random(a, in_nblimbs);
+                    RR::SetPrecision((in_nblimbs) * BITS_PER_LIMBS);
+                    RR aa = to_RR(a);
+
+                    RR::SetOutputPrecision(100);
+
+                    //cout << endl;
+                    //cout << "aa: " << aa << endl;
+
+                    BigTorus out(&out_params);
+                    //RR::SetPrecision((in_nblimbs+0) * BITS_PER_LIMBS);
+                    //RR oout = (random_RR() - 0.5);
+                    //to_torus(out, oout);
+
+                    //cout << "oout: " << oout << endl;
+
+
+                    //test positive first
+                    ZZ coef_zz = RandomBits_ZZ(bitsOfA);
+                    int64_t coef = to_long(coef_zz);
+                    if (!positive) {
+                        coef = -coef;
+                        coef_zz = -coef_zz;
+                    }
+
+                    //cout << "coef_zz: " << coef_zz << endl;
+
+                    mul64(out, coef, a, limb_prec);
+
+                    //test that out = a * coef modulo 1
+                    RR::SetPrecision((in_nblimbs + 1) * BITS_PER_LIMBS);
+                    RR target = centerMod1(to_RR(coef_zz) * aa);
+                    RR actual = to_RR(out);
+
+                    //cout << "actual: " << actual << endl;
+                    //cout << "target: " << target << endl;
+
+                    RR distance = centerMod1(target - actual);
+                    //cout << "distance: " << distance << endl;
+
+                    ASSERT_LE(log2DiffMod1(target, actual), -limb_prec * BITS_PER_LIMBS + bitsOfA);
+                }
+            }
+        }
     }
 }
