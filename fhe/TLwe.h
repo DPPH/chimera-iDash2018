@@ -6,10 +6,10 @@
 
 class TLweParams {
 public:
-    const uint64_t N;  ///< key size
+    const UINT64 N;  ///< key size
     const BigTorusParams fixp_params; ///< fixp_params;
 
-    TLweParams(const uint64_t N, const BigTorusParams &fixp_params);
+    TLweParams(const UINT64 N, const BigTorusParams &fixp_params);
 };
 
 
@@ -45,12 +45,12 @@ std::shared_ptr<TLweKey> tlwe_keygen(const TLweParams &params);
 
 void zero(TLwe &tlwe);
 
-void native_encrypt(TLwe &reps, const BigTorusRef &plaintext, const TLweKey &key, uint64_t alpha_bits = NA);
+void native_encrypt(TLwe &reps, const BigTorusRef &plaintext, const TLweKey &key, UINT64 alpha_bits = NA);
 
-void native_phase(BigTorusRef reps, const TLwe &tlwe, const TLweKey &key, uint64_t alpha_bits = NA);
+void native_phase(BigTorusRef reps, const TLwe &tlwe, const TLweKey &key, UINT64 alpha_bits = NA);
 
-void slot_encrypt(TLwe &reps, const NTL::RR &plaintext, const TLweKey &key, uint64_t alpha_bits = NA);
+void slot_encrypt(TLwe &reps, const NTL::RR &plaintext, const TLweKey &key, UINT64 alpha_bits = NA);
 
-NTL::RR slot_decrypt(const TLwe &tlwe, const TLweKey &key, uint64_t alpha_bits = NA);
+NTL::RR slot_decrypt(const TLwe &tlwe, const TLweKey &key, UINT64 alpha_bits = NA);
 
 #endif //FHE_TLWE_H

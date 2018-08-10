@@ -9,17 +9,17 @@
 class BigTorusVector {
 public:
     const BigTorusParams &btp; // a ref to the parameters it was initialized with (only for destructor purposes)
-    uint64_t const length;
-    uint64_t *const limbs;
+    UINT64 const length;
+    UINT64 *const limbs;
 
     NO_COPY(BigTorusVector);
 
-    BigTorusVector(uint64_t length, const BigTorusParams &params);
+    BigTorusVector(UINT64 length, const BigTorusParams &params);
 
     ~BigTorusVector();
 
-    BigTorusRef getAT(uint64_t i) const; ///< coef a[i] as a BigTorus
-    BigTorusRef getAT(uint64_t i); ///< coef a[i] as a BigTorus
+    BigTorusRef getAT(UINT64 i) const; ///< coef a[i] as a BigTorus
+    BigTorusRef getAT(UINT64 i); ///< coef a[i] as a BigTorus
 };
 
 /**
@@ -27,9 +27,9 @@ public:
  */
 class BigTorusMatrix {
 public:
-    uint64_t *limbs;
-    uint64_t rows;
-    uint64_t cols;
+    UINT64 *limbs;
+    UINT64 rows;
+    UINT64 cols;
     const BigTorusParams *params;
 
     BigTorusRef operator()(int i, int j) { return BigTorusRef(limbs + (i * cols + j) * params->torus_limbs, params); }
@@ -38,16 +38,16 @@ public:
         return BigTorusRef(limbs + (i * cols + j) * params->torus_limbs, params);
     };
 
-    BigTorusMatrix(uint64_t rows, uint64_t cols, const BigTorusParams *params);
+    BigTorusMatrix(UINT64 rows, UINT64 cols, const BigTorusParams *params);
 
     ~BigTorusMatrix();
 };
 
 void zero(const BigTorusVector &v);
 
-void fixp_add(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVector &b, uint64_t out_precision_bits = NA);
+void fixp_add(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVector &b, UINT64 out_precision_bits = NA);
 
-void fixp_sub(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVector &b, uint64_t out_precision_bits = NA);
+void fixp_sub(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVector &b, UINT64 out_precision_bits = NA);
 
 
 

@@ -5,7 +5,7 @@
 #include "BigTorusVector.h"
 
 class BigTorusPolynomial : public BigTorusVector {
-    BigTorusPolynomial(uint64_t N, const BigTorusParams &params);
+    BigTorusPolynomial(UINT64 N, const BigTorusParams &params);
 
     ~BigTorusPolynomial();
 };

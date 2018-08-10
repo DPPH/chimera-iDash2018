@@ -4,7 +4,7 @@
 #include "BigComplex.h"
 
 
-BigComplex *precomp_iFFT(int n, uint64_t nblimbs) {
+BigComplex *precomp_iFFT(int n, UINT64 nblimbs) {
     BigComplex *buf = (BigComplex *) malloc((n + 1) * sizeof(BigComplex));
     int32_t *nn = (int32_t *) (buf);
     BigComplex *powomega = buf + 1;
@@ -28,7 +28,7 @@ void clear_precomp_iFFT(BigComplex *powomega) {
     free(buf);
 }
 
-BigComplex *precomp_FFT(int n, uint64_t nblimbs) {
+BigComplex *precomp_FFT(int n, UINT64 nblimbs) {
     BigComplex *buf = (BigComplex *) malloc((n + 1) * sizeof(BigComplex));
     int32_t *nn = (int32_t *) (buf);
     BigComplex *powombar = buf + 1;
@@ -52,7 +52,7 @@ void clear_precomp_FFT(BigComplex *powombar) {
 }
 
 void iFFT(BigComplex *out, const BigReal *in, int n, const BigComplex *powomega) {
-    const uint64_t nblimbs = out[0].real.nblimbs;
+    const UINT64 nblimbs = out[0].real.nblimbs;
     BigComplex t1(nblimbs);
     BigComplex t2(nblimbs);
     //const int N = n/2;
@@ -88,13 +88,13 @@ static unsigned logPow2(int n) {
 }
 
 void FFT(BigReal *out, BigComplex *in, int n, const BigComplex *powombar) {
-    const uint64_t nblimbs = out[0].nblimbs;
+    const UINT64 nblimbs = out[0].nblimbs;
     BigComplex t1(nblimbs);
     BigComplex t2(nblimbs);
 
     //const int N = n/2;
     const int ns4 = n / 4;
-    const uint64_t LOG2Ns4 = logPow2(ns4);
+    const UINT64 LOG2Ns4 = logPow2(ns4);
 
 
 

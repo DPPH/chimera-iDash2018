@@ -2,6 +2,7 @@
 #define FHE_BIGFFT128_H
 
 #include <complex>
+#include "commons.h"
 
 typedef __float128 Real128;
 typedef std::complex<Real128> Complex128;
@@ -12,7 +13,7 @@ typedef std::complex<Real128> Complex128;
  * Although this structure is mostly opaque, in this poc, the returned array contains all complex powers of unity
  * TODO!
  */
-Complex128 *precomp_iFFT128(int n, uint64_t nblimbs);
+Complex128 *precomp_iFFT128(int n, UINT64 nblimbs);
 
 /** releases the precomputed an iFFT structure */
 void clear_precomp_iFFT128(Complex128 *powomega);
@@ -23,7 +24,7 @@ void clear_precomp_iFFT128(Complex128 *powomega);
  * in reverse order
  * TODO!
  */
-Complex128 *precomp_FFT128(int n, uint64_t nblimbs);
+Complex128 *precomp_FFT128(int n, UINT64 nblimbs);
 
 /** releases the precomputed an iFFT structure */
 void clear_precomp_FFT128(Complex128 *powombar);

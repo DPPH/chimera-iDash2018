@@ -3,11 +3,17 @@
 
 #include <NTL/LLL.h>
 
+#if __APPLE__
+typedef unsigned long long UINT64;
+#else
+typedef uint64_t UINT64;
+#endif
+
 #define NA 0x8000000000000000ul
 const int64_t BITS_PER_LIMBS = 64;
 //const int64_t BYTES_PER_LIMBS = BITS_PER_LIMBS / 8;
 
-inline int64_t limb_precision(uint64_t bit_precision) {
+inline int64_t limb_precision(UINT64 bit_precision) {
     if (bit_precision == NA) return NA;
     return (bit_precision + BITS_PER_LIMBS - 1) / BITS_PER_LIMBS;
 }

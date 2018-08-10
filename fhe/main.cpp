@@ -4,9 +4,9 @@
 
 NTL_CLIENT;
 
-const uint64_t X_limbs = 1;
-const uint64_t X_plainExp = 0;
-const uint64_t X_levelExp = 20;
+const UINT64 X_limbs = 1;
+const UINT64 X_plainExp = 0;
+const UINT64 X_levelExp = 20;
 const BigTorusParams X_params(X_limbs, X_plainExp, X_levelExp);
 
 const int64_t S_limbs = 1;

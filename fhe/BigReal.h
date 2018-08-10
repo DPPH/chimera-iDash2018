@@ -16,9 +16,9 @@
 class BigReal {
 public:
     mpz_t value;
-    uint64_t nblimbs;
+    UINT64 nblimbs;
 
-    BigReal(uint64_t nblimbs);
+    BigReal(UINT64 nblimbs);
 
     ~BigReal();
 
@@ -43,7 +43,7 @@ void extmul(BigReal &dest, int a, const BigReal &b);
 void mul(BigReal &dest, const BigReal &a, const BigReal &b);
 
 /** division by power of 2 */
-void div2ui(BigReal &dest, const BigReal &a, uint64_t b);
+void div2ui(BigReal &dest, const BigReal &a, UINT64 b);
 
 /** copy */
 void copy(BigReal &dest, const BigReal &a);
@@ -58,9 +58,9 @@ NTL::RR to_RR(const BigReal &v);
 void to_BigReal(BigReal &dest, const NTL::RR &v);
 
 /** create an array of BigReal */
-BigReal *new_BigReal_array(uint64_t n, uint64_t nblimbs);
+BigReal *new_BigReal_array(UINT64 n, UINT64 nblimbs);
 
 /** delete an array of BigReal */
-void delete_BigReal_array(uint64_t n, BigReal *array);
+void delete_BigReal_array(UINT64 n, BigReal *array);
 
 #endif //FHE_BIG_REAL_H

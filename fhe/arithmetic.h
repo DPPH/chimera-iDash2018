@@ -34,6 +34,6 @@ std::ostream &operator<<(std::ostream &out, const BigTorusVector &v);
 
 uint8_t random_bit();
 
-uint64_t random_uint64_t();
+UINT64 random_uint64_t();
 
 #endif //FHE_ARITHMETIC_H

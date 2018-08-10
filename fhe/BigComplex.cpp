@@ -1,6 +1,6 @@
 #include "BigComplex.h"
 
-BigComplex::BigComplex(uint64_t nblimbs) : real(nblimbs), imag(nblimbs) {}
+BigComplex::BigComplex(UINT64 nblimbs) : real(nblimbs), imag(nblimbs) {}
 
 BigComplex::~BigComplex() {}
 
@@ -19,8 +19,8 @@ BigComplexRef::BigComplexRef(const BigComplex &z) :
         imag((BigReal *) &z.imag) {}
 
 void accurate_power_unity(BigComplexRef dest, int i, int n) {
-    const uint64_t nblimbs = dest.real->nblimbs;
-    const uint64_t FPREC = nblimbs * BITS_PER_LIMBS;
+    const UINT64 nblimbs = dest.real->nblimbs;
+    const UINT64 FPREC = nblimbs * BITS_PER_LIMBS;
     mpfr_t angle;
     mpfr_t rsin;
     mpfr_t rcos;
@@ -46,7 +46,7 @@ void accurate_power_unity(BigComplexRef dest, int i, int n) {
 }
 
 void mul(BigComplexRef dest, BigComplexRef a, BigComplexRef b) {
-    const uint64_t nblimbs = dest.real->nblimbs;
+    const UINT64 nblimbs = dest.real->nblimbs;
     BigReal t1(nblimbs);
     BigReal t2(nblimbs);
     BigReal t3(nblimbs);
@@ -78,16 +78,16 @@ void copy(BigComplexRef dest, BigComplexRef a) {
     copy(*dest.imag, *a.imag);
 }
 
-BigComplex *new_BigComplex_array(uint64_t n, uint64_t nblimbs) {
+BigComplex *new_BigComplex_array(UINT64 n, UINT64 nblimbs) {
     BigComplex *reps = (BigComplex *) malloc(n * sizeof(BigComplex));
-    for (uint64_t i = 0; i < n; i++) {
+    for (UINT64 i = 0; i < n; i++) {
         new(reps + i) BigComplex(nblimbs);
     }
     return reps;
 }
 
-void delete_BigComplex_array(uint64_t n, BigComplex *array) {
-    for (uint64_t i = 0; i < n; i++) {
+void delete_BigComplex_array(UINT64 n, BigComplex *array) {
+    for (UINT64 i = 0; i < n; i++) {
         (array + i)->~BigComplex();
     }
     free(array);

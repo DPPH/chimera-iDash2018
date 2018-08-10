@@ -37,8 +37,8 @@ void fixp_prepareAdd(fixp_add_params &out, const BigTorusParams &pres, const Big
     out.sb = pb.plaintext_expo + pb.level_expo - pres.plaintext_expo - pres.level_expo;
 
     //allocate tmp buffer
-    out.tmp_a = new uint64_t[out.oc_limbs + 1];
-    out.tmp_b = new uint64_t[out.oc_limbs + 1];
+    out.tmp_a = new UINT64[out.oc_limbs + 1];
+    out.tmp_b = new UINT64[out.oc_limbs + 1];
 }
 
 void fixp_releaseAdd(fixp_add_params &out) {
@@ -46,7 +46,7 @@ void fixp_releaseAdd(fixp_add_params &out) {
     delete[] out.tmp_b;
 }
 
-void fixp_special_add_lshift(uint64_t *out, uint64_t *a, int64_t out_limbs, int64_t a_limbs, int64_t bit_shift) {
+void fixp_special_add_lshift(UINT64 *out, UINT64 *a, int64_t out_limbs, int64_t a_limbs, int64_t bit_shift) {
     int64_t sbits = bit_shift % BITS_PER_LIMBS;
     int64_t slimbs = bit_shift / BITS_PER_LIMBS;
     int64_t oc = out_limbs;
@@ -112,10 +112,10 @@ void fixp_special_add_lshift(uint64_t *out, uint64_t *a, int64_t out_limbs, int6
     }
 }
 
-void fixp_raw_add(uint64_t *reps, uint64_t *a, uint64_t *b, const fixp_add_params &params) {
-    uint64_t *tmp_a = params.tmp_a;
-    uint64_t *tmp_b = params.tmp_b;
-    uint64_t *c = reps + params.ic_limbs - params.oc_limbs;
+void fixp_raw_add(UINT64 *reps, UINT64 *a, UINT64 *b, const fixp_add_params &params) {
+    UINT64 *tmp_a = params.tmp_a;
+    UINT64 *tmp_b = params.tmp_b;
+    UINT64 *c = reps + params.ic_limbs - params.oc_limbs;
 
     //left shift a by sa positions and keep oc limbs
     fixp_special_add_lshift(tmp_a, a, params.oc_limbs, params.ia_limbs, params.sa);
@@ -125,10 +125,10 @@ void fixp_raw_add(uint64_t *reps, uint64_t *a, uint64_t *b, const fixp_add_param
     mpn_add_n(c, tmp_a, tmp_b, params.oc_limbs);
 }
 
-void fixp_raw_sub(uint64_t *reps, uint64_t *a, uint64_t *b, const fixp_add_params &params) {
-    uint64_t *tmp_a = params.tmp_a;
-    uint64_t *tmp_b = params.tmp_b;
-    uint64_t *c = reps + params.ic_limbs - params.oc_limbs;
+void fixp_raw_sub(UINT64 *reps, UINT64 *a, UINT64 *b, const fixp_add_params &params) {
+    UINT64 *tmp_a = params.tmp_a;
+    UINT64 *tmp_b = params.tmp_b;
+    UINT64 *c = reps + params.ic_limbs - params.oc_limbs;
 
     //left shift a by sa positions and keep oc limbs
     fixp_special_add_lshift(tmp_a, a, params.oc_limbs, params.ia_limbs, params.sa);
@@ -139,7 +139,7 @@ void fixp_raw_sub(uint64_t *reps, uint64_t *a, uint64_t *b, const fixp_add_param
 }
 
 
-void fixp_add(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, uint64_t out_precision_bits) {
+void fixp_add(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, UINT64 out_precision_bits) {
     fixp_add_params addParams;
     if (out_precision_bits == NA) out_precision_bits = reps.params->torus_limbs * BITS_PER_LIMBS;
     fixp_prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
@@ -147,7 +147,7 @@ void fixp_add(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, uint
     fixp_releaseAdd(addParams);
 }
 
-void fixp_sub(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, uint64_t out_precision_bits) {
+void fixp_sub(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, UINT64 out_precision_bits) {
     fixp_add_params addParams;
     if (out_precision_bits == NA) out_precision_bits = reps.params->torus_limbs * BITS_PER_LIMBS;
     fixp_prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);

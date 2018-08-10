@@ -1,6 +1,6 @@
 #include "BigTorusPolynomial.h"
 
-BigTorusPolynomial::BigTorusPolynomial(uint64_t N, const BigTorusParams &params) : BigTorusVector(N, params) {
+BigTorusPolynomial::BigTorusPolynomial(UINT64 N, const BigTorusParams &params) : BigTorusVector(N, params) {
 }
 
 BigTorusPolynomial::~BigTorusPolynomial() {

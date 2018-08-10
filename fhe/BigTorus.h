@@ -19,11 +19,11 @@
  */
 class BigTorusParams {
 public:
-    const uint64_t torus_limbs; ///< total number of limbs
+    const UINT64 torus_limbs; ///< total number of limbs
     const int64_t plaintext_expo;  ///< plaintext exponent
     const int64_t level_expo;      ///< level exponent
 
-    BigTorusParams(uint64_t torus_limbs, int64_t plaintext_expo = 0, int64_t level_expo = 0);
+    BigTorusParams(UINT64 torus_limbs, int64_t plaintext_expo = 0, int64_t level_expo = 0);
 };
 
 static_assert(sizeof(BigTorusParams) == 24, "Bad compiler");
@@ -33,13 +33,13 @@ static_assert(sizeof(BigTorusParams) == 24, "Bad compiler");
  */
 class BigTorus {
 public:
-    uint64_t *limbs; ///< limbs
+    UINT64 *limbs; ///< limbs
     const BigTorusParams *const params; ///< parameters
 
     /** constructs new BigTorus */
     BigTorus(const BigTorusParams *params) :
             params(params) {
-        limbs = new uint64_t[params->torus_limbs];
+        limbs = new UINT64[params->torus_limbs];
     }
 
     /** deletes a bigtorus */
@@ -57,10 +57,10 @@ public:
  */
 class BigTorusRef {
 public:
-    uint64_t *limbs;
+    UINT64 *limbs;
     const BigTorusParams *const params;
 
-    BigTorusRef(uint64_t *limbs, const BigTorusParams *params);
+    BigTorusRef(UINT64 *limbs, const BigTorusParams *params);
 
     BigTorusRef(const BigTorus &torus);
 
@@ -68,36 +68,36 @@ public:
 };
 
 /** multiply a bigTorus by an integer (modulo 1) */
-void bigTorusRawScale(uint64_t *limbs, int64_t coef, uint64_t nblimbs);
+void bigTorusRawScale(UINT64 *limbs, int64_t coef, UINT64 nblimbs);
 
 /** multiply a bigTorus by an integer (modulo 1) */
 void bigTorusScale(const BigTorusRef &x, int64_t coef);
 
 /** copy the limb_precision most significant bits from x to dest */
-void copy(BigTorusRef dest, const BigTorusRef &x, uint64_t limb_precision = NA);
+void copy(BigTorusRef dest, const BigTorusRef &x, UINT64 limb_precision = NA);
 
 /** make dest zero */
 void zero(BigTorusRef dest);
 
 /** make the limb_precision most significant bits of dest uniformly random */
-void random(BigTorusRef dest, uint64_t limb_precision = NA);
+void random(BigTorusRef dest, UINT64 limb_precision = NA);
 
 /** add a noise of magnitude 2^-alpha (cutoff distribution for now) */
-void add_noise(BigTorusRef dest, uint64_t alpha_bits, uint64_t limb_precision = NA);
+void add_noise(BigTorusRef dest, UINT64 alpha_bits, UINT64 limb_precision = NA);
 
 struct bigtorus_addsub_params {
-    uint64_t asize;
-    uint64_t bsize;
-    uint64_t dsize;
-    uint64_t limb_precision;
-    uint64_t aoffset;
-    uint64_t boffset;
-    uint64_t doffset;
+    UINT64 asize;
+    UINT64 bsize;
+    UINT64 dsize;
+    UINT64 limb_precision;
+    UINT64 aoffset;
+    UINT64 boffset;
+    UINT64 doffset;
 };
 
 /** prepare an addition or a subtraction (with the provided precision) */
 bigtorus_addsub_params prepare_addsub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b,
-                                      uint64_t limb_precision = NA);
+                                      UINT64 limb_precision = NA);
 
 /** add two bigtorus (prepared) */
 void add_prep(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, const bigtorus_addsub_params &params);
@@ -106,10 +106,10 @@ void add_prep(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, cons
 void sub_prep(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, const bigtorus_addsub_params &params);
 
 /** add two bigtorus (with the provided precision, wrapper function) */
-void add(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision = NA);
+void add(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, UINT64 limb_precision = NA);
 
 /** add two bigtorus (with the provided precision, wrapper function) */
-void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, uint64_t limb_precision = NA);
+void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, UINT64 limb_precision = NA);
 
 void to_torus(BigTorusRef reps, const NTL::RR &a);
 
@@ -124,8 +124,8 @@ struct fixp_add_params {
     int64_t oc_limbs;   //significant limbs in c's output
     int64_t sa;         // shift in bits to apply to a
     int64_t sb;         // shift in bits to apply to b
-    uint64_t *tmp_a; //buffer of size oc_limbs+1
-    uint64_t *tmp_b; //buffer of size oc_limbs+1
+    UINT64 *tmp_a; //buffer of size oc_limbs+1
+    UINT64 *tmp_b; //buffer of size oc_limbs+1
 
     fixp_add_params();
 };
@@ -148,7 +148,7 @@ void fixp_releaseAdd(fixp_add_params &out);
  * @param a_limbs
  * @param bit_shift left shift in bits
  */
-void fixp_special_add_lshift(uint64_t *out, uint64_t *a,
+void fixp_special_add_lshift(UINT64 *out, UINT64 *a,
                              int64_t out_limbs, int64_t a_limbs, int64_t bit_shift);
 
 /**
@@ -159,7 +159,7 @@ void fixp_special_add_lshift(uint64_t *out, uint64_t *a,
  * @param b torus buffer of b
  * @param params the addition parameters
  */
-void fixp_raw_add(uint64_t *reps, uint64_t *a, uint64_t *b, const fixp_add_params &params);
+void fixp_raw_add(UINT64 *reps, UINT64 *a, UINT64 *b, const fixp_add_params &params);
 
 /**
  * Performs the raw fixed point subtraction on the torus buffers a and b
@@ -169,16 +169,16 @@ void fixp_raw_add(uint64_t *reps, uint64_t *a, uint64_t *b, const fixp_add_param
  * @param b torus buffer of b
  * @param params the addition parameters
  */
-void fixp_raw_sub(uint64_t *reps, uint64_t *a, uint64_t *b, const fixp_add_params &params);
+void fixp_raw_sub(UINT64 *reps, UINT64 *a, UINT64 *b, const fixp_add_params &params);
 
 /**
  * zero
  */
-void fixPRawClear(uint64_t *reps, const uint64_t limbs_size);
+void fixPRawClear(UINT64 *reps, const UINT64 limbs_size);
 
-void fixp_add(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, uint64_t out_precision_bits = NA);
+void fixp_add(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, UINT64 out_precision_bits = NA);
 
-void fixp_sub(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, uint64_t out_precision_bits = NA);
+void fixp_sub(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, UINT64 out_precision_bits = NA);
 
 
 #endif //FHE_BIGTORUS_H

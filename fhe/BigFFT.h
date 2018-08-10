@@ -8,7 +8,7 @@
  * precompute an iFFT structure for logical n (=2*N if we are mod X^N+1) and limb precision nblimbs
  * Although this structure is mostly opaque, in this poc, the returned array contains all complex powers of unity
  */
-BigComplex *precomp_iFFT(int n, uint64_t nblimbs);
+BigComplex *precomp_iFFT(int n, UINT64 nblimbs);
 
 /** releases the precomputed an iFFT structure */
 void clear_precomp_iFFT(BigComplex *powomega);
@@ -18,7 +18,7 @@ void clear_precomp_iFFT(BigComplex *powomega);
  * Although this structure is mostly opaque, in this poc, the returned array contains all complex powers of unity
  * in reverse order
  */
-BigComplex *precomp_FFT(int n, uint64_t nblimbs);
+BigComplex *precomp_FFT(int n, UINT64 nblimbs);
 
 /** releases the precomputed an iFFT structure */
 void clear_precomp_FFT(BigComplex *powombar);

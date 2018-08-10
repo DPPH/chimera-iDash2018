@@ -17,7 +17,7 @@ public:
     BigReal imag; ///< imaginary part
 
     /* constructs a BigComplex of precision nblimbs x 64 */
-    BigComplex(uint64_t nblimbs);
+    BigComplex(UINT64 nblimbs);
 
     /* destroys a BigComplex */
     ~BigComplex();
@@ -65,10 +65,10 @@ void sub(BigComplexRef dest, BigComplexRef a, BigComplexRef b);
 void copy(BigComplexRef dest, BigComplexRef a);
 
 /** create an array */
-BigComplex *new_BigComplex_array(uint64_t n, uint64_t nblimbs);
+BigComplex *new_BigComplex_array(UINT64 n, UINT64 nblimbs);
 
 /** delete an array */
-void delete_BigComplex_array(uint64_t n, BigComplex *array);
+void delete_BigComplex_array(UINT64 n, BigComplex *array);
 
 
 #endif //FHE_BIGCOMPLEX_H
