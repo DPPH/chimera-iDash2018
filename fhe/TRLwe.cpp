@@ -24,8 +24,7 @@ void pubKS(TRLwe &out, TLwe &in, pubKsKey &ks) {
 }
 
 __int128 bitdecomp_coef128(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_prec) {
-
-    const int nlimbs = tmpDec.params->torus_limbs;
+    const UINT64 nlimbs = tmpDec.params->torus_limbs;
     if (2 * j <= nlimbs) {
         return *(__int128 *) tmpDec.limbs + nlimbs - 2 * j;
     } else if (2 * j == nlimbs + 1) {

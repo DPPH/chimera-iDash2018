@@ -55,7 +55,7 @@ void fixp_sub(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVecto
 
 void subMul(BigTorusVector &out, __int128 a, const BigTorusVector &in, const UINT64 out_limb_prec) {
     assert_dramatically(in.length == out.length, "not the good size");
-    for (int i = 0; i < in.length; i++) {
+    for (UINT64 i = 0; i < in.length; i++) {
         subMul(out.getAT(i), a, in.getAT(i), out_limb_prec);
     }
 
