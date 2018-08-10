@@ -61,6 +61,30 @@ void subMul(BigTorusVector &out, __int128 a, const BigTorusVector &in, const UIN
 
 }
 
+void copy(BigTorusVector &out, const BigTorusVector &in, UINT64 out_limbs_prec) {
+    for (UINT64 i = 0; i < out.length; i++) {
+        copy(out.getAT(i), in.getAT(i), out_limbs_prec);
+    }
+}
+
+void random(BigTorusVector &out, UINT64 out_limbs_prec) {
+    for (UINT64 i = 0; i < out.length; i++) {
+        random(out.getAT(i), out_limbs_prec);
+    }
+}
+
+void add_noise(BigTorusVector &out, UINT64 alpha_bits, UINT64 out_limbs_prec) {
+    for (UINT64 i = 0; i < out.length; i++) {
+        add_noise(out.getAT(i), alpha_bits, out_limbs_prec);
+    }
+}
+
+void sub(BigTorusVector &out, const BigTorusVector &a, const BigTorusVector &b, UINT64 out_limbs_prec) {
+    for (UINT64 i = 0; i < out.length; i++) {
+        sub(out.getAT(i), a.getAT(i), b.getAT(i), out_limbs_prec);
+    }
+}
+
 
 BigTorusMatrix::BigTorusMatrix(UINT64 rows, UINT64 cols, const BigTorusParams *params) :
         rows(rows), cols(cols), params(params) {

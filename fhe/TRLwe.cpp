@@ -42,3 +42,45 @@ void subMul(TRLwe &out, __int128 aij, const TRLwe &in, const UINT64 out_limb_pre
     subMul(out.a[0], aij, in.a[0], out_limb_prec);
     subMul(out.a[1], aij, in.a[1], out_limb_prec);
 }
+
+void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLweKey &key, UINT64 alpha_bits) {
+
+    const UINT64 N = reps.params.N;
+    const UINT64 alpha_limbs = limb_precision(alpha_bits);
+
+    BigTorusPolynomial &b = reps.a[1];
+    // b = plaintext + sum s_i a_i
+    copy(b, plaintext, alpha_limbs);
+    random(reps.a[0], alpha_limbs);
+    BigTorusPolynomial temp(N, alpha_limbs);
+    int64_t *K = new int64_t[N];
+
+    for (UINT64 i = 0; i < N; i++) {
+        K[i] = key.key[i];
+    }
+    naive_external_product(temp, K, reps.a[0], alpha_limbs);
+    //randomize below bit alpha (noise)
+    add_noise(b, alpha_bits, alpha_limbs);
+    delete[] K;
+}
+
+
+void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, UINT64 alpha_bits) {
+    const UINT64 N = c.params.N;
+    const UINT64 alpha_limbs = limb_precision(alpha_bits);
+
+    const BigTorusPolynomial &b = c.a[1];
+    copy(reps, b, alpha_limbs);
+
+    BigTorusPolynomial temp(N, alpha_limbs);
+    int64_t *K = new int64_t[N];
+
+
+    for (UINT64 i = 0; i < N; i++) {
+        K[i] = key.key[i];
+    }
+
+    naive_external_product(temp, K, c.a[0], alpha_limbs);
+    sub(reps, b, temp, alpha_limbs);
+    delete[] K;
+}

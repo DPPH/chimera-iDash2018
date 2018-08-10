@@ -52,4 +52,14 @@ void fixp_sub(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVecto
 /** @brief compute a vector equal to out= oui-a.in */
 void subMul(BigTorusVector &out, __int128 a, const BigTorusVector &in, const UINT64 out_limb_prec);
 
+/** @brief copy "in" in "out" */
+void copy(BigTorusVector &out, const BigTorusVector &in, UINT64 out_limbs_prec);
+
+/** @brief generate a random bigtorusvector */
+void random(BigTorusVector &out, UINT64 out_limbs_prec);
+
+/** @brief add a noise to out  of alpha bits*/
+void add_noise(BigTorusVector &out, UINT64 alpha_bits, UINT64 out_limbs_prec);
 #endif //FHE_BIGTORUSVECTOR_H
+
+void sub(BigTorusVector &out, const BigTorusVector &a, const BigTorusVector &b, UINT64 out_limbs_prec);
