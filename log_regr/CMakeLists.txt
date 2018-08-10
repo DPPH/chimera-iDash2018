@@ -11,25 +11,55 @@ set(CXXOPTS_LIB_PATH external/cxxopts)
 add_subdirectory(${TFHE_LIB_PATH})
 add_subdirectory(${CXXOPTS_LIB_PATH})
 
-
 include_directories(
     ../common
     ${TFHE_LIB_PATH}/include
     ${CXXOPTS_LIB_PATH}/include
     )
 
-# set(LOG_REGR_SRCS
-#         gen_keys.cpp
-#         enc_log_regr.cpp
-#     )
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
 
-add_executable(gen_keys gen_keys.cpp $<TARGET_OBJECTS:tfhe-core> $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>)
+add_executable(
+    gen_keys
 
-add_executable(enc_log_regr enc_log_regr.cpp $<TARGET_OBJECTS:tfhe-core> $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>)
-target_link_libraries(enc_log_regr -lntl -lgmp -pthread)
-# target_include_directories(enc_log_regr
-#         PRIVATE ${TFHE_LIB_PATH}/include
-#         )
+    gen_keys.cpp
+    keyset.cpp
 
+    $<TARGET_OBJECTS:tfhe-core>
+    $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
+    )
 
-add_executable(log_regr log_regr.cpp $<TARGET_OBJECTS:tfhe-core> $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>)
+add_executable(
+    encrypt_data
+
+    encrypt_data.cpp
+    keyset.cpp
+
+    $<TARGET_OBJECTS:tfhe-core>
+    $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
+    )
+target_link_libraries(encrypt_data -lntl -lgmp -pthread)
+
+add_executable(
+    decrypt_data
+
+    decrypt_data.cpp
+    keyset.cpp
+
+    $<TARGET_OBJECTS:tfhe-core>
+    $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
+    )
+target_link_libraries(decrypt_data -lntl -lgmp -pthread)
+
+add_executable(
+    log_regr
+
+    log_regr.cpp
+
+    $<TARGET_OBJECTS:tfhe-core>
+    $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
+    )
