@@ -40,7 +40,7 @@ TEST(TLWE_TEST, tlwe_zero) {
             //check zero
             for (UINT64 i = 0; i < N; ++i) {
                 for (UINT64 j = 0; j < nblimbs; ++j) {
-                    ASSERT_EQ(c.getAT(i).limbs[j], 0u);
+                    ASSERT_EQ(c.getAT(i).limbs_end[-1 - j], 0u);
                 }
             }
         }
@@ -57,8 +57,8 @@ TEST(TLWE_TEST, tlwe_encrypt_decrypt_native) {
             std::shared_ptr<TLweKey> key = tlwe_keygen(params);
 
             TLwe c(params);
-            BigTorus plaintext(&params.fixp_params);
-            BigTorus plaintext2(&params.fixp_params);
+            BigTorus plaintext(params.fixp_params);
+            BigTorus plaintext2(params.fixp_params);
 
             random(plaintext);
 
@@ -68,7 +68,7 @@ TEST(TLWE_TEST, tlwe_encrypt_decrypt_native) {
             //check randomness
             std::set<UINT64> dist;
             for (UINT64 i = 0; i < N; i++) {
-                dist.insert(c.getAT(i).limbs[nblimbs - 1]);
+                dist.insert(c.getAT(i).limbs_end[-1]);
             }
             ASSERT_GE(dist.size(), 9 * N / 10);
 

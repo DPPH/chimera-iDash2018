@@ -27,7 +27,7 @@ TEST(BIGTORUS_ARITHMETIC, convRR) {
         //torus load and store to RR
         for (int trial = 0; trial < 100; trial++) {
             RR test1 = random_RR() - 0.5;
-            BigTorus testTorus(&params);
+            BigTorus testTorus(params);
             to_torus(testTorus, test1);
             RR test2 = fixp_to_RR(testTorus);
 
@@ -49,7 +49,7 @@ TEST(BIGTORUS_ARITHMETIC, convFixP) {
                 //fixP load and store to RR
                 for (int trial = 0; trial < 100; trial++) {
                     RR test1 = 1000 * (random_RR() - 0.5);
-                    BigTorus testFixp(&params);
+                    BigTorus testFixp(params);
                     to_fixP(testFixp, test1);
                     RR test2 = fixp_to_RR(testFixp);
 
@@ -72,9 +72,9 @@ TEST(BIGTORUS_ARITHMETIC, addFixP) {
     for (int trial = 0; trial < 100; trial++) {
         RR testa = 1000 * (random_RR() - 0.5);
         RR testb = 1000 * (random_RR() - 0.5);
-        BigTorus testFixpA(&params);
-        BigTorus testFixpB(&paramsb);
-        BigTorus testFixpC(&paramsc);
+        BigTorus testFixpA(params);
+        BigTorus testFixpB(paramsb);
+        BigTorus testFixpC(paramsc);
         to_fixP(testFixpA, testa);
         to_fixP(testFixpB, testb);
         fixp_add(testFixpC, testFixpA, testFixpB, 640);
@@ -101,7 +101,7 @@ TEST(BIGTORUS_ARITHMETIC, submul128) {
                     BigTorusParams in_params(in_nblimbs);
                     BigTorusParams out_params(out_nblimbs);
 
-                    BigTorus a(&in_params);
+                    BigTorus a(in_params);
                     RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
                     RR aa = (random_RR() - 0.5);
                     to_torus(a, aa);
@@ -111,7 +111,7 @@ TEST(BIGTORUS_ARITHMETIC, submul128) {
                     //cout << endl;
                     //cout << "aa: " << aa << endl;
 
-                    BigTorus out(&out_params);
+                    BigTorus out(out_params);
                     RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
                     RR oout = (random_RR() - 0.5);
                     to_torus(out, oout);
@@ -129,7 +129,7 @@ TEST(BIGTORUS_ARITHMETIC, submul128) {
 
                     //cout << "coef_zz: " << coef_zz << endl;
 
-                    subMul(out, coef, a, limb_prec);
+                    subMulS128(out, coef, a, limb_prec);
 
                     //test that out = oldout - a * coef modulo 1
                     RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
@@ -149,7 +149,7 @@ TEST(BIGTORUS_ARITHMETIC, submul128) {
     }
 }
 
-TEST(BIGTORUS_ARITHMETIC, mul64) {
+TEST(BIGTORUS_ARITHMETIC, mulS64) {
     for (int64_t limb_prec:  {1, 3, 5, 7}) {
         for (int64_t out_nblimbs: {limb_prec, limb_prec + 1, limb_prec + 3}) {
             int64_t in_nblimbs = out_nblimbs;
@@ -158,7 +158,7 @@ TEST(BIGTORUS_ARITHMETIC, mul64) {
                     BigTorusParams in_params(in_nblimbs);
                     BigTorusParams out_params(out_nblimbs);
 
-                    BigTorus a(&in_params);
+                    BigTorus a(in_params);
                     zero(a);
                     random(a, in_nblimbs);
                     RR::SetPrecision((in_nblimbs) * BITS_PER_LIMBS);
@@ -169,7 +169,7 @@ TEST(BIGTORUS_ARITHMETIC, mul64) {
                     //cout << endl;
                     //cout << "aa: " << aa << endl;
 
-                    BigTorus out(&out_params);
+                    BigTorus out(out_params);
                     //RR::SetPrecision((in_nblimbs+0) * BITS_PER_LIMBS);
                     //RR oout = (random_RR() - 0.5);
                     //to_torus(out, oout);
@@ -187,7 +187,7 @@ TEST(BIGTORUS_ARITHMETIC, mul64) {
 
                     //cout << "coef_zz: " << coef_zz << endl;
 
-                    mul64(out, coef, a, limb_prec);
+                    mulS64(out, coef, a, limb_prec);
 
                     //test that out = a * coef modulo 1
                     RR::SetPrecision((in_nblimbs + 1) * BITS_PER_LIMBS);

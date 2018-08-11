@@ -36,10 +36,9 @@ void div2ui(BigReal &dest, const BigReal &a, UINT64 b) {
 
 void to_BigReal(BigReal &dest, const BigTorusRef &v) {
     const int dsize = dest.nblimbs;
-    const int vsize = v.params->torus_limbs;
+    const int vsize = v.params.torus_limbs;
     const int vcopysize = std::min(dsize, vsize);
     const int zerofill = dsize - vcopysize;
-    const int vcopyoffset = vsize - vcopysize;
     //copy the nblimbs most significant limbs
     mpz_realloc2(dest.value, dsize * BITS_PER_LIMBS);
     assert(dest.value->_mp_alloc >= dsize);
@@ -49,13 +48,13 @@ void to_BigReal(BigReal &dest, const BigTorusRef &v) {
         mpn_zero(dest.value->_mp_d, zerofill);
     }
     //negate or copy limbs from v
-    bool vnegative = v.limbs[vsize - 1] >> 63u;
+    bool vnegative = v.limbs_end[-1] >> 63u;
     if (vnegative) {
         //v is negative
-        mpn_neg(dest.value->_mp_d + zerofill, v.limbs + vcopyoffset, vcopysize);
+        mpn_neg(dest.value->_mp_d + zerofill, v.limbs_end - vcopysize, vcopysize);
     } else {
         //v is positive
-        mpn_copyi(dest.value->_mp_d + zerofill, v.limbs + vcopyoffset, vcopysize);
+        mpn_copyi(dest.value->_mp_d + zerofill, v.limbs_end - vcopysize, vcopysize);
     }
     //find the right size
     int dl;

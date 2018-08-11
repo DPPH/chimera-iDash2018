@@ -8,7 +8,7 @@ void pubKS(TRLwe &out, TLwe &in, pubKsKey &ks) {
     const BigTorus &bitDecomp_in_offset = ks.bitDecomp_in_offset; // sum Bg/2 Bg^i
     __int128 bitDecomp_out_offset = ks.bitDecomp_out_offset; // -Bg/2
 
-    BigTorus tmpDec(&in_params.fixp_params); //temp variable
+    BigTorus tmpDec(in_params.fixp_params); //temp variable
 
     // out = trivial(b)
     trivial(out, in.getBT(), out_prec_limbs);
@@ -24,11 +24,11 @@ void pubKS(TRLwe &out, TLwe &in, pubKsKey &ks) {
 }
 
 __int128 bitdecomp_coef128(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_prec) {
-    const UINT64 nlimbs = tmpDec.params->torus_limbs;
+    const UINT64 nlimbs = tmpDec.params.torus_limbs;
     if (2 * j <= nlimbs) {
-        return *(__int128 *) tmpDec.limbs + nlimbs - 2 * j;
+        return *(__int128 *) (tmpDec.limbs_end - 2 * j);
     } else if (2 * j == nlimbs + 1) {
-        return ((__int128) *tmpDec.limbs) << (__int128(64));
+        return ((__int128) *(tmpDec.limbs_end - nlimbs)) << (__int128(64));
     }
     return 0;
 }

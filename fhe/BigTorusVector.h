@@ -10,11 +10,13 @@ class BigTorusVector {
 public:
     const BigTorusParams &btp; // a ref to the parameters it was initialized with (only for destructor purposes)
     UINT64 const length;
-    UINT64 *const limbs;
+    UINT64 *const limbs_end;
 
     NO_COPY(BigTorusVector);
 
     BigTorusVector(UINT64 length, const BigTorusParams &params);
+
+    BigTorusVector(UINT64 length, BigTorusParams &&params) = delete; //cannot pass a temporary
 
     ~BigTorusVector();
 
@@ -27,18 +29,24 @@ public:
  */
 class BigTorusMatrix {
 public:
-    UINT64 *limbs;
+    UINT64 *limbs_end; //<end of first bigtorus limb pointer
     UINT64 rows;
     UINT64 cols;
-    const BigTorusParams *params;
+    const BigTorusParams &params;
 
-    BigTorusRef operator()(int i, int j) { return BigTorusRef(limbs + (i * cols + j) * params->torus_limbs, params); }
+    BigTorusRef operator()(int i, int j) {
+        return BigTorusRef(
+                limbs_end + (i * cols + j) * params.torus_limbs,
+                params);
+    }
 
     BigTorusRef operator()(int i, int j) const {
-        return BigTorusRef(limbs + (i * cols + j) * params->torus_limbs, params);
+        return BigTorusRef(
+                limbs_end + (i * cols + j) * params.torus_limbs,
+                params);
     };
 
-    BigTorusMatrix(UINT64 rows, UINT64 cols, const BigTorusParams *params);
+    BigTorusMatrix(UINT64 rows, UINT64 cols, const BigTorusParams &params);
 
     ~BigTorusMatrix();
 };

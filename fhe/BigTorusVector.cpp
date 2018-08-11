@@ -3,20 +3,20 @@
 BigTorusVector::BigTorusVector(UINT64 length, const BigTorusParams &params) :
         btp(params),
         length(length),
-        limbs(new UINT64[(length + 1) * params.torus_limbs * sizeof(UINT64)]) {
+        limbs_end((new UINT64[(length + 1) * params.torus_limbs]) + params.torus_limbs) {
 
 }
 
 BigTorusVector::~BigTorusVector() {
-    delete[] limbs;
+    delete[] (limbs_end - btp.torus_limbs);
 }
 
 BigTorusRef BigTorusVector::getAT(UINT64 i) {
-    return BigTorusRef(limbs + i * btp.torus_limbs, &btp);
+    return BigTorusRef(limbs_end + i * btp.torus_limbs, btp);
 }
 
 BigTorusRef BigTorusVector::getAT(UINT64 i) const {
-    return BigTorusRef(limbs + i * btp.torus_limbs, &btp);
+    return BigTorusRef(limbs_end + i * btp.torus_limbs, btp);
 }
 
 void zero(const BigTorusVector &v) {
@@ -34,7 +34,11 @@ void fixp_add(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVecto
     if (out_precision_bits == NA) out_precision_bits = reps.btp.torus_limbs * BITS_PER_LIMBS;
     fixp_prepareAdd(addParams, reps.btp, a.btp, b.btp, out_precision_bits);
     for (UINT64 i = 0; i < a.length; i++) {
-        fixp_raw_add(reps.limbs + i * nreps, a.limbs + i * na, b.limbs + i * nb, addParams);
+        fixp_raw_add(
+                reps.limbs_end - nreps + i * nreps,
+                a.limbs_end - na + i * na,
+                b.limbs_end - nb + i * nb,
+                addParams);
     }
     fixp_releaseAdd(addParams);
 }
@@ -48,7 +52,11 @@ void fixp_sub(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVecto
     if (out_precision_bits == NA) out_precision_bits = reps.btp.torus_limbs * BITS_PER_LIMBS;
     fixp_prepareAdd(addParams, reps.btp, a.btp, b.btp, out_precision_bits);
     for (UINT64 i = 0; i < a.length; i++) {
-        fixp_raw_sub(reps.limbs + i * nreps, a.limbs + i * na, b.limbs + i * nb, addParams);
+        fixp_raw_sub(
+                reps.limbs_end - nreps + i * nreps,
+                a.limbs_end - na + i * na,
+                b.limbs_end - nb + i * nb,
+                addParams);
     }
     fixp_releaseAdd(addParams);
 }
@@ -56,7 +64,7 @@ void fixp_sub(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVecto
 void subMul(BigTorusVector &out, __int128 a, const BigTorusVector &in, const UINT64 out_limb_prec) {
     assert_dramatically(in.length == out.length, "not the good size");
     for (UINT64 i = 0; i < in.length; i++) {
-        subMul(out.getAT(i), a, in.getAT(i), out_limb_prec);
+        subMulS128(out.getAT(i), a, in.getAT(i), out_limb_prec);
     }
 
 }
@@ -92,11 +100,11 @@ void add(BigTorusVector &out, const BigTorusVector &a, const BigTorusVector &b, 
 }
 
 
-BigTorusMatrix::BigTorusMatrix(UINT64 rows, UINT64 cols, const BigTorusParams *params) :
+BigTorusMatrix::BigTorusMatrix(UINT64 rows, UINT64 cols, const BigTorusParams &params) :
         rows(rows), cols(cols), params(params) {
-    this->limbs = new UINT64[rows * cols * params->torus_limbs];
+    this->limbs_end = new UINT64[rows * cols * params.torus_limbs] + params.torus_limbs;
 }
 
 BigTorusMatrix::~BigTorusMatrix() {
-    delete[] limbs;
+    delete[] (limbs_end - params.torus_limbs);
 }

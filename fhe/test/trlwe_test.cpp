@@ -22,8 +22,8 @@ TEST(TRLWE_TEST, trlwe_zero) {
             //check zero
             for (UINT64 i = 0; i < N; ++i) {
                 for (UINT64 j = 0; j < nblimbs; ++j) {
-                    ASSERT_EQ(c.a[0].getAT(i).limbs[j], 0u);
-                    ASSERT_EQ(c.a[1].getAT(i).limbs[j], 0u);
+                    ASSERT_EQ(c.a[0].getAT(i).limbs_end[-1 - j], 0u);
+                    ASSERT_EQ(c.a[1].getAT(i).limbs_end[-1 - j], 0u);
                 }
             }
         }
@@ -50,7 +50,7 @@ TEST(TRLWE_TEST, add_noise) {
             //check randomness of a
             std::set<UINT64> dist;
             for (UINT64 i = 0; i < N; i++) {
-                dist.insert(plaintext.getAT(i).limbs[nblimbs - 1]);
+                dist.insert(plaintext.getAT(i).limbs_end[-1]);
             }
             ASSERT_GE(dist.size(), 9 * N / 10);
 
@@ -90,7 +90,7 @@ TEST(TRLWE_TEST, trlwe_encrypt_decrypt_native) {
             //check randomness of a
             std::set<UINT64> dist;
             for (UINT64 i = 0; i < N; i++) {
-                dist.insert(c.a[0].getAT(i).limbs[nblimbs - 1]);
+                dist.insert(c.a[0].getAT(i).limbs_end[-1]);
             }
             ASSERT_GE(dist.size(), 9 * N / 10);
 

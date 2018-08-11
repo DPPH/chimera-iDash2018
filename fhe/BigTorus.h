@@ -33,18 +33,23 @@ static_assert(sizeof(BigTorusParams) == 24, "Bad compiler");
  */
 class BigTorus {
 public:
-    UINT64 *limbs; ///< limbs
-    const BigTorusParams *const params; ///< parameters
+    UINT64 *limbs_end;            ///< limbs end ptr
+    const BigTorusParams &params; ///< parameters
 
     /** constructs new BigTorus */
-    BigTorus(const BigTorusParams *params) :
+    BigTorus(const BigTorusParams &params) :
             params(params) {
-        limbs = new UINT64[params->torus_limbs];
+        UINT64 *limbs = new UINT64[params.torus_limbs];
+        limbs_end = limbs + params.torus_limbs;
+
     }
+
+    BigTorus(BigTorusParams &&params) = delete; //cannot pass a temporary
+
 
     /** deletes a bigtorus */
     ~BigTorus() {
-        delete[] limbs;
+        delete[] (limbs_end - params.torus_limbs);
     }
 
     BigTorus(const BigTorus &) = delete;
@@ -57,21 +62,23 @@ public:
  */
 class BigTorusRef {
 public:
-    UINT64 *limbs;
-    const BigTorusParams *const params;
+    UINT64 *const limbs_end;
+    const BigTorusParams &params;
 
-    BigTorusRef(UINT64 *limbs, const BigTorusParams *params);
+    BigTorusRef(UINT64 *limbs_end, const BigTorusParams &params);
 
     BigTorusRef(const BigTorus &torus);
 
     BigTorusRef(BigTorus &torus);
+
+    BigTorusRef(BigTorus &&torus) = delete; //cannot pass a temporary
 };
 
 /** multiply a bigTorus by an integer (modulo 1) */
-void bigTorusRawScale(UINT64 *limbs, int64_t coef, UINT64 nblimbs);
+void bigTorusRawScaleU64(UINT64 *limbs_end, int64_t coef, UINT64 nblimbs);
 
 /** multiply a bigTorus by an integer (modulo 1) */
-void bigTorusScale(const BigTorusRef &x, int64_t coef);
+void bigTorusScaleU64(const BigTorusRef &x, int64_t coef);
 
 /** copy the limb_precision most significant bits from x to dest */
 void copy(BigTorusRef dest, const BigTorusRef &x, UINT64 limb_precision = NA);
@@ -90,9 +97,6 @@ struct bigtorus_addsub_params {
     UINT64 bsize;
     UINT64 dsize;
     UINT64 limb_precision;
-    UINT64 aoffset;
-    UINT64 boffset;
-    UINT64 doffset;
 };
 
 /** prepare an addition or a subtraction (with the provided precision) */
@@ -112,10 +116,10 @@ void add(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, UINT64 li
 void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, UINT64 limb_precision = NA);
 
 /** @brief compute the bigtorus equal to out= out-a.in */
-void subMul(BigTorusRef out, __int128 a, const BigTorusRef &in, UINT64 out_limb_prec);
+void subMulS128(BigTorusRef out, __int128 a, const BigTorusRef &in, UINT64 out_limb_prec);
 
 /** @brief compute out = a * in */
-void mul64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 limb_prec);
+void mulS64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 limb_prec);
 
 void to_torus(BigTorusRef reps, const NTL::RR &a);
 

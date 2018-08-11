@@ -46,6 +46,7 @@ void fixp_releaseAdd(fixp_add_params &out) {
     delete[] out.tmp_b;
 }
 
+/** left shift a by bit_shift, and write out_limbs limbs */
 void fixp_special_add_lshift(UINT64 *out, UINT64 *a, int64_t out_limbs, int64_t a_limbs, int64_t bit_shift) {
     int64_t sbits = bit_shift % BITS_PER_LIMBS;
     int64_t slimbs = bit_shift / BITS_PER_LIMBS;
@@ -141,17 +142,25 @@ void fixp_raw_sub(UINT64 *reps, UINT64 *a, UINT64 *b, const fixp_add_params &par
 
 void fixp_add(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, UINT64 out_precision_bits) {
     fixp_add_params addParams;
-    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_limbs * BITS_PER_LIMBS;
-    fixp_prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
-    fixp_raw_add(reps.limbs, a.limbs, b.limbs, addParams);
+    if (out_precision_bits == NA) out_precision_bits = reps.params.torus_limbs * BITS_PER_LIMBS;
+    fixp_prepareAdd(addParams, reps.params, a.params, b.params, out_precision_bits);
+    fixp_raw_add(
+            reps.limbs_end - addParams.ic_limbs,
+            a.limbs_end - addParams.ia_limbs,
+            b.limbs_end - addParams.ib_limbs,
+            addParams);
     fixp_releaseAdd(addParams);
 }
 
 void fixp_sub(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, UINT64 out_precision_bits) {
     fixp_add_params addParams;
-    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_limbs * BITS_PER_LIMBS;
-    fixp_prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
-    fixp_raw_sub(reps.limbs, a.limbs, b.limbs, addParams);
+    if (out_precision_bits == NA) out_precision_bits = reps.params.torus_limbs * BITS_PER_LIMBS;
+    fixp_prepareAdd(addParams, reps.params, a.params, b.params, out_precision_bits);
+    fixp_raw_sub(
+            reps.limbs_end - addParams.ic_limbs,
+            a.limbs_end - addParams.ia_limbs,
+            b.limbs_end - addParams.ib_limbs,
+            addParams);
     fixp_releaseAdd(addParams);
 }
 

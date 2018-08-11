@@ -40,7 +40,7 @@ std::shared_ptr<TLweKey> tlwe_keygen(const TLweParams &params) {
 void zero(TLwe &tlwe) {
     const UINT64 Np = tlwe.params.N + 1;
     const UINT64 limbSize = tlwe.params.fixp_params.torus_limbs;
-    mpn_zero(tlwe.limbs, Np * limbSize);
+    mpn_zero(tlwe.limbs_end - limbSize, Np * limbSize);
 }
 
 void native_encrypt(TLwe &reps, const BigTorusRef &plaintext, const TLweKey &key, UINT64 alpha_bits) {
@@ -76,13 +76,13 @@ void native_phase(BigTorusRef reps, const TLwe &tlwe, const TLweKey &key, UINT64
 }
 
 void slot_encrypt(TLwe &reps, const NTL::RR &plaintext, const TLweKey &key, UINT64 alpha_bits) {
-    BigTorus tmp(&reps.params.fixp_params);
+    BigTorus tmp(reps.params.fixp_params);
     to_fixP(tmp, plaintext);
-    native_encrypt(reps, BigTorusRef(tmp.limbs, tmp.params), key, alpha_bits);
+    native_encrypt(reps, tmp, key, alpha_bits);
 }
 
 NTL::RR slot_decrypt(const TLwe &tlwe, const TLweKey &key, UINT64 alpha_bits) {
-    BigTorus tmp(&tlwe.params.fixp_params);
-    native_phase(BigTorusRef(tmp.limbs, tmp.params), tlwe, key, alpha_bits);
+    BigTorus tmp(tlwe.params.fixp_params);
+    native_phase(tmp, tlwe, key, alpha_bits);
     return fixp_to_RR(tmp);
 }
