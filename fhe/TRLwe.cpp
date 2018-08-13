@@ -127,6 +127,36 @@ void delete_TRLweMatrix(TRLwe **data, UINT64 rows, UINT64 cols, const TRLweParam
     free(r);
 }
 
+
+std::shared_ptr<pubKsKey>
+ks_keygen(const TRLweParams &out_params, const TLweParams &in_params, const TLweKey &in_key, const TLweKey &out_key,
+          const UINT64 alpha_bits) {
+
+    UINT64 ldec = (out_params.fixp_params.torus_limbs + 1) / 2;
+    pubKsKey *reps = new pubKsKey(in_params, out_params, ldec);
+    BigTorusPolynomial plaintext(out_params.N, out_params.fixp_params);
+
+    for (UINT64 i = 0; i < in_params.N; i++) {
+        for (UINT64 j = 1; j <= ldec; j++) {
+            zero(plaintext);
+            if (in_key.key[i] == 1) { plaintext.getAT(0).limbs_end[-2 * j] = 1; }
+            native_encrypt(reps->kskey[i][j], plaintext, out_key, alpha_bits);
+        }
+    }
+
+// sum Bg/2 Bg^-i
+    for (UINT64 i = 1; i <= ldec; i++) {
+        reps->bitDecomp_in_offset.limbs_end[-2 * i + 1] = 0x8000000000000000UL;
+        reps->bitDecomp_in_offset.limbs_end[-2 * i] = 0;
+    }
+
+    reps->bitDecomp_out_offset = __int128(1) << 127; // -Bg/2
+    return std::shared_ptr<pubKsKey>(reps);
+}
+
+
+
+
 pubKsKey::pubKsKey(const TLweParams &in_params, const TRLweParams &out_params, const UINT64 l_dec) :
         in_params(in_params),
         out_params(out_params),
