@@ -1,9 +1,8 @@
 #include "TRLwe.h"
 
-void pubKS(TRLwe &out, TLwe &in, pubKsKey &ks) {
+void pubKS(TRLwe &out, TLwe &in, pubKsKey &ks, const UINT64 out_prec_limbs) {
     //const TRLweParams& out_params = out.params;
     const TLweParams &in_params = in.params;
-    const int64_t out_prec_limbs = ks.out_prec_limbs;
     //const int64_t ks_prec_limbs = out_prec_limbs+2; //ks has 128-bit more precision
     const BigTorus &bitDecomp_in_offset = ks.bitDecomp_in_offset; // sum Bg/2 Bg^i
     __int128 bitDecomp_out_offset = ks.bitDecomp_out_offset; // -Bg/2
@@ -106,21 +105,37 @@ void zero(TRLwe &out) {
     zero(out.a[1]);
 }
 
+
 std::shared_ptr<pubKsKey>
 ks_keygen(const TRLweParams &out_params, const TLweParams &in_params, const TLweKey &in_key, const TLweKey &out_key,
           const UINT64 out_limb_prec) {
-    pubKsKey* reps= new pubKsKey();
+    pubKsKey *reps = new pubKsKey();
 
-    reps->kskey= native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLweKey &key, UINT64 alpha_bits);
+    reps->kskey = native_encrypt(TRLwe & reps,
+    const BigTorusPolynomial &plaintext,
+    const TLweKey &key, UINT64
+    alpha_bits);
 
-   reps->bitDecomp_in_offset= new BigTorus(params); // sum Bg/2 Bg^-i
+    reps->bitDecomp_in_offset = new BigTorus(params); // sum Bg/2 Bg^-i
 
-   reps->bitDecomp_out_offset= __int128 (1) << 127; // -Bg/2
-   reps->BgBits= 128;
-   reps->l_dec= ;
-   reps->out_prec_limbs= out_limb_prec;
-
+    reps->bitDecomp_out_offset = __int128(1) << 127; // -Bg/2
+    reps->BgBits = 128;
+    reps->l_dec =;
+    reps->out_prec_limbs = out_limb_prec;
 
 
     return std::shared_ptr<pubKsKey>();
+}
+
+pubKsKey::pubKsKey(const TLweParams &in_params, const TRLweParams &out_params, const UINT64 l_dec) :
+        in_params(in_params),
+        out_params(out_params),
+        l_dec(l_dec),
+        kskey(new_TRLweMatrix(in_params.N, l_dec, out_params)),
+        bitDecomp_in_offset(in_params.fixp_params),
+        bitDecomp_out_offset(0) {}
+
+pubKsKey::~pubKsKey() {
+    delete_TRLweMatrix(kskey, in_params.N, l_dec, out_params);
+
 }
