@@ -1,9 +1,8 @@
 #include "TRLwe.h"
 
-void pubKS(TRLwe &out, TLwe &in, pubKsKey &ks) {
+void pubKS(TRLwe &out, TLwe &in, pubKsKey &ks, const UINT64 out_prec_limbs) {
     //const TRLweParams& out_params = out.params;
     const TLweParams &in_params = in.params;
-    const int64_t out_prec_limbs = ks.out_prec_limbs;
     //const int64_t ks_prec_limbs = out_prec_limbs+2; //ks has 128-bit more precision
     const BigTorus &bitDecomp_in_offset = ks.bitDecomp_in_offset; // sum Bg/2 Bg^i
     __int128 bitDecomp_out_offset = ks.bitDecomp_out_offset; // -Bg/2
@@ -104,4 +103,16 @@ void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, 
 void zero(TRLwe &out) {
     zero(out.a[0]);
     zero(out.a[1]);
+}
+
+pubKsKey::pubKsKey(const TLweParams &in_params, const TRLweParams &out_params, const UINT64 l_dec) :
+        in_params(in_params),
+        out_params(out_params),
+        l_dec(l_dec),
+        kskey(new_TRLweMatrix(in_params.N, l_dec, out_params)),
+        bitDecomp_in_offset(in_params.fixp_params),
+        bitDecomp_out_offset(0) {}
+
+pubKsKey::~pubKsKey() {
+    delete_TRLweMatrix(kskey, in_params.N, l_dec, out_params);
 }
