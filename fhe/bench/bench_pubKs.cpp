@@ -12,7 +12,7 @@ static void RangesAll(benchmark::internal::Benchmark *b) {
     }
 }
 
-std::shared_ptr<pubKsKey>
+std::shared_ptr<pubKsKey128>
 ks_keygen_fake(const TRLweParams &out_params, const TLweParams &in_params,
                const TLweKey &in_key, const TLweKey &out_key,
                const UINT64 out_alpha_bits) {
@@ -39,7 +39,7 @@ ks_keygen_fake(const TRLweParams &out_params, const TLweParams &in_params,
     //the output nblimbs must be larger than limb_prec(out_alpha_bits)
     assert_dramatically(out_params.fixp_params.torus_limbs >= UINT64(limb_precision(out_alpha_bits)));
 
-    pubKsKey *reps = new pubKsKey(in_params, out_params, TRLweParams(ks_params), ldec);
+    pubKsKey128 *reps = new pubKsKey128(in_params, out_params, TRLweParams(ks_params), ldec);
 
     //plaintext must have the same precision as the keyswitch key
     BigTorusPolynomial plaintext(ks_params.N, ks_params.fixp_params);
@@ -61,7 +61,7 @@ ks_keygen_fake(const TRLweParams &out_params, const TLweParams &in_params,
     }
 
     reps->bitDecomp_out_offset = (__int128(1) << __int128(127)); // -Bg/2
-    return std::shared_ptr<pubKsKey>(reps);
+    return std::shared_ptr<pubKsKey128>(reps);
 }
 
 class pubKs_Bench : public benchmark::Fixture {
@@ -73,7 +73,7 @@ public:
     unique_ptr<TRLweParams> trlwe_params_out;
     shared_ptr<TLweKey> key_in;
     shared_ptr<TLweKey> key_out;
-    shared_ptr<pubKsKey> ks_key;
+    shared_ptr<pubKsKey128> ks_key;
     int64_t limb_prec;
     unique_ptr<TLwe> ciphertext;
     unique_ptr<TRLwe> res;
@@ -123,14 +123,14 @@ public:
 };
 
 
-BENCHMARK_DEFINE_F(pubKs_Bench, pubKS)(benchmark::State &state) {
+BENCHMARK_DEFINE_F(pubKs_Bench, pubKS128)(benchmark::State &state) {
     for (auto _ : state) {
-        pubKS(*res, *ciphertext, *ks_key, limb_prec);
+        pubKS128(*res, *ciphertext, *ks_key, limb_prec);
     }
 }
 
 
-BENCHMARK_REGISTER_F(pubKs_Bench, pubKS)
+BENCHMARK_REGISTER_F(pubKs_Bench, pubKS128)
 
         ->Apply(RangesAll)
         ->Unit(benchmark::kMicrosecond);

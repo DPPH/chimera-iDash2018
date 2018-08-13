@@ -1,7 +1,7 @@
 #include "TRLwe.h"
 
 // see if this out_prec_limbs still make sense?
-void pubKS(TRLwe &out, const TLwe &in, const pubKsKey &ks, const UINT64 out_prec_limbs) {
+void pubKS128(TRLwe &out, const TLwe &in, const pubKsKey128 &ks, const UINT64 out_prec_limbs) {
     //const TRLweParams& out_params = out.params;
     const TLweParams &in_params = in.params;
     //const int64_t ks_prec_limbs = out_prec_limbs+2; //ks has 128-bit more precision
@@ -18,7 +18,7 @@ void pubKS(TRLwe &out, const TLwe &in, const pubKsKey &ks, const UINT64 out_prec
             // coef aij of the decomposition
             __int128 aij = bitdecomp_coef128(tmpDec, j, out_prec_limbs) + bitDecomp_out_offset;
             // out = out - aij . ks_ij
-            subMul(out, aij, ks.kskey[i][j - 1], out_prec_limbs);
+            subMul128(out, aij, ks.kskey[i][j - 1], out_prec_limbs);
         }
     }
 }
@@ -39,7 +39,7 @@ void trivial(TRLwe &out, const BigTorusRef &in, const UINT64 out_limb_prec) {
     const_poly(out.a[1], in, out_limb_prec);
 }
 
-void subMul(TRLwe &out, __int128 aij, const TRLwe &in, const UINT64 out_limb_prec) {
+void subMul128(TRLwe &out, __int128 aij, const TRLwe &in, const UINT64 out_limb_prec) {
     subMul(out.a[0], aij, in.a[0], out_limb_prec);
     subMul(out.a[1], aij, in.a[1], out_limb_prec);
 }
@@ -130,10 +130,10 @@ void delete_TRLweMatrix(TRLwe **data, UINT64 rows, UINT64 cols, const TRLweParam
 }
 
 
-std::shared_ptr<pubKsKey>
-ks_keygen(const TRLweParams &out_params, const TLweParams &in_params,
-          const TLweKey &in_key, const TLweKey &out_key,
-          const UINT64 out_alpha_bits) {
+std::shared_ptr<pubKsKey128>
+ks_keygen128(const TRLweParams &out_params, const TLweParams &in_params,
+             const TLweKey &in_key, const TLweKey &out_key,
+             const UINT64 out_alpha_bits) {
     //automatic parameter deduction
     const double out_variance_bits = out_alpha_bits * 2;
     const double in_variance_bits = out_variance_bits + 1;     // 1/2 from the input noise
@@ -157,7 +157,7 @@ ks_keygen(const TRLweParams &out_params, const TLweParams &in_params,
     //the output nblimbs must be larger than limb_prec(out_alpha_bits)
     assert_dramatically(out_params.fixp_params.torus_limbs >= UINT64(limb_precision(out_alpha_bits)));
 
-    pubKsKey *reps = new pubKsKey(in_params, out_params, TRLweParams(ks_params), ldec);
+    pubKsKey128 *reps = new pubKsKey128(in_params, out_params, TRLweParams(ks_params), ldec);
 
     //plaintext must have the same precision as the keyswitch key
     BigTorusPolynomial plaintext(ks_params.N, ks_params.fixp_params);
@@ -177,11 +177,11 @@ ks_keygen(const TRLweParams &out_params, const TLweParams &in_params,
     }
 
     reps->bitDecomp_out_offset = (__int128(1) << __int128(127)); // -Bg/2
-    return std::shared_ptr<pubKsKey>(reps);
+    return std::shared_ptr<pubKsKey128>(reps);
 }
 
 
-pubKsKey::pubKsKey(
+pubKsKey128::pubKsKey128(
         const TLweParams &in_params,
         const TRLweParams &out_params,
         TRLweParams &&ks_params,
@@ -194,6 +194,6 @@ pubKsKey::pubKsKey(
         bitDecomp_in_offset(in_params.fixp_params),
         bitDecomp_out_offset(0) {}
 
-pubKsKey::~pubKsKey() {
+pubKsKey128::~pubKsKey128() {
     delete_TRLweMatrix(kskey, in_params.N, l_dec, out_params);
 }

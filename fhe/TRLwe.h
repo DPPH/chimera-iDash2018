@@ -29,7 +29,7 @@ TRLwe **new_TRLweMatrix(UINT64 rows, UINT64 cols, const TRLweParams &params);
 void delete_TRLweMatrix(TRLwe **data, UINT64 rows, UINT64 cols, const TRLweParams &params);
 
 
-struct pubKsKey {
+struct pubKsKey128 {
     static const UINT64 BgBits = 128;
     const TLweParams &in_params;
     const TRLweParams &out_params;
@@ -46,9 +46,32 @@ struct pubKsKey {
      * @param out_params
      * @param l_dec decomposition length in base 2^128
      */
-    pubKsKey(const TLweParams &in_params, const TRLweParams &out_params, TRLweParams &&ks_params, const UINT64 l_dec);
+    pubKsKey128(const TLweParams &in_params, const TRLweParams &out_params, TRLweParams &&ks_params,
+                const UINT64 l_dec);
 
-    ~pubKsKey();
+    ~pubKsKey128();
+};
+
+struct pubKsKey32 {
+    static const UINT64 BgBits = 32;
+    const TLweParams &in_params;
+    const TRLweParams &out_params;
+    const TRLweParams ks_params;
+    const UINT64 l_dec;
+
+    TRLwe **const kskey;
+    BigTorus bitDecomp_in_offset; // sum Bg/2 Bg^i
+    int64_t bitDecomp_out_offset; // -Bg/2
+
+    /**
+     * constructs a pubKsKey structure, ksKey and offsets are not initialized
+     * @param in_params
+     * @param out_params
+     * @param l_dec decomposition length in base 2^128
+     */
+    pubKsKey32(const TLweParams &in_params, const TRLweParams &out_params, TRLweParams &&ks_params, const UINT64 l_dec);
+
+    ~pubKsKey32();
 };
 
 
@@ -56,13 +79,24 @@ struct pubKsKey {
  * @brief generation of PublicKeySwitch key
  * @param out_alpha_bits alpha of the output of the keyswitch (expect the output to be 128-bit more noisy)
  */
-std::shared_ptr<pubKsKey>
-ks_keygen(const TRLweParams &out_params, const TLweParams &in_params,
-          const TLweKey &in_key, const TLweKey &out_key,
-          const UINT64 out_alpha_bits);
+std::shared_ptr<pubKsKey128>
+ks_keygen128(const TRLweParams &out_params, const TLweParams &in_params,
+             const TLweKey &in_key, const TLweKey &out_key,
+             const UINT64 out_alpha_bits);
+
+/**
+ * @brief generation of PublicKeySwitch key
+ * @param out_alpha_bits alpha of the output of the keyswitch (expect the output to be 128-bit more noisy)
+ */
+std::shared_ptr<pubKsKey128>
+ks_keygen32(const TRLweParams &out_params, const TLweParams &in_params,
+            const TLweKey &in_key, const TLweKey &out_key,
+            const UINT64 out_alpha_bits);
 
 
-void pubKS(TRLwe &out, const TLwe &in, const pubKsKey &ks, const UINT64 out_prec_limbs);
+void pubKS128(TRLwe &out, const TLwe &in, const pubKsKey128 &ks, const UINT64 out_prec_limbs);
+
+void pubKS32(TRLwe &out, const TLwe &in, const pubKsKey128 &ks, const UINT64 out_prec_limbs);
 
 
 /**
@@ -74,10 +108,18 @@ void trivial(TRLwe &out, const BigTorusRef &in, const UINT64 out_limb_prec);
  * the output can be signed, we don't care */
 __int128 bitdecomp_coef128(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_prec);
 
+/** @brief get the j-th coef of the base 2^128 decomposition between [0 and 2^128[
+ * the output can be signed, we don't care */
+int64_t bitdecomp_coef32(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_prec);
+
 
 /** @brief out = out - aij * in
  *  WARNING: input limb precision = out_limb_prec + 2 */
-void subMul(TRLwe &out, __int128 aij, const TRLwe &in, const UINT64 out_limb_prec);
+void subMul128(TRLwe &out, __int128 aij, const TRLwe &in, const UINT64 out_limb_prec);
+
+/** @brief out = out - aij * in
+ *  WARNING: input limb precision = out_limb_prec + 2 */
+void subMul64(TRLwe &out, int64_t aij, const TRLwe &in, const UINT64 out_limb_prec);
 
 void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLweKey &key, UINT64 alpha_bits);
 

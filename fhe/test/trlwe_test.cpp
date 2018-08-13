@@ -114,7 +114,7 @@ TEST(TRLWE_TEST, pubKSKeyGen) {
 
 }
 
-TEST(TRLWE_TEST, pubKS) {
+TEST(TRLWE_TEST, pubKS128) {
     int64_t N_in = 512;
     int64_t N_out = 512;
     int64_t nblimbs_in = 5;
@@ -131,7 +131,7 @@ TEST(TRLWE_TEST, pubKS) {
     shared_ptr<TLweKey> key_out = tlwe_keygen(trlwe_params_out);
 
     cout << "keygen at: " << clock() / double(CLOCKS_PER_SEC) << endl;
-    shared_ptr<pubKsKey> ks_key = ks_keygen(
+    shared_ptr<pubKsKey128> ks_key = ks_keygen128(
             trlwe_params_out, tlwe_params_in,
             *key_in, *key_out, alpha_bits);
     cout << "end keygen at: " << clock() / double(CLOCKS_PER_SEC) << endl;
@@ -147,7 +147,7 @@ TEST(TRLWE_TEST, pubKS) {
     //keyswitch it
     TRLwe res(trlwe_params_out);
     cout << "pubks at: " << clock() / double(CLOCKS_PER_SEC) << endl;
-    pubKS(res, ciphertext, *ks_key, limb_prec);
+    pubKS128(res, ciphertext, *ks_key, limb_prec);
     cout << "end pubks at: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
     // the target is a constant BTPoly of the plaintext
