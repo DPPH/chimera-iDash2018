@@ -23,6 +23,33 @@ void pubKS128(TRLwe &out, const TLwe &in, const pubKsKey128 &ks, const UINT64 ou
     }
 }
 
+// see if this out_prec_limbs still make sense?
+void pubKS32(TRLwe &out, const TLwe &in, const pubKsKey32 &ks, const UINT64 out_prec_limbs) {
+    //const TRLweParams& out_params = out.params;
+    const TLweParams &in_params = in.params;
+    //const int64_t ks_prec_limbs = out_prec_limbs+2; //ks has 128-bit more precision
+    const BigTorus &bitDecomp_in_offset = ks.bitDecomp_in_offset; // sum Bg/2 Bg^i
+    int64_t bitDecomp_out_offset = ks.bitDecomp_out_offset; // -Bg/2
+
+    BigTorus tmpDec(in_params.fixp_params); //temp variable
+
+    // out = trivial(b)
+    trivial(out, in.getBT(), out_prec_limbs);
+    for (UINT64 i = 0; i < in_params.N; i++) {
+        add(tmpDec, in.getAT(i), bitDecomp_in_offset);
+        for (UINT64 j = 1; j <= ks.l_dec; ++j) {
+            // coef aij of the decomposition
+            int64_t aij = bitdecomp_coef32(tmpDec, j, out_prec_limbs) + bitDecomp_out_offset;
+            // out = out - aij . ks_ij
+            subMul64(out, aij, ks.kskey[i][j - 1], out_prec_limbs);
+        }
+    }
+}
+
+
+
+
+
 __int128 bitdecomp_coef128(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_prec) {
     const UINT64 nlimbs = tmpDec.params.torus_limbs;
     if (2 * j <= nlimbs) {
@@ -34,14 +61,30 @@ __int128 bitdecomp_coef128(const BigTorusRef &tmpDec, UINT64 j, const UINT64 lim
     return 0;
 }
 
+
+int64_t bitdecomp_coef32(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_prec) {
+    const UINT64 nlimbs = tmpDec.params.torus_limbs;
+    if (j <= 2 * nlimbs) {
+        if (j % 2 == 0) { return int64_t(tmpDec.limbs_end[-j / 2] & 0xFFFFFFFFUL); }
+        else { return int64_t(tmpDec.limbs_end[-(j + 1) / 2] >> 32UL); }
+    } else return 0;
+}
+
+
+
 void trivial(TRLwe &out, const BigTorusRef &in, const UINT64 out_limb_prec) {
     zero(out.a[0]);
     const_poly(out.a[1], in, out_limb_prec);
 }
 
 void subMul128(TRLwe &out, __int128 aij, const TRLwe &in, const UINT64 out_limb_prec) {
-    subMul(out.a[0], aij, in.a[0], out_limb_prec);
-    subMul(out.a[1], aij, in.a[1], out_limb_prec);
+    subMul128(out.a[0], aij, in.a[0], out_limb_prec);
+    subMul128(out.a[1], aij, in.a[1], out_limb_prec);
+}
+
+void subMul64(TRLwe &out, int64_t aij, const TRLwe &in, const UINT64 out_limb_prec) {
+    subMul64(out.a[0], aij, in.a[0], out_limb_prec);
+    subMul64(out.a[1], aij, in.a[1], out_limb_prec);
 }
 
 TRLweParams::TRLweParams(const UINT64 N, const BigTorusParams &fixp_params) :
