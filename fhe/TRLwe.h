@@ -88,7 +88,7 @@ ks_keygen128(const TRLweParams &out_params, const TLweParams &in_params,
  * @brief generation of PublicKeySwitch key
  * @param out_alpha_bits alpha of the output of the keyswitch (expect the output to be 128-bit more noisy)
  */
-std::shared_ptr<pubKsKey128>
+std::shared_ptr<pubKsKey32>
 ks_keygen32(const TRLweParams &out_params, const TLweParams &in_params,
             const TLweKey &in_key, const TLweKey &out_key,
             const UINT64 out_alpha_bits);
