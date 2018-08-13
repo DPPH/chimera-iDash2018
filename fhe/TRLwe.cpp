@@ -105,6 +105,28 @@ void zero(TRLwe &out) {
     zero(out.a[1]);
 }
 
+TRLwe **new_TRLweMatrix(UINT64 rows, UINT64 cols, const TRLweParams &params) {
+    uint8_t *r = (uint8_t *) malloc(rows * sizeof(TRLwe *) + rows * cols * sizeof(TRLwe));
+    TRLwe **reps = (TRLwe **) r;
+    TRLwe *reps_raw = (TRLwe *) (r + rows * sizeof(TRLwe *));
+    for (UINT64 i = 0; i < rows * cols; i++) {
+        new(reps_raw + i) TRLwe(params);
+    }
+    for (UINT64 j = 0; j < rows; j++) {
+        reps[j] = reps_raw + cols * j;
+    }
+    return reps;
+}
+
+void delete_TRLweMatrix(TRLwe **data, UINT64 rows, UINT64 cols, const TRLweParams &params) {
+    uint8_t *r = (uint8_t *) data;
+    TRLwe *reps_raw = (TRLwe *) (r + rows * sizeof(TRLwe *));
+    for (UINT64 i = 0; i < rows * cols; i++) {
+        (reps_raw + i)->~TRLwe();
+    }
+    free(r);
+}
+
 pubKsKey::pubKsKey(const TLweParams &in_params, const TRLweParams &out_params, const UINT64 l_dec) :
         in_params(in_params),
         out_params(out_params),

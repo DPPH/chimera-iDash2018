@@ -22,8 +22,10 @@ public:
     ~TRLwe();
 };
 
+/** @brief allocates a matrix of TRLWE */
 TRLwe **new_TRLweMatrix(UINT64 rows, UINT64 cols, const TRLweParams &params);
 
+/** @brief frees a matrix of TRLWE allocated with new_TRLWEMatrix */
 void delete_TRLweMatrix(TRLwe **data, UINT64 rows, UINT64 cols, const TRLweParams &params);
 
 
