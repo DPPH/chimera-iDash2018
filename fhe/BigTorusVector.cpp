@@ -66,9 +66,14 @@ void subMul128(BigTorusVector &out, __int128 a, const BigTorusVector &in, const 
     for (UINT64 i = 0; i < in.length; i++) {
         subMulS128(out.getAT(i), a, in.getAT(i), out_limb_prec);
     }
-
 }
 
+void subMul64(BigTorusVector &out, int64_t a, const BigTorusVector &in, const UINT64 out_limb_prec) {
+    assert_dramatically(in.length == out.length, "not the good size");
+    for (UINT64 i = 0; i < in.length; i++) {
+        subMulS64(out.getAT(i), a, in.getAT(i), out_limb_prec);
+    }
+}
 void copy(BigTorusVector &out, const BigTorusVector &in, UINT64 out_limbs_prec) {
     for (UINT64 i = 0; i < out.length; i++) {
         copy(out.getAT(i), in.getAT(i), out_limbs_prec);

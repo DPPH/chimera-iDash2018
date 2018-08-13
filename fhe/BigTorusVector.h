@@ -60,6 +60,11 @@ void fixp_sub(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVecto
 /** @brief compute a vector equal to out= oui-a.in */
 void subMul128(BigTorusVector &out, __int128 a, const BigTorusVector &in, const UINT64 out_limb_prec);
 
+
+/** @brief compute a vector equal to out= oui-a.in */
+void subMul64(BigTorusVector &out, int64_t a, const BigTorusVector &in, const UINT64 out_limb_prec);
+
+
 /** @brief copy "in" in "out" */
 void copy(BigTorusVector &out, const BigTorusVector &in, UINT64 out_limbs_prec);
 
