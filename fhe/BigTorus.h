@@ -118,6 +118,9 @@ void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, UINT64 li
 /** @brief compute the bigtorus equal to out= out-a.in */
 void subMulS128(BigTorusRef out, __int128 a, const BigTorusRef &in, UINT64 out_limb_prec);
 
+/** @brief compute the bigtorus equal to out= out-a.in */
+void subMulS64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 out_limb_prec);
+
 /** @brief compute out = a * in */
 void mulS64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 limb_prec);
 

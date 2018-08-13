@@ -139,6 +139,31 @@ void subMulS128(BigTorusRef out, __int128 a, const BigTorusRef &in, UINT64 out_l
     delete[] tmp;
 }
 
+void subMulS64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 out_limb_prec) {
+    if (out_limb_prec == NA) {
+        out_limb_prec = out.params.torus_limbs;
+    } else {
+        assert_dramatically(out_limb_prec <= out.params.torus_limbs, "requested output precision too high");
+    }
+    assert_dramatically(out_limb_prec >= 1, "precision too low");
+    const UINT64 in_limb_prec = out_limb_prec + 1; //input is 64-bit more precise
+    assert_dramatically(in_limb_prec <= in.params.torus_limbs, "requested input precision too high");
+
+    UINT64 *out_ptr = out.limbs_end - out_limb_prec;
+    UINT64 *in_ptr = in.limbs_end - in_limb_prec;
+    UINT64 *tmp = new UINT64[in_limb_prec];
+    if (a >= 0) {
+        mpn_mul_1(tmp, in_ptr, in_limb_prec, a);
+        mpn_sub_n(out_ptr, out_ptr, tmp + 1, out_limb_prec);
+    } else {
+        a = -a;
+        mpn_mul_1(tmp, in_ptr, in_limb_prec, a);
+        mpn_add_n(out_ptr, out_ptr, tmp + 1, out_limb_prec);
+    }
+}
+
+
+
 void mulS64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 limb_prec) {
     if (limb_prec == NA) {
         limb_prec = out.params.torus_limbs;
