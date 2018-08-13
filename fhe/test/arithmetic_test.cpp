@@ -149,6 +149,64 @@ TEST(BIGTORUS_ARITHMETIC, submul128) {
     }
 }
 
+TEST(BIGTORUS_ARITHMETIC, submul64) {
+    for (int64_t limb_prec:  {1, 3, 5, 7}) {
+        for (int64_t out_nblimbs: {limb_prec, limb_prec + 1, limb_prec + 3}) {
+            for (int64_t in_nblimbs: {limb_prec + 1, limb_prec + 2, limb_prec + 3}) {
+                for (bool positive: {true, false}) {
+
+
+                    BigTorusParams in_params(in_nblimbs);
+                    BigTorusParams out_params(out_nblimbs);
+
+                    BigTorus a(in_params);
+                    RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
+                    RR aa = (random_RR() - 0.5);
+                    to_torus(a, aa);
+
+                    RR::SetOutputPrecision(100);
+
+                    //cout << endl;
+                    //cout << "aa: " << aa << endl;
+
+                    BigTorus out(out_params);
+                    RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
+                    RR oout = (random_RR() - 0.5);
+                    to_torus(out, oout);
+
+                    //cout << "oout: " << oout << endl;
+
+
+                    //test positive first
+                    ZZ coef_zz = RandomBits_ZZ(32);
+                    int64_t coef = to_long(coef_zz);
+                    if (!positive) {
+                        coef = -coef;
+                        coef_zz = -coef_zz;
+                    }
+
+                    //cout << "coef_zz: " << coef_zz << endl;
+
+                    subMulS64(out, coef, a, limb_prec);
+
+                    //test that out = oldout - a * coef modulo 1
+                    RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
+                    RR target = centerMod1(oout - to_RR(coef_zz) * aa);
+                    RR actual = to_RR(out);
+
+                    //cout << "actual: " << actual << endl;
+                    //cout << "target: " << target << endl;
+
+                    RR distance = centerMod1(target - actual);
+                    //cout << "distance: " << distance << endl;
+
+                    ASSERT_LE(log2DiffMod1(target, actual), -limb_prec * BITS_PER_LIMBS + 1 + 32);
+                }
+            }
+        }
+    }
+}
+
 TEST(BIGTORUS_ARITHMETIC, mulS64) {
     for (int64_t limb_prec:  {1, 3, 5, 7}) {
         for (int64_t out_nblimbs: {limb_prec, limb_prec + 1, limb_prec + 3}) {

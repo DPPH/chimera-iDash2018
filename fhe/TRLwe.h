@@ -96,7 +96,7 @@ ks_keygen32(const TRLweParams &out_params, const TLweParams &in_params,
 
 void pubKS128(TRLwe &out, const TLwe &in, const pubKsKey128 &ks, const UINT64 out_prec_limbs);
 
-void pubKS32(TRLwe &out, const TLwe &in, const pubKsKey128 &ks, const UINT64 out_prec_limbs);
+void pubKS32(TRLwe &out, const TLwe &in, const pubKsKey32 &ks, const UINT64 out_prec_limbs);
 
 
 /**

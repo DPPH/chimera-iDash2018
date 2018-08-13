@@ -163,3 +163,53 @@ TEST(TRLWE_TEST, pubKS128) {
         ASSERT_LE(log2Diff(to_RR(phase.getAT(i)), to_RR(0)), -int64_t(alpha_bits) + 3);
     }
 }
+
+TEST(TRLWE_TEST, pubKS32) {
+    int64_t N_in = 32;
+    int64_t N_out = 64;
+    int64_t nblimbs_in = 3;
+    int64_t nblimbs_out = 4;
+    int64_t alpha_bits = 80;
+    int64_t limb_prec = limb_precision(alpha_bits);
+
+    BigTorusParams bt_params_in(nblimbs_in);
+    BigTorusParams bt_params_out(nblimbs_out);
+    TLweParams tlwe_params_in(N_in, bt_params_in);
+    TRLweParams trlwe_params_out(N_out, bt_params_out);
+
+    shared_ptr<TLweKey> key_in = tlwe_keygen(tlwe_params_in);
+    shared_ptr<TLweKey> key_out = tlwe_keygen(trlwe_params_out);
+
+    cout << "keygen at: " << clock() / double(CLOCKS_PER_SEC) << endl;
+    shared_ptr<pubKsKey32> ks_key = ks_keygen32(
+            trlwe_params_out, tlwe_params_in,
+            *key_in, *key_out, alpha_bits);
+    cout << "end keygen at: " << clock() / double(CLOCKS_PER_SEC) << endl;
+
+    // take a random plaintext
+    BigTorus plaintext(bt_params_in);
+    random(plaintext);
+
+    // encrypt it
+    TLwe ciphertext(tlwe_params_in);
+    native_encrypt(ciphertext, plaintext, *key_in);
+
+    //keyswitch it
+    TRLwe res(trlwe_params_out);
+    cout << "pubks at: " << clock() / double(CLOCKS_PER_SEC) << endl;
+    pubKS32(res, ciphertext, *ks_key, limb_prec);
+    cout << "end pubks at: " << clock() / double(CLOCKS_PER_SEC) << endl;
+
+    // the target is a constant BTPoly of the plaintext
+    BigTorusPolynomial phase(N_out, bt_params_out);
+    native_phase(phase, res, *key_out, limb_prec * BITS_PER_LIMBS);
+
+    //constant term
+    RR::SetPrecision(limb_prec * BITS_PER_LIMBS);
+    ASSERT_LE(log2Diff(to_RR(phase.getAT(0)), to_RR(plaintext)), -int64_t(alpha_bits) + 2);
+    //other terms
+    for (UINT64 i = 1; i < trlwe_params_out.N; i++) {
+        RR::SetPrecision(limb_prec * BITS_PER_LIMBS);
+        ASSERT_LE(log2Diff(to_RR(phase.getAT(i)), to_RR(0)), -int64_t(alpha_bits) + 3);
+    }
+}

@@ -146,7 +146,7 @@ void subMulS64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 out_lim
         assert_dramatically(out_limb_prec <= out.params.torus_limbs, "requested output precision too high");
     }
     assert_dramatically(out_limb_prec >= 1, "precision too low");
-    const UINT64 in_limb_prec = out_limb_prec + 1; //input is 64-bit more precise
+    const UINT64 in_limb_prec = out_limb_prec + 0; //input is up to 64-bit more precise
     assert_dramatically(in_limb_prec <= in.params.torus_limbs, "requested input precision too high");
 
     UINT64 *out_ptr = out.limbs_end - out_limb_prec;
@@ -154,11 +154,11 @@ void subMulS64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 out_lim
     UINT64 *tmp = new UINT64[in_limb_prec];
     if (a >= 0) {
         mpn_mul_1(tmp, in_ptr, in_limb_prec, a);
-        mpn_sub_n(out_ptr, out_ptr, tmp + 1, out_limb_prec);
+        mpn_sub_n(out_ptr, out_ptr, tmp, out_limb_prec);
     } else {
         a = -a;
         mpn_mul_1(tmp, in_ptr, in_limb_prec, a);
-        mpn_add_n(out_ptr, out_ptr, tmp + 1, out_limb_prec);
+        mpn_add_n(out_ptr, out_ptr, tmp, out_limb_prec);
     }
 }
 
