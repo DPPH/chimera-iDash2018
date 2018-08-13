@@ -129,10 +129,19 @@ void delete_TRLweMatrix(TRLwe **data, UINT64 rows, UINT64 cols, const TRLweParam
 
 
 std::shared_ptr<pubKsKey>
-ks_keygen(const TRLweParams &out_params, const TLweParams &in_params, const TLweKey &in_key, const TLweKey &out_key,
+ks_keygen(const TRLweParams &out_params, const TLweParams &in_params,
+          const TLweKey &in_key, const TLweKey &out_key,
           const UINT64 alpha_bits) {
+    const UINT64 nblimbs_in = UINT64(limb_precision(alpha_bits));
+    const UINT64 nblimbs_out = (nblimbs_in + 1) & UINT64_C(-2); //smallest even number >= nblimbs_in
+    UINT64 ldec = nblimbs_out / 2;
+    //verify that the out params are large enough for the requested noise
+    assert_dramatically(out_params.fixp_params.torus_limbs >= nblimbs_out,
+                        "the output limb precision is too small for the requested noise");
+    //veriy that the in params are large enough for the input decomposition
+    assert_dramatically(in_params.fixp_params.torus_limbs >= nblimbs_in,
+                        "the output limb precision is too small for the requested noise");
 
-    UINT64 ldec = (out_params.fixp_params.torus_limbs + 1) / 2;
     pubKsKey *reps = new pubKsKey(in_params, out_params, ldec);
     BigTorusPolynomial plaintext(out_params.N, out_params.fixp_params);
 
@@ -144,17 +153,15 @@ ks_keygen(const TRLweParams &out_params, const TLweParams &in_params, const TLwe
         }
     }
 
-// sum Bg/2 Bg^-i
+    // sum Bg/2 Bg^-i
     for (UINT64 i = 1; i <= ldec; i++) {
         reps->bitDecomp_in_offset.limbs_end[-2 * i + 1] = 0x8000000000000000UL;
         reps->bitDecomp_in_offset.limbs_end[-2 * i] = 0;
     }
 
-    reps->bitDecomp_out_offset = __int128(1) << 127; // -Bg/2
+    reps->bitDecomp_out_offset = (__int128(1) << __int128(127)); // -Bg/2
     return std::shared_ptr<pubKsKey>(reps);
 }
-
-
 
 
 pubKsKey::pubKsKey(const TLweParams &in_params, const TRLweParams &out_params, const UINT64 l_dec) :
