@@ -33,6 +33,7 @@ struct pubKsKey {
     static const UINT64 BgBits = 128;
     const TLweParams &in_params;
     const TRLweParams &out_params;
+    const TRLweParams ks_params;
     const UINT64 l_dec;
 
     TRLwe **const kskey;
@@ -45,7 +46,7 @@ struct pubKsKey {
      * @param out_params
      * @param l_dec decomposition length in base 2^128
      */
-    pubKsKey(const TLweParams &in_params, const TRLweParams &out_params, const UINT64 l_dec);
+    pubKsKey(const TLweParams &in_params, const TRLweParams &out_params, TRLweParams &&ks_params, const UINT64 l_dec);
 
     ~pubKsKey();
 };
@@ -53,14 +54,15 @@ struct pubKsKey {
 
 /**
  * @brief generation of PublicKeySwitch key
+ * @param out_alpha_bits alpha of the output of the keyswitch (expect the output to be 128-bit more noisy)
  */
 std::shared_ptr<pubKsKey>
 ks_keygen(const TRLweParams &out_params, const TLweParams &in_params,
           const TLweKey &in_key, const TLweKey &out_key,
-          const UINT64 alpha_bits);
+          const UINT64 out_alpha_bits);
 
 
-void pubKS(TRLwe &out, TLwe &in, pubKsKey &ks, const UINT64 out_prec_limbs);
+void pubKS(TRLwe &out, const TLwe &in, const pubKsKey &ks, const UINT64 out_prec_limbs);
 
 
 /**

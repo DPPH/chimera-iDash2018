@@ -1,6 +1,7 @@
 #include "TRLwe.h"
 
-void pubKS(TRLwe &out, TLwe &in, pubKsKey &ks, const UINT64 out_prec_limbs) {
+// see if this out_prec_limbs still make sense?
+void pubKS(TRLwe &out, const TLwe &in, const pubKsKey &ks, const UINT64 out_prec_limbs) {
     //const TRLweParams& out_params = out.params;
     const TLweParams &in_params = in.params;
     //const int64_t ks_prec_limbs = out_prec_limbs+2; //ks has 128-bit more precision
@@ -17,7 +18,7 @@ void pubKS(TRLwe &out, TLwe &in, pubKsKey &ks, const UINT64 out_prec_limbs) {
             // coef aij of the decomposition
             __int128 aij = bitdecomp_coef128(tmpDec, j, out_prec_limbs) + bitDecomp_out_offset;
             // out = out - aij . ks_ij
-            subMul(out, aij, ks.kskey[i][j], out_prec_limbs);
+            subMul(out, aij, ks.kskey[i][j - 1], out_prec_limbs);
         }
     }
 }
@@ -29,6 +30,7 @@ __int128 bitdecomp_coef128(const BigTorusRef &tmpDec, UINT64 j, const UINT64 lim
     } else if (2 * j == nlimbs + 1) {
         return ((__int128) *(tmpDec.limbs_end - nlimbs)) << (__int128(64));
     }
+    //fill with zero beyond limb_prec
     return 0;
 }
 
@@ -131,32 +133,47 @@ void delete_TRLweMatrix(TRLwe **data, UINT64 rows, UINT64 cols, const TRLweParam
 std::shared_ptr<pubKsKey>
 ks_keygen(const TRLweParams &out_params, const TLweParams &in_params,
           const TLweKey &in_key, const TLweKey &out_key,
-          const UINT64 alpha_bits) {
-    const UINT64 nblimbs_in = UINT64(limb_precision(alpha_bits));
-    const UINT64 nblimbs_out = (nblimbs_in + 1) & UINT64_C(-2); //smallest even number >= nblimbs_in
-    UINT64 ldec = nblimbs_out / 2;
-    //verify that the out params are large enough for the requested noise
-    assert_dramatically(out_params.fixp_params.torus_limbs >= nblimbs_out,
-                        "the output limb precision is too small for the requested noise");
-    //veriy that the in params are large enough for the input decomposition
-    assert_dramatically(in_params.fixp_params.torus_limbs >= nblimbs_in,
-                        "the output limb precision is too small for the requested noise");
+          const UINT64 out_alpha_bits) {
+    //automatic parameter deduction
+    const double out_variance_bits = out_alpha_bits * 2;
+    const double in_variance_bits = out_variance_bits + 1;     // 1/2 from the input noise
+    const double errdec_variance_bits = out_variance_bits + 2; // 1/4 from decomp error
+    const double kssum_variance_bits = out_variance_bits + 2;  // 1/4 from the big sum
 
-    pubKsKey *reps = new pubKsKey(in_params, out_params, ldec);
-    BigTorusPolynomial plaintext(out_params.N, out_params.fixp_params);
 
+    //smallest decomposition in base 2^128 giving an error variance <= errdec_variance_bits
+    const UINT64 ldec = ceil(errdec_variance_bits / 2. / 128.);
+
+    //the input noise variance must be smaller than in_variance_bits
+    // -> input nblimbs must be larger than limb_prec(variance/2)
+    assert_dramatically(in_params.fixp_params.torus_limbs >= UINT64(limb_precision(in_variance_bits / 2)));
+
+    //smallest variance for the keyswitch key
+    const double ks_variance_bits = kssum_variance_bits + log2(in_params.N) + log2(ldec) + 2 * 127.;
+    const UINT64 ks_alpha_bits = UINT64(ks_variance_bits / 2);
+    const UINT64 ks_nblimbs = UINT64(limb_precision(ks_alpha_bits) + 1) & UINT64(-2); //must be even
+    TRLweParams ks_params(out_params.N, ks_nblimbs);
+
+    //the output nblimbs must be larger than limb_prec(out_alpha_bits)
+    assert_dramatically(out_params.fixp_params.torus_limbs >= UINT64(limb_precision(out_alpha_bits)));
+
+    pubKsKey *reps = new pubKsKey(in_params, out_params, TRLweParams(ks_params), ldec);
+
+    //plaintext must have the same precision as the keyswitch key
+    BigTorusPolynomial plaintext(ks_params.N, ks_params.fixp_params);
     for (UINT64 i = 0; i < in_params.N; i++) {
         for (UINT64 j = 1; j <= ldec; j++) {
+            // plaintext = ks[i] / Bg^j
             zero(plaintext);
             if (in_key.key[i] == 1) { plaintext.getAT(0).limbs_end[-2 * j] = 1; }
-            native_encrypt(reps->kskey[i][j], plaintext, out_key, alpha_bits);
+            native_encrypt(reps->kskey[i][j - 1], plaintext, out_key, ks_alpha_bits);
         }
     }
 
     // sum Bg/2 Bg^-i
-    for (UINT64 i = 1; i <= ldec; i++) {
-        reps->bitDecomp_in_offset.limbs_end[-2 * i + 1] = 0x8000000000000000UL;
-        reps->bitDecomp_in_offset.limbs_end[-2 * i] = 0;
+    zero(reps->bitDecomp_in_offset);
+    for (UINT64 i = 1; i <= reps->in_params.fixp_params.torus_limbs; i += 2) {
+        reps->bitDecomp_in_offset.limbs_end[-i] = 0x8000000000000000UL;
     }
 
     reps->bitDecomp_out_offset = (__int128(1) << __int128(127)); // -Bg/2
@@ -164,11 +181,16 @@ ks_keygen(const TRLweParams &out_params, const TLweParams &in_params,
 }
 
 
-pubKsKey::pubKsKey(const TLweParams &in_params, const TRLweParams &out_params, const UINT64 l_dec) :
+pubKsKey::pubKsKey(
+        const TLweParams &in_params,
+        const TRLweParams &out_params,
+        TRLweParams &&ks_params,
+        const UINT64 l_dec) :
         in_params(in_params),
         out_params(out_params),
+        ks_params(ks_params),
         l_dec(l_dec),
-        kskey(new_TRLweMatrix(in_params.N, l_dec, out_params)),
+        kskey(new_TRLweMatrix(in_params.N, l_dec, this->ks_params)), //warning: this-> is essential here!
         bitDecomp_in_offset(in_params.fixp_params),
         bitDecomp_out_offset(0) {}
 
