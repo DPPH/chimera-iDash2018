@@ -31,6 +31,11 @@ struct pubKsKey {
     UINT64 out_prec_limbs;
 };
 
+/**
+ * @brief generation of PublicKeySwitch key
+ */
+std::shared_ptr<pubKsKey> ks_keygen(const TRLweParams &out_params, const TLweParams &in_params, const TLweKey &in_key, const TLweKey &out_key, const UINT64 out_limb_prec);
+
 void pubKS(TRLwe& out, TLwe& in, pubKsKey& ks);
 
 /**

@@ -105,3 +105,22 @@ void zero(TRLwe &out) {
     zero(out.a[0]);
     zero(out.a[1]);
 }
+
+std::shared_ptr<pubKsKey>
+ks_keygen(const TRLweParams &out_params, const TLweParams &in_params, const TLweKey &in_key, const TLweKey &out_key,
+          const UINT64 out_limb_prec) {
+    pubKsKey* reps= new pubKsKey();
+
+    reps->kskey= native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLweKey &key, UINT64 alpha_bits);
+
+   reps->bitDecomp_in_offset= new BigTorus(params); // sum Bg/2 Bg^-i
+
+   reps->bitDecomp_out_offset= __int128 (1) << 127; // -Bg/2
+   reps->BgBits= 128;
+   reps->l_dec= ;
+   reps->out_prec_limbs= out_limb_prec;
+
+
+
+    return std::shared_ptr<pubKsKey>();
+}
