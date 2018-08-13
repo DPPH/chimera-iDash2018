@@ -114,6 +114,9 @@ public:
 
     void TearDown(const ::benchmark::State &state) {
 
+        ks_key = nullptr;
+        ciphertext = nullptr;
+        res = nullptr;
     }
 
 
