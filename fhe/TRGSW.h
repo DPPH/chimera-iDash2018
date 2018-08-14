@@ -18,7 +18,7 @@ public:
 class TRGSW {
 public:
     const TRGSWParams &params;
-    BigComplex *(a[3][2]);
+    BigComplex *(a[2][3][2]);
 
     TRGSW(const TRGSWParams &params);
 
@@ -28,6 +28,6 @@ public:
 
 void binary_encrypt(TRGSW &reps, const UINT64 plaintext, const TLweKey &key, UINT64 alpha_bits);
 
-void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 alpha_bits);
+void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 bits_a, UINT64 alpha_bits);
 
 #endif //FHE_TRGSW_H
