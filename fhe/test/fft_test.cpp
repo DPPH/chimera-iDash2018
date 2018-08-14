@@ -152,9 +152,9 @@ TEST(FFT_TEST, bijection_FFT_iFFT) {
 
 TEST(FFT_EXT_MUL_TEST, external_product_FFT) {
 
-    int64_t N = 32;
-    int64_t nblimbs_in = 5;
-    int64_t nblimbs_out = 5;
+    int64_t N = 4096;
+    int64_t nblimbs_in = 2;
+    int64_t nblimbs_out = 2;
 
     BigTorusParams params_in(nblimbs_in);
     BigTorusParams params_out(nblimbs_out);
@@ -166,7 +166,7 @@ TEST(FFT_EXT_MUL_TEST, external_product_FFT) {
 
     random(b, nblimbs_in);
 
-    int64_t bits_a = 3;
+    int64_t bits_a = 32;
     int64_t _2am1m1 = (1 << (bits_a - 1)) - 1;
     int64_t _2am1 = (1 << (bits_a)) - 1;
 
@@ -175,9 +175,19 @@ TEST(FFT_EXT_MUL_TEST, external_product_FFT) {
     for (int64_t i = 0; i < N; i++) {
         a[i] = (rand() & _2am1) - _2am1m1;
     }
+    cout << clock() / double(CLOCKS_PER_SEC) << " avant fft " << endl;
 
     fft_external_product(out, a, b, bits_a, nblimbs_out);
+
+    cout << clock() / double(CLOCKS_PER_SEC) << " avant fft " << endl;
+
+    fft_external_product(out, a, b, bits_a, nblimbs_out);
+
+    cout << clock() / double(CLOCKS_PER_SEC) << " apres fft " << endl;
+
     naive_external_product(out1, a, b, nblimbs_out);
+
+    cout << clock() / double(CLOCKS_PER_SEC) << " apres ext product " << endl;
     for (int64_t i = 0; i < N; i++) {
         //cout << "i: " << i << endl;
         //RR::SetPrecision(nblimbs_out * BITS_PER_LIMBS);
