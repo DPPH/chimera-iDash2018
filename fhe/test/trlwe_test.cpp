@@ -115,8 +115,8 @@ TEST(TRLWE_TEST, pubKSKeyGen) {
 }
 
 TEST(TRLWE_TEST, pubKS128) {
-    int64_t N_in = 512;
-    int64_t N_out = 512;
+    int64_t N_in = 45;
+    int64_t N_out = 32;
     int64_t nblimbs_in = 5;
     int64_t nblimbs_out = 6;
     int64_t alpha_bits = nblimbs_in * BITS_PER_LIMBS - 2;
@@ -156,11 +156,11 @@ TEST(TRLWE_TEST, pubKS128) {
 
     //constant term
     RR::SetPrecision(limb_prec * BITS_PER_LIMBS);
-    ASSERT_LE(log2Diff(to_RR(phase.getAT(0)), to_RR(plaintext)), -int64_t(alpha_bits) + 2);
+    ASSERT_LE(log2Diff(to_RR(phase.getAT(0)), to_RR(plaintext)), -int64_t(alpha_bits) + 6);
     //other terms
     for (UINT64 i = 1; i < trlwe_params_out.N; i++) {
         RR::SetPrecision(limb_prec * BITS_PER_LIMBS);
-        ASSERT_LE(log2Diff(to_RR(phase.getAT(i)), to_RR(0)), -int64_t(alpha_bits) + 3);
+        ASSERT_LE(log2Diff(to_RR(phase.getAT(i)), to_RR(0)), -int64_t(alpha_bits) + 6);
     }
 }
 
