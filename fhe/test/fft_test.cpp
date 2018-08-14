@@ -152,9 +152,9 @@ TEST(FFT_TEST, bijection_FFT_iFFT) {
 
 TEST(FFT_EXT_MUL_TEST, external_product_FFT) {
 
-    int64_t N = 16;
-    int64_t nblimbs_in = 6;
-    int64_t nblimbs_out = 6;
+    int64_t N = 32;
+    int64_t nblimbs_in = 5;
+    int64_t nblimbs_out = 5;
 
     BigTorusParams params_in(nblimbs_in);
     BigTorusParams params_out(nblimbs_out);
@@ -187,9 +187,9 @@ TEST(FFT_EXT_MUL_TEST, external_product_FFT) {
 
 TEST(FFT_INTERNAL_MUL_TEST, internal_product_FFT) {
 
-    int64_t N = 16;
-    int64_t nblimbs_in = 6;
-    int64_t nblimbs_out = 6;
+    int64_t N = 8;
+    int64_t nblimbs_in = 5;
+    int64_t nblimbs_out = 5;
 
     BigTorusParams params_in(nblimbs_in);
     BigTorusParams params_out(nblimbs_out);
