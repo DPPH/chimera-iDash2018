@@ -48,8 +48,14 @@ void div2ui(BigReal &dest, const BigReal &a, UINT64 b);
 /** copy */
 void copy(BigReal &dest, const BigReal &a);
 
-/** conversion torus to bigreal */
+/** conversion torus to bigreal (outputs v between -1/2 and 1/2) */
 void to_BigReal(BigReal &dest, const BigTorusRef &v);
+
+/** conversion torus to bigreal (outputs a/2^nbits) */
+void to_BigReal(BigReal &dest, const int64_t a, UINT64 a_nbits);
+
+/** conversion bigreal to torus (outputs a*2^lshiftbits mod 1 with given limb precision) */
+void to_BigTorus(BigTorusRef dest, const BigReal &a, UINT64 lshift_bits, UINT64 out_precision_limbs);
 
 /** conversion bigreal to RR */
 NTL::RR to_RR(const BigReal &v);

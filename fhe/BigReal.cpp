@@ -43,7 +43,7 @@ void to_BigReal(BigReal &dest, const BigTorusRef &v) {
     mpz_realloc2(dest.value, dsize * BITS_PER_LIMBS);
     assert(dest.value->_mp_alloc >= dsize);
     //dest.value->_mp_d = (mp_limb_t *) malloc(dsize * BYTES_PER_LIMBS);
-    //fill the zeros
+    //fill the zeros if dest is larger
     if (zerofill > 0) {
         mpn_zero(dest.value->_mp_d, zerofill);
     }
@@ -56,13 +56,34 @@ void to_BigReal(BigReal &dest, const BigTorusRef &v) {
         //v is positive
         mpn_copyi(dest.value->_mp_d + zerofill, v.limbs_end - vcopysize, vcopysize);
     }
-    //find the right size
+    //find the right size (for the mpz_t)
     int dl;
     for (dl = dsize; dl >= 1; dl--) {
         if (dest.value->_mp_d[dl - 1] != 0) break;
     }
     dest.value->_mp_size = vnegative ? -dl : dl;
 }
+
+void to_BigReal(BigReal &dest, int64_t a, UINT64 a_nbits) {
+    assert(a_nbits <= 64 && a_nbits >= 1);
+    if (a == 0) {
+        mpz_set_ui(dest.value, 0);
+        return;
+    }
+    const int dsize = dest.nblimbs;
+    mpz_realloc2(dest.value, dsize * BITS_PER_LIMBS);
+    assert(dest.value->_mp_alloc >= dsize);
+    mpn_zero(dest.value->_mp_d, dsize);
+    if (a >= 0) {
+        dest.value->_mp_d[dsize - 1] = (UINT64(a) << UINT64(64 - a_nbits));
+        dest.value->_mp_size = dsize;
+    } else {
+        a = -a;
+        dest.value->_mp_d[dsize - 1] = (UINT64(a) << UINT64(64 - a_nbits));
+        dest.value->_mp_size = -dsize;
+    }
+}
+
 
 void copy(BigReal &dest, const BigReal &a) {
     mpz_set(dest.value, a.value);
@@ -118,3 +139,36 @@ void to_BigReal(BigReal &dest, const NTL::RR &v) {
         mpn_copyi(dest.value->_mp_d, ZZ_limbs_get(vv), vsize);
     }
 }
+
+void to_BigTorus(BigTorusRef dest, const BigReal &a, UINT64 lshift_bits, UINT64 out_precision_limbs) {
+    assert(lshift_bits >= 0 && lshift_bits < 64);
+    if (out_precision_limbs == NA) {
+        out_precision_limbs = dest.params.torus_limbs;
+    } else {
+        assert_dramatically(dest.params.torus_limbs >= out_precision_limbs);
+    }
+    UINT64 *tmp = new UINT64[out_precision_limbs + 1];
+    //copy all limbs from a to tmp
+    //a.value->_mp_d[a.nblimbs-1] -> tmp[out_precision_limbs]
+    //a.value->_mp_d[a.nblimbs-2] -> tmp[out_precision_limbs-1]
+    //...
+    int64_t asize = abs(a.value->_mp_size);
+    for (int i = 0; i <= out_precision_limbs; i++) {
+        if (a.nblimbs - i - 1 < asize && a.nblimbs - i - 1 >= 0)
+            tmp[out_precision_limbs - i] = a.value->_mp_d[a.nblimbs - 1];
+        else
+            tmp[out_precision_limbs - i] = 0;
+    }
+    //negate if a is negative
+    if (a.value->_mp_size < 0) {
+        mpn_neg(tmp, tmp, out_precision_limbs + 1);
+    }
+    //do the shift
+    if (lshift_bits > 0)
+        mpn_lshift(tmp, tmp, out_precision_limbs + 1, lshift_bits);
+    //copy the final limbs
+    mpn_copyi(dest.limbs_end - out_precision_limbs, tmp + 1, out_precision_limbs);
+    //free resources
+    delete[] tmp;
+}
+
