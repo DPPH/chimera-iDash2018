@@ -1,5 +1,6 @@
 #include "BigTorusPolynomial.h"
 #include "BigComplex.h"
+#include "BigFFT.h"
 
 BigTorusPolynomial::BigTorusPolynomial(UINT64 N, const BigTorusParams &params) : BigTorusVector(N, params) {
 }
@@ -61,7 +62,8 @@ void fft_internal_product(BigTorusPolynomial &out, const BigTorusPolynomial &a, 
         to_BigReal(ra[i], a.getAT(i));
 
     }
-
+    BigComplex *powomega = fftAutoPrecomp.omega(n, nblimbs);
+    BigComplex *powombar = fftAutoPrecomp.omegabar(n, nblimbs);
     iFFT(cb, rb, n, powomega);
     iFFT(ca, ra, n, powomega);
     for (UINT64 i = 0; i < N / 2; i++) {
@@ -89,7 +91,8 @@ void fft_semi_external_product(BigTorusPolynomial &out, const BigComplex *ca, co
         to_BigReal(rb[i], b.getAT(i));
 
     }
-
+    BigComplex *powomega = fftAutoPrecomp.omega(n, nblimbs);
+    BigComplex *powombar = fftAutoPrecomp.omegabar(n, nblimbs);
     iFFT(cb, rb, n, powomega);
 
     for (UINT64 i = 0; i < N / 2; i++) {
@@ -121,6 +124,8 @@ void fft_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPol
         to_BigReal(ra[i], a[i], bits_a);
 
     }
+    BigComplex *powomega = fftAutoPrecomp.omega(n, nblimbs);
+    BigComplex *powombar = fftAutoPrecomp.omegabar(n, nblimbs);
 
     iFFT(cb, rb, n, powomega);
     iFFT(ca, ra, n, powomega);
@@ -130,7 +135,7 @@ void fft_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPol
 
     FFT(rb, cb, n, powombar);
     for (UINT64 i = 0; i < N; i++) {
-        to_BigTorus(out.getAT(i), rb[i], bits_a, out_limb_prec); //TODO
+        to_BigTorus(out.getAT(i), rb[i], bits_a, out_limb_prec);
     }
 
 }
