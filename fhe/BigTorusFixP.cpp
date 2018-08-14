@@ -164,3 +164,13 @@ void fixp_sub(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, UINT
     fixp_releaseAdd(addParams);
 }
 
+double log2Diff(const BigTorusRef &a, const BigTorusRef &b) {
+
+    for (UINT64 i = 0; i < a.params.torus_limbs; i++) {
+
+
+    }
+
+    return 0;
+}
+

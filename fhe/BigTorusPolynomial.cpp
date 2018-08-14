@@ -118,7 +118,7 @@ void fft_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPol
 
     for (UINT64 i = 0; i < N; i++) {
         to_BigReal(rb[i], b.getAT(i));
-        to_BigReal(ra[i], a, bits_a);
+        to_BigReal(ra[i], a[i], bits_a);
 
     }
 

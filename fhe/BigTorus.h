@@ -126,6 +126,8 @@ void mulS64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 limb_prec)
 
 void to_torus(BigTorusRef reps, const NTL::RR &a);
 
+double log2Diff(const BigTorusRef &a, const BigTorusRef &b);
+
 NTL::RR to_RR(const BigTorusRef &a);
 
 // ***********************

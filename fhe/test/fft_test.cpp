@@ -2,6 +2,7 @@
 #include "../BigReal.h"
 #include "../BigComplex.h"
 #include "../BigFFT.h"
+#include "../BigTorusPolynomial.h"
 
 NTL_CLIENT
 
@@ -149,3 +150,36 @@ TEST(FFT_TEST, bijection_FFT_iFFT) {
     clear_precomp_iFFT(powomega);
 }
 
+TEST(FFT_MUL_TEST, external_product_FFT) {
+
+    int64_t N = 16;
+    int64_t nblimbs_in = 5;
+    int64_t nblimbs_out = 6;
+
+    BigTorusParams params_in(nblimbs_in);
+    BigTorusParams params_out(nblimbs_out);
+
+    BigTorusPolynomial b(N, params_in);
+
+    BigTorusPolynomial out(N, params_out);
+    BigTorusPolynomial out1(N, params_out);
+
+    random(b, nblimbs_in);
+
+    int64_t bits_a = 3;
+    int64_t _2am1m1 = (1 << (bits_a - 1)) - 1;
+    int64_t _2am1 = (1 << (bits_a)) - 1;
+
+    int64_t *a = new int64_t[N];
+
+    for (UINT64 i = 0; i < N; i++) {
+        a[i] = (rand() & _2am1) - _2am1m1;
+    }
+
+    fft_external_product(out, a, b, bits_a, nblimbs_out);
+    naive_external_product(out1, a, b, nblimbs_out);
+    for (UINT64 i = 0; i < N; i++) {
+        ASSERT_LE(log2Diff(out.getAT(i), out1.getAT(i)), -nblimbs_out * BITS_PER_LIMBS);
+
+    }
+}
