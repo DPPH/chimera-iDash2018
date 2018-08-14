@@ -153,9 +153,9 @@ void to_BigTorus(BigTorusRef dest, const BigReal &a, UINT64 lshift_bits, UINT64 
     //a.value->_mp_d[a.nblimbs-2] -> tmp[out_precision_limbs-1]
     //...
     int64_t asize = abs(a.value->_mp_size);
-    for (int i = 0; i <= out_precision_limbs; i++) {
+    for (UINT64 i = 0; i <= out_precision_limbs; i++) {
         if (int64_t(a.nblimbs - i - 1) < asize && int64_t(a.nblimbs - i - 1) >= 0)
-            tmp[out_precision_limbs - i] = a.value->_mp_d[a.nblimbs - 1];
+            tmp[out_precision_limbs - i] = a.value->_mp_d[a.nblimbs - 1 - i];
         else
             tmp[out_precision_limbs - i] = 0;
     }
