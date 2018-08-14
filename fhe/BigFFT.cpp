@@ -125,3 +125,39 @@ void FFT(BigReal *out, BigComplex *in, int n, const BigComplex *powombar) {
         div2ui(out[j + ns4], in[j].imag, LOG2Ns4);  // /ns4; //divide by N/2
     }
 }
+
+UINT64 FFTAutoPrecomp::precomp_id(uint32_t n, uint16_t nblimbs, uint16_t bar) {
+    return (UINT64(n) << 32ul) | (UINT64(nblimbs) << 16ul) | (UINT64(bar));
+}
+
+BigComplex *FFTAutoPrecomp::omega(uint32_t n, uint16_t nblimbs) {
+    const UINT64 id = precomp_id(n, nblimbs, 0);
+    auto it = precomp_map.find(id);
+    if (it != precomp_map.end())
+        return it->second;
+    BigComplex *reps = precomp_iFFT(n, nblimbs);
+    precomp_map.emplace(id, reps);
+    return reps;
+}
+
+BigComplex *FFTAutoPrecomp::omegabar(uint32_t n, uint16_t nblimbs) {
+    const UINT64 id = precomp_id(n, nblimbs, 1);
+    auto it = precomp_map.find(id);
+    if (it != precomp_map.end())
+        return it->second;
+    BigComplex *reps = precomp_FFT(n, nblimbs);
+    precomp_map.emplace(id, reps);
+    return reps;
+}
+
+FFTAutoPrecomp::FFTAutoPrecomp() {}
+
+FFTAutoPrecomp::~FFTAutoPrecomp() {
+    for (auto it: precomp_map) {
+        if (it.first % 2 == 0) {
+            clear_precomp_iFFT(it.second);
+        } else {
+            clear_precomp_FFT(it.second);
+        }
+    }
+}
