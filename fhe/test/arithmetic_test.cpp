@@ -264,3 +264,52 @@ TEST(BIGTORUS_ARITHMETIC, mulS64) {
         }
     }
 }
+
+TEST(BIGTORUS_ARITHMETIC, BigReal_to_BigTorus) {
+/* //TODO
+    RR::SetPrecision(nblimbs*BITS_PER_LIMBS);
+    RR::SetOutputPrecision(nblimbs*BITS_PER_LIMBS/log2(10.));
+    RR rbi = to_RR(rb[i])*pow(to_RR(2),to_RR(bits_a));
+    rbi -= to_RR(RoundToZZ(rbi));
+    to_BigTorus(out.getAT(i), rb[i], bits_a, out_limb_prec);
+    RR outi = to_RR(out.getAT(i));
+    cout << rbi << endl;
+    cout << outi << endl;
+*/
+}
+
+TEST(BIGCOMPLEX_ARITHMETIC, mulTo) {
+/* //TODO
+    RR::SetPrecision(nblimbs*BITS_PER_LIMBS);
+    RR cbre = to_RR(cb[i].real);
+    RR cbim = to_RR(cb[i].imag);
+    RR care = to_RR(ca[i].real);
+    RR caim = to_RR(ca[i].imag);
+    mulTo(cb[i], ca[i]);
+    RR targetre = cbre * care - cbim * caim;
+    RR targetim = cbre * caim + cbim * care;
+    RR actualre = to_RR(cb[i].real);
+    RR actualim = to_RR(cb[i].imag);
+    cout << i << " ---- " << log2Diff(targetre, actualre) << endl;
+    cout << i << " ---- " << log2Diff(targetim, actualim) << endl;
+*/
+}
+
+TEST(BIGTORUS_ARITHMETIC, BigTorus_To_BigReal) {
+/* TODO
+    RR::SetPrecision(nblimbs*BITS_PER_LIMBS);
+    RR bi = to_RR(b.getAT(i));
+    to_BigReal(rb[i], b.getAT(i));
+    RR rbi = to_RR(rb[i]);
+    cout << i << " -rbi- " << log2Diff(bi, rbi) << endl;
+*/
+}
+
+TEST(BIGTORUS_ARITHMETIC, int_To_BigReal) {
+/* TODO
+    RR ai = to_RR(a[i])/pow(to_RR(2), to_RR(bits_a));
+    to_BigReal(ra[i], a[i], bits_a);
+    RR rai = to_RR(ra[i]);
+    cout << i << " -rai- " << log2Diff(ai, rai) << endl;
+*/
+}

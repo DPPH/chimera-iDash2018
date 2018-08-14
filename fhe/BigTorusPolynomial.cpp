@@ -105,6 +105,11 @@ void fft_semi_external_product(BigTorusPolynomial &out, const BigComplex *ca, co
     }
 }
 
+using namespace NTL; //todo remove
+using namespace std;
+
+double log2Diff(const RR &a, const RR &b);
+
 void fft_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPolynomial &b, const UINT64 bits_a,
                           UINT64 out_limb_prec) {
 
@@ -112,7 +117,6 @@ void fft_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPol
     UINT64 n = 2 * b.length;
     UINT64 prec_bits = b.btp.torus_limbs * BITS_PER_LIMBS + bits_a + (UINT64) log2f(N);
     UINT64 nblimbs = limb_precision(prec_bits);
-
 
     BigReal *rb = new_BigReal_array(N, nblimbs);
     BigReal *ra = new_BigReal_array(N, nblimbs);
@@ -122,7 +126,6 @@ void fft_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPol
     for (UINT64 i = 0; i < N; i++) {
         to_BigReal(rb[i], b.getAT(i));
         to_BigReal(ra[i], a[i], bits_a);
-
     }
     BigComplex *powomega = fftAutoPrecomp.omega(n, nblimbs);
     BigComplex *powombar = fftAutoPrecomp.omegabar(n, nblimbs);

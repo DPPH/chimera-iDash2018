@@ -172,15 +172,19 @@ TEST(FFT_EXT_MUL_TEST, external_product_FFT) {
 
     int64_t *a = new int64_t[N];
 
-    for (UINT64 i = 0; i < N; i++) {
+    for (int64_t i = 0; i < N; i++) {
         a[i] = (rand() & _2am1) - _2am1m1;
     }
 
     fft_external_product(out, a, b, bits_a, nblimbs_out);
     naive_external_product(out1, a, b, nblimbs_out);
-    for (UINT64 i = 0; i < N; i++) {
+    for (int64_t i = 0; i < N; i++) {
+        //cout << "i: " << i << endl;
+        //RR::SetPrecision(nblimbs_out * BITS_PER_LIMBS);
+        //RR::SetOutputPrecision(nblimbs_out * BITS_PER_LIMBS / log2(10.));
+        //cout << "out_i : " << to_RR(out.getAT(i)) << endl;
+        //cout << "out1_i: " << to_RR(out1.getAT(i)) << endl;
         ASSERT_LE(log2Diff(out.getAT(i), out1.getAT(i)), -nblimbs_out * BITS_PER_LIMBS);
-
     }
 }
 
