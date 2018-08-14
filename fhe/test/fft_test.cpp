@@ -150,10 +150,10 @@ TEST(FFT_TEST, bijection_FFT_iFFT) {
     clear_precomp_iFFT(powomega);
 }
 
-TEST(FFT_MUL_TEST, external_product_FFT) {
+TEST(FFT_EXT_MUL_TEST, external_product_FFT) {
 
     int64_t N = 16;
-    int64_t nblimbs_in = 5;
+    int64_t nblimbs_in = 6;
     int64_t nblimbs_out = 6;
 
     BigTorusParams params_in(nblimbs_in);
@@ -182,4 +182,32 @@ TEST(FFT_MUL_TEST, external_product_FFT) {
         ASSERT_LE(log2Diff(out.getAT(i), out1.getAT(i)), -nblimbs_out * BITS_PER_LIMBS);
 
     }
+}
+
+
+TEST(FFT_INTERNAL_MUL_TEST, internal_product_FFT) {
+
+    int64_t N = 16;
+    int64_t nblimbs_in = 6;
+    int64_t nblimbs_out = 6;
+
+    BigTorusParams params_in(nblimbs_in);
+    BigTorusParams params_out(nblimbs_out);
+
+    BigTorusPolynomial b(N, params_in);
+    BigTorusPolynomial a(N, params_in);
+
+    BigTorusPolynomial out(N, params_out);
+    BigTorusPolynomial out1(N, params_out);
+
+    random(b, nblimbs_in);
+    random(a, nblimbs_in);
+
+    fft_internal_product(out, a, b, nblimbs_out);
+    //TODO avec quoi comparer
+    //naive_external_product(out1, a, b, nblimbs_out);
+    // for (UINT64 i = 0; i < N; i++) {
+    //    ASSERT_LE(log2Diff(out.getAT(i), out1.getAT(i)), -nblimbs_out * BITS_PER_LIMBS);
+
+    //}
 }
