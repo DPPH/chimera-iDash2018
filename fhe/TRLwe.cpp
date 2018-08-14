@@ -117,7 +117,7 @@ void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLwe
     for (UINT64 i = 0; i < N; i++) {
         K[i] = key.key[i];
     }
-    naive_external_product(temp, K, reps.a[0], alpha_limbs);
+    fft_external_product(temp, K, reps.a[0], 1, alpha_limbs);
     add(b, b, temp, alpha_limbs);
     //randomize below bit alpha (noise)
     add_noise(b, alpha_bits, alpha_limbs);
@@ -140,7 +140,7 @@ void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, 
         K[i] = key.key[i];
     }
 
-    naive_external_product(temp, K, c.a[0], alpha_limbs);
+    fft_external_product(temp, K, c.a[0], 1, alpha_limbs);
     sub(reps, b, temp, alpha_limbs);
     delete[] K;
 }
