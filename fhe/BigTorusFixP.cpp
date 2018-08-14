@@ -1,5 +1,6 @@
 #include <gmp.h>
 #include <cassert>
+#include <vector>
 #include "BigTorus.h"
 
 fixp_add_params::fixp_add_params() :
@@ -165,12 +166,21 @@ void fixp_sub(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, UINT
 }
 
 double log2Diff(const BigTorusRef &a, const BigTorusRef &b) {
+    int64_t alimbs = a.params.torus_limbs;
+    int64_t blimbs = b.params.torus_limbs;
+    int64_t n = std::min(alimbs, blimbs);
 
-    for (UINT64 i = 0; i < a.params.torus_limbs; i++) {
-
-
+    std::vector<UINT64> bufv(n);
+    UINT64 *buf = bufv.data();
+    mpn_sub_n(buf, a.limbs_end - n, b.limbs_end - n, n);
+    if (buf[n - 1] & 0x8000000000000000UL) {
+        mpn_neg(buf, buf, n);
     }
-
-    return 0;
+    //find the first non zero position
+    for (int64_t i = 0; i < n; i++) {
+        if (buf[n - 1 - i] == 0) continue;
+        return -64 * (i + 1) + log2(double(buf[n - 1 - i]));
+    }
+    return -64 * n;
 }
 
