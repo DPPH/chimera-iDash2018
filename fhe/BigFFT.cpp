@@ -161,3 +161,6 @@ FFTAutoPrecomp::~FFTAutoPrecomp() {
         }
     }
 }
+
+FFTAutoPrecomp fftAutoPrecomp;
+
