@@ -10,6 +10,8 @@ class BigTorusPolynomial : public BigTorusVector {
 public:
     BigTorusPolynomial(UINT64 N, const BigTorusParams &params);
 
+    BigTorusPolynomial(UINT64 N, BigTorusParams &&params) = delete;
+
     ~BigTorusPolynomial();
 };
 

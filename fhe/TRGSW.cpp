@@ -73,8 +73,8 @@ void intPoly_encrypt(
     //encrypt each component
     BigTorusParams btParams(fft_nlimbs);
     TRLweParams trLweParams(N, btParams);
-    BigTorusPolynomial rescaled_plaintext(N, fft_nlimbs);
-    BigTorusPolynomial zero_plaintext(N, fft_nlimbs);
+    BigTorusPolynomial rescaled_plaintext(N, btParams);
+    BigTorusPolynomial zero_plaintext(N, btParams);
     TRLwe zPlusMuH_ciphertext(trLweParams);
     BigReal *zPlusMuHRj = new_BigReal_array(N, fft_nlimbs);
     for (int64_t i = 0; i < int64_t(ell); i++) { //must be signed

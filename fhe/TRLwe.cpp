@@ -126,12 +126,13 @@ void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLwe
 
     const UINT64 N = reps.params.N;
     const UINT64 alpha_limbs = limb_precision(alpha_bits);
+    const BigTorusParams bt_out_params(alpha_limbs);
 
     BigTorusPolynomial &b = reps.a[1];
     // b = plaintext + sum s_i a_i
     copy(b, plaintext, alpha_limbs);
     random(reps.a[0], alpha_limbs);
-    BigTorusPolynomial temp(N, alpha_limbs);
+    BigTorusPolynomial temp(N, bt_out_params);
     int64_t *K = new int64_t[N];
 
     for (UINT64 i = 0; i < N; i++) {
@@ -141,6 +142,7 @@ void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLwe
     add(b, b, temp, alpha_limbs);
     //randomize below bit alpha (noise)
     add_noise(b, alpha_bits, alpha_limbs);
+
     delete[] K;
 }
 
@@ -148,11 +150,12 @@ void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLwe
 void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, UINT64 alpha_bits) {
     const UINT64 N = c.params.N;
     const UINT64 alpha_limbs = limb_precision(alpha_bits);
+    BigTorusParams bt_params(alpha_limbs);
 
     const BigTorusPolynomial &b = c.a[1];
     copy(reps, b, alpha_limbs);
 
-    BigTorusPolynomial temp(N, alpha_limbs);
+    BigTorusPolynomial temp(N, bt_params);
     int64_t *K = new int64_t[N];
 
 
