@@ -34,4 +34,8 @@ void binary_encrypt(TRGSW &reps, const UINT64 plaintext, const TLweKey &key, UIN
 
 void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits);
 
+void
+native_phase_FFT(BigTorusPolynomial &reps, BigComplex *a, BigComplex *b, const TLweKey &key, const int64_t lshift = 0);
+
+
 #endif //FHE_TRGSW_H

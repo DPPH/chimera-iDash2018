@@ -4,6 +4,7 @@
 #include "../arithmetic.h"
 #include "../BigReal.h"
 #include "../BigComplex.h"
+#include "../TRLwe.h"
 
 NTL_CLIENT;
 
@@ -313,7 +314,7 @@ TEST(BIGCOMPLEX_ARITHMETIC, mulTo) {
         RR actualre = to_RR(cb.real);
         RR actualim = to_RR(cb.imag);
         ASSERT_LE(log2Diff(targetre, actualre), -nblimbs * BITS_PER_LIMBS + 1);
-        ASSERT_LE(log2Diff(targetim, actualim), -nblimbs * BITS_PER_LIMBS + 1);
+        ASSERT_LE(log2Diff(targetim, actualim), -nblimbs * BITS_PER_LIMBS + 2);
     }
 }
 
@@ -349,5 +350,29 @@ TEST(BIGTORUS_ARITHMETIC, int2_To_BigReal) {
             RR rai = to_RR(dest);
             ASSERT_LE(log2Diff(ai, rai), -nblimbs * BITS_PER_LIMBS);
         }
+    }
+}
+
+TEST(BIGTORUS_ARITHMETIC, bitdecomp32) {
+    for (const int64_t nblimbs : {1, 2, 5}) {
+        BigTorusParams params(nblimbs);
+        int ell = 2 * nblimbs;
+        BigTorus b(params);
+        BigTorus bof(params);
+        BigTorus hi(params);
+        BigTorus recomp_b(params);
+        BigTorus tmp(params);
+        random(b);
+
+        zero(recomp_b);
+        bitdecomp_signed_offset32_apply(bof, b);
+        for (int i = 0; i < ell; i++) {
+            int64_t coeff = bitdecomp_signed_coef32(bof, i + 1, nblimbs);
+            zero(hi);
+            hi.limbs_end[-(i + 2) / 2] = (i % 2 == 0) ? 0x100000000ul : 0x1ul;
+            mulS64(tmp, coeff, hi, nblimbs);
+            add(recomp_b, recomp_b, tmp);
+        }
+        ASSERT_LE(log2Diff(b, recomp_b), -nblimbs * BITS_PER_LIMBS);
     }
 }

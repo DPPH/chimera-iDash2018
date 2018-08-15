@@ -147,6 +147,10 @@ void intPoly_encrypt(
     delete_BigReal_array(N, zPlusMuHRj);
 }
 
+//TODO DEBUG!!!
+int64_t *debug_plaintext;
+TLweKey *debug_key;
+
 void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits) {
     const UINT64 N = a.params.N;
     assert(b.params.N == N);
@@ -173,27 +177,89 @@ void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits) {
             zero(accFFT[l][k]);
         }
     }
+
+    //TODO DEBUG
+    int64_t *debug_intpoly = new int64_t[N];
+    TRLwe debug_acc(b.params);
+    //TRLwe debug_acc2(b.params);
+    BigTorusPolynomial debug_acc_phase(N, b.params.fixp_params);
+    BigTorusPolynomial debug_acc2_phase(N, b.params.fixp_params);
+    BigTorusPolynomial debug_hji(N, b.params.fixp_params);
+    BigTorusPolynomial debug_tmp(N, b.params.fixp_params);
+    zero(debug_acc);
+
+    {
+        // TODO debug: at this point, verify that the phase of the accumulator
+        // contains the same info as the phase of the debug accum
+        native_phase(debug_acc_phase, debug_acc, *debug_key, fft_nlimbs * BITS_PER_LIMBS);
+        native_phase_FFT(debug_acc2_phase, accFFT[0], accFFT[1], *debug_key, 32);
+        //fft_external_product(debug_tmp, debug_plaintext, debug_acc_phase, 32, fft_nlimbs);
+        cout << "init: " << endl;
+        for (int k = 0; k < int64_t(N); k++) {
+            cout << "yyyy " << k << endl;
+            RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
+            RR::SetOutputPrecision(in_nblimbs * BITS_PER_LIMBS / log2(10.));
+            cout << to_RR(debug_acc_phase.getAT(k)) << endl;
+            cout << to_RR(debug_acc2_phase.getAT(k)) << endl;
+            cout << log2Diff(to_RR(debug_acc2_phase.getAT(k)), to_RR(debug_acc_phase.getAT(k))) << endl;
+        }
+    }
     for (UINT64 j = 0; j < 2; j++) {
-        //tmp = b.a[j] + (bitDecomp_in_offset,...,bitDecomp_in_offset)
+        //tmpDec = b.a[j] + (bitDecomp_in_offset,...,bitDecomp_in_offset)
         for (UINT64 k = 0; k < N; ++k) {
             bitdecomp_signed_offset32_apply(tmpDec.getAT(k), b.a[j].getAT(k));
         }
 
         //decompose tmp in base 2^32
-        for (UINT64 i = 0; i < ell; i++) {
+        for (int64_t i = 0; i < int64_t(ell); i++) {
             for (UINT64 k = 0; k < N; ++k) {
                 int64_t polyk = bitdecomp_signed_coef32(tmpDec.getAT(k), i + 1, in_nblimbs);
-                to_BigReal(poly[k], polyk, 32);
+                to_BigReal(poly[k], polyk, 32); //warning, in the bigReal, shift by 32
+                debug_intpoly[k] = polyk;
             }
-            iFFT(poly_fft, poly, n, powomega);
+            // TODO debug
+            zero(debug_hji);
+            debug_hji.getAT(0).limbs_end[-(i + 2) / 2] = (((i % 2) == 0) ? 0x100000000ul : 0x1ul);
+            fft_external_product(debug_tmp, debug_intpoly, debug_hji, 32, in_nblimbs);
+            add(debug_acc.a[j], debug_acc.a[j], debug_tmp);
+
+            //now, poly contains the decomposition coef of the plaintext over H[j][i].
+            iFFT(poly_fft, poly, n, powomega); //warning, in the bigcomplex, shift by 32
             //multiply the TRLWE a.a[j][i] with poly, and add it to accum
             for (UINT64 l = 0; l < 2; l++) {
                 for (UINT64 k = 0; k < Ns2; ++k) {
                     addMulTo(accFFT[l][k], poly_fft[k], a.a[j][i][l][k]);
                 }
             }
+            // TODO debug: at this point, verify that the phase of the accumulator
+            // contains the same info as the phase of the debug accum
+            native_phase(debug_acc_phase, debug_acc, *debug_key, fft_nlimbs * BITS_PER_LIMBS);
+            native_phase_FFT(debug_acc2_phase, accFFT[0], accFFT[1], *debug_key, 32);
+            //fft_external_product(debug_tmp, debug_plaintext, debug_acc_phase, 32, fft_nlimbs);
+            cout << "j,i: " << j << " " << i << endl;
+            for (int k = 0; k < int64_t(N); k++) {
+                cout << "yyyy " << k << endl;
+                RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
+                RR::SetOutputPrecision(in_nblimbs * BITS_PER_LIMBS / log2(10.));
+                cout << to_RR(debug_acc_phase.getAT(k)) << endl;
+                cout << to_RR(debug_acc2_phase.getAT(k)) << endl;
+                cout << log2Diff(to_RR(debug_acc2_phase.getAT(k)), to_RR(debug_acc_phase.getAT(k))) << endl;
+            }
+
+
         }
     }
+    //TODO debug verify that the accumulator contains b
+    for (int l = 0; l < 2; l++) {
+        for (int k = 0; k < int64_t(N); k++) {
+            cout << "xxxxx" << endl;
+            RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
+            RR::SetOutputPrecision(in_nblimbs * BITS_PER_LIMBS / log2(10.));
+            cout << to_RR(debug_acc.a[l].getAT(k)) << endl;
+            cout << to_RR(b.a[l].getAT(k)) << endl;
+        }
+    }
+
     //finally, un-FFT the accumulator into the final answer
     for (UINT64 l = 0; l < 2; l++) {
         FFT(acc[l], accFFT[l], n, powombar);
@@ -209,3 +275,26 @@ void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits) {
     delete_BigComplex_array(Ns2, poly_fft);
     delete_BigReal_array(N, poly);
 }
+
+
+void native_phase_FFT(BigTorusPolynomial &reps, BigComplex *a, BigComplex *b, const TLweKey &key, int64_t lshift) {
+    const int64_t N = reps.length;
+    const int64_t n = reps.length * 2;
+    const int64_t fft_nblimbs = a->real.nblimbs;
+    const BigComplex *powombar = fftAutoPrecomp.omegabar(n, fft_nblimbs);
+    BigReal *ra = new_BigReal_array(N, fft_nblimbs);
+    BigReal *rb = new_BigReal_array(N, fft_nblimbs);
+    BigTorusParams bt_params(fft_nblimbs);
+    TRLweParams params(N, bt_params);
+    TRLwe plain_ab(params);
+    FFT(ra, a, n, powombar);
+    FFT(rb, b, n, powombar);
+    for (int k = 0; k < int(N); k++) {
+        to_BigTorus(plain_ab.a[0].getAT(k), ra[k], lshift, fft_nblimbs);
+        to_BigTorus(plain_ab.a[1].getAT(k), rb[k], lshift, fft_nblimbs);
+    }
+    native_phase(reps, plain_ab, key, fft_nblimbs * BITS_PER_LIMBS);
+    delete_BigReal_array(N, rb);
+    delete_BigReal_array(N, ra);
+}
+

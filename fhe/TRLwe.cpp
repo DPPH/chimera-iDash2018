@@ -1,5 +1,7 @@
 #include <cassert>
+#include <vector>
 #include "TRLwe.h"
+
 
 // see if this out_prec_limbs still make sense?
 void pubKS128(TRLwe &out, const TLwe &in, const pubKsKey128 &ks, const UINT64 out_prec_limbs) {
@@ -29,18 +31,19 @@ void pubKS32(TRLwe &out, const TLwe &in, const pubKsKey32 &ks, const UINT64 out_
     //const TRLweParams& out_params = out.params;
     const TLweParams &in_params = in.params;
     //const int64_t ks_prec_limbs = out_prec_limbs+2; //ks has 128-bit more precision
-    const BigTorus &bitDecomp_in_offset = ks.bitDecomp_in_offset; // sum Bg/2 Bg^i
-    int64_t bitDecomp_out_offset = ks.bitDecomp_out_offset; // -Bg/2
+    //const BigTorus &bitDecomp_in_offset = ks.bitDecomp_in_offset; // sum Bg/2 Bg^i
+    //int64_t bitDecomp_out_offset = ks.bitDecomp_out_offset; // -Bg/2
 
     BigTorus tmpDec(in_params.fixp_params); //temp variable
 
     // out = trivial(b)
     trivial(out, in.getBT(), out_prec_limbs);
     for (UINT64 i = 0; i < in_params.N; i++) {
-        add(tmpDec, in.getAT(i), bitDecomp_in_offset);
+        bitdecomp_signed_offset32_apply(tmpDec, in.getAT(i));
         for (UINT64 j = 1; j <= ks.l_dec; ++j) {
             // coef aij of the decomposition
-            int64_t aij = bitdecomp_coef32(tmpDec, j, out_prec_limbs) + bitDecomp_out_offset;
+            //int64_t aij = bitdecomp_coef32(tmpDec, j, out_prec_limbs) + bitDecomp_out_offset;
+            int64_t aij = bitdecomp_signed_coef32(tmpDec, j, out_prec_limbs);
             // out = out - aij . ks_ij
             subMul64(out, aij, ks.kskey[i][j - 1], out_prec_limbs);
         }
@@ -63,18 +66,25 @@ void bitdecomp_signed_offset32_apply(BigTorusRef reps, const BigTorusRef &source
     int64_t dlimb = reps.params.torus_limbs;
     int64_t slimb = source.params.torus_limbs;
     static const UINT64 LIMB_OFFSET = 0x8000000080000000UL; //2^31 + 2^63
+    static std::vector<UINT64> offsetV;
+    if (offsetV.size() < UINT64(dlimb)) {
+        offsetV.resize(dlimb, LIMB_OFFSET);
+    }
+    //copy source to destination, filling with zeros
     if (dlimb <= slimb) {
         for (int64_t i = 1; i <= dlimb; i++) {
-            reps.limbs_end[-i] = source.limbs_end[-i] + LIMB_OFFSET;
+            reps.limbs_end[-i] = source.limbs_end[-i];
         }
     } else {
         for (int64_t i = 1; i <= slimb; i++) {
-            reps.limbs_end[-i] = source.limbs_end[-i] + LIMB_OFFSET;
+            reps.limbs_end[-i] = source.limbs_end[-i];
         }
         for (int64_t i = slimb + 1; i <= dlimb; i++) {
-            reps.limbs_end[-i] = LIMB_OFFSET;
+            reps.limbs_end[-i] = 0;
         }
     }
+    //add offset
+    mpn_add_n(reps.limbs_end - dlimb, reps.limbs_end - dlimb, offsetV.data(), dlimb);
 }
 
 
@@ -82,8 +92,11 @@ int64_t bitdecomp_coef32(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_
     assert(j >= 1);
     const UINT64 nlimbs = tmpDec.params.torus_limbs;
     if (j <= 2 * nlimbs) {
-        if (j % 2 == 0) { return int64_t(tmpDec.limbs_end[-j / 2] & 0xFFFFFFFFUL); }
-        else { return int64_t(tmpDec.limbs_end[-(j + 1) / 2] >> 32UL); }
+        if (j % 2 == 0) {
+            return int64_t(tmpDec.limbs_end[-j / 2] & 0xFFFFFFFFUL);
+        } else {
+            return int64_t(tmpDec.limbs_end[-(j + 1) / 2] >> 32UL);
+        }
     } else return 0;
 }
 

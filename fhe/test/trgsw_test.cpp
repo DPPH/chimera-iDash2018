@@ -8,22 +8,29 @@
 using namespace std;
 using namespace NTL;
 
+extern int64_t *debug_plaintext;
+extern TLweKey *debug_key;
+
 TEST(TRGSW_TEST, trgsw_external_product) {
 
 
-    int64_t N = 128;
-    int64_t n = 2 * N;
+    int64_t N = 8;
+    //int64_t n = 2 * N;
     int64_t nblimbs_in = 3;
 
 
     int64_t alpha_bits = 112;
     int64_t bits_a = 15;
-    UINT64 out_alpha_bits = alpha_bits - bits_a;
+    UINT64 out_alpha_bits = alpha_bits;
 
     BigTorusParams bt_params_in(nblimbs_in);
     TRGSWParams trgswParams(N, bt_params_in);
 
     shared_ptr<TLweKey> key = tlwe_keygen(trgswParams);
+    debug_key = key.get();
+    for (int64_t i = 0; i < N; i++) {
+        key->key[i] = 0;
+    }
 
     TRGSW a(trgswParams);
 
@@ -33,41 +40,41 @@ TEST(TRGSW_TEST, trgsw_external_product) {
 
 
     int64_t *plaintext_a = new int64_t[a.params.N];
+    debug_plaintext = plaintext_a;
 
     for (UINT64 i = 0; i < a.params.N; i++) {
-        plaintext_a[i] = (rand() % (1l << bits_a)) - (1l << (bits_a - 1));
+        plaintext_a[i] = ((i == 0) ? 1 : 0);
+        //plaintext_a[i] = (rand() % (1l << bits_a)) - (1l << (bits_a - 1));
     }
 
     intPoly_encrypt(a, plaintext_a, *key, alpha_bits);
+
+
     //verify the encryption of a
-    BigReal *aa = new_BigReal_array(N, nblimbs_in);
-    BigReal *ab = new_BigReal_array(N, nblimbs_in);
-    TRLwe ac(trgswParams);
     BigTorusPolynomial phaseAC(N, bt_params_in);
+    BigTorusPolynomial phaseRef(N, bt_params_in);
 
-    const BigComplex *powombar = fftAutoPrecomp.omegabar(n, nblimbs_in);
+    //const BigComplex *powombar = fftAutoPrecomp.omegabar(n, nblimbs_in);
 
-    for (int i = 0; i < int(a.ell); i++) {
-        //the phase of a[1][i] should be (plaintext, 0)/2^32.(i+1)
-        FFT(aa, a.a[1][i][0], n, powombar);
-        FFT(ab, a.a[1][i][1], n, powombar);
-        for (int k = 0; k < N; k++) {
-            to_BigTorus(ac.a[0].getAT(k), aa[k], 0, nblimbs_in);
-        }
-        for (int k = 0; k < N; k++) {
-            to_BigTorus(ac.a[1].getAT(k), ab[k], 0, nblimbs_in);
-        }
-        //compute the phase of ac
-        native_phase(phaseAC, ac, *key, alpha_bits);
-        //compare with plaintext / 2^32.(i+1)
-        for (int k = 0; k < N; k++) {
-            RR::SetPrecision(nblimbs_in * BITS_PER_LIMBS);
-            RR actual_k = to_RR(phaseAC.getAT(k));
-            RR expected_k = to_RR(plaintext_a[k]) / pow(to_RR(2), to_RR(32 * (i + 1)));
-            //cout << "-----" << endl;
-            //cout << actual_k << endl;
-            //cout << expected_k << endl;
-            ASSERT_LE(log2Diff(actual_k, expected_k), -alpha_bits + 1);
+    for (int j = 0; j < 2; j++) {
+        for (int i = 0; i < int(a.ell); i++) {
+            // the phase of a[j][i]
+            native_phase_FFT(phaseAC, a.a[j][i][0], a.a[j][i][1], *key);
+            // plaintext * phase(h_j,i)
+            zero(phaseRef);
+            phaseRef.getAT(0).limbs_end[-i / 2 - 1] = ((i % 2 == 0) ? (1ul << 32ul) : 1ul);
+            if (j == 0) {
+                mpn_neg(phaseRef.getAT(0).limbs_end - nblimbs_in,
+                        phaseRef.getAT(0).limbs_end - nblimbs_in, nblimbs_in);
+                fft_external_product(phaseRef, key->key, phaseRef, 1, nblimbs_in);
+            }
+            fft_external_product(phaseRef, plaintext_a, phaseRef, 16, nblimbs_in);
+            for (int k = 0; k < N; k++) {
+                cout << j << "," << i << "," << k << ": "
+                     << log2Diff(phaseRef.getAT(k), phaseAC.getAT(k)) << endl;
+                //cout << to_RR(phaseRef.getAT(k)) << endl;
+                //cout << to_RR(phaseAC.getAT(k)) << endl;
+            }
         }
     }
 
@@ -88,9 +95,6 @@ TEST(TRGSW_TEST, trgsw_external_product) {
     for (int64_t i = 0; i < N; i++) {
         ASSERT_LE(log2Diff(phase.getAT(i), phase2.getAT(i)), -1000);
     }
-
-    delete_BigReal_array(N, aa);
-    delete_BigReal_array(N, ab);
 }
 
 /*

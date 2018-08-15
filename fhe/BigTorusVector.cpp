@@ -4,7 +4,7 @@ BigTorusVector::BigTorusVector(UINT64 length, const BigTorusParams &params) :
         btp(params),
         length(length),
         limbs_end((new UINT64[(length + 1) * params.torus_limbs]) + params.torus_limbs) {
-
+    memset(limbs_end - params.torus_limbs, 0, (length + 1) * params.torus_limbs * sizeof(UINT64));
 }
 
 BigTorusVector::~BigTorusVector() {

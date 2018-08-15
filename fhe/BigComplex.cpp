@@ -1,3 +1,4 @@
+#include <cassert>
 #include "BigComplex.h"
 
 BigComplex::BigComplex(UINT64 nblimbs) : real(nblimbs), imag(nblimbs) {}
@@ -65,6 +66,7 @@ void mulTo(BigComplexRef dest, BigComplexRef a) {
 
 void add(BigComplexRef dest, BigComplexRef a, BigComplexRef b) {
     add(*dest.real, *a.real, *b.real);
+    add(*dest.real, *a.real, *b.real);
     add(*dest.imag, *a.imag, *b.imag);
 }
 
@@ -99,7 +101,14 @@ void zero(BigComplexRef dest) {
 }
 
 void addMulTo(BigComplexRef dest, const BigComplexRef &a, const BigComplexRef &b) {
-    BigComplex tmp(a.real->nblimbs);
+    const UINT64 nblimbs = a.real->nblimbs;
+    assert(dest.real->nblimbs == nblimbs);
+    assert(dest.imag->nblimbs == nblimbs);
+    assert(a.real->nblimbs == nblimbs);
+    assert(a.imag->nblimbs == nblimbs);
+    assert(b.real->nblimbs == nblimbs);
+    assert(b.imag->nblimbs == nblimbs);
+    BigComplex tmp(nblimbs);
     mul(tmp, a, b);
     add(dest, dest, tmp);
 }
