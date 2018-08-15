@@ -16,6 +16,9 @@ public:
 /** @brief generate a constant polynomial equal to in */
 void const_poly(BigTorusPolynomial &out, const BigTorusRef &in, UINT64 out_limb_prec);
 
+/** @brief addition */
+void add(BigTorusPolynomial &reps, const BigTorusPolynomial &a, const BigTorusPolynomial &b);
+
 /** @brief int-polynomial torus-polynomial external product  */
 void naive_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPolynomial &b, UINT64 out_limb_prec);
 

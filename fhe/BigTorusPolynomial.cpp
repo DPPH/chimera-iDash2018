@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "BigTorusPolynomial.h"
 #include "BigComplex.h"
 #include "BigFFT.h"
@@ -141,4 +142,13 @@ void fft_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPol
         to_BigTorus(out.getAT(i), rb[i], bits_a, out_limb_prec);
     }
 
+}
+
+void add(BigTorusPolynomial &reps, const BigTorusPolynomial &a, const BigTorusPolynomial &b) {
+    const UINT64 N = reps.length;
+    assert(a.length == N);
+    assert(b.length == N);
+    for (UINT64 i = 0; i < N; i++) {
+        add(reps.getAT(i), a.getAT(i), b.getAT(i));
+    }
 }
