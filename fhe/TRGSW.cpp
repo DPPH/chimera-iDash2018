@@ -143,7 +143,7 @@ void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits) {
         //decompose tmp in base 2^32
         for (UINT64 i = 0; i < ell; i++) {
             for (UINT64 k = 0; k < N; ++k) {
-                int64_t polyk = bitdecomp_signed_coef32(tmpDec.getAT(k), i, in_nblimbs);
+                int64_t polyk = bitdecomp_signed_coef32(tmpDec.getAT(k), i + 1, in_nblimbs);
                 to_BigReal(poly[k], polyk, 32);
             }
             iFFT(poly_fft, poly, n, powomega);
