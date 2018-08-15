@@ -93,3 +93,14 @@ void delete_BigComplex_array(UINT64 n, BigComplex *array) {
     free(array);
 }
 
+void zero(BigComplexRef dest) {
+    zero(*dest.real);
+    zero(*dest.imag);
+}
+
+void addMulTo(BigComplexRef dest, const BigComplexRef &a, const BigComplexRef &b) {
+    BigComplex tmp(a.real->nblimbs);
+    mul(tmp, a, b);
+    add(dest, dest, tmp);
+}
+

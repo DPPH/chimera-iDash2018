@@ -64,6 +64,12 @@ void sub(BigComplexRef dest, BigComplexRef a, BigComplexRef b);
 /** copy dest = a */
 void copy(BigComplexRef dest, BigComplexRef a);
 
+/** dest = 0 */
+void zero(BigComplexRef dest);
+
+/** dest = dest + a * b */
+void addMulTo(BigComplexRef dest, const BigComplexRef &a, const BigComplexRef &b);
+
 /** create an array */
 BigComplex *new_BigComplex_array(UINT64 n, UINT64 nblimbs);
 

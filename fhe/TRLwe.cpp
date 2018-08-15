@@ -59,6 +59,24 @@ __int128 bitdecomp_coef128(const BigTorusRef &tmpDec, UINT64 j, const UINT64 lim
     return 0;
 }
 
+void bitdecomp_signed_offset32_apply(BigTorusRef reps, const BigTorusRef &source) {
+    int64_t dlimb = reps.params.torus_limbs;
+    int64_t slimb = source.params.torus_limbs;
+    static const UINT64 LIMB_OFFSET = 0x8000000080000000UL; //2^31 + 2^63
+    if (dlimb <= slimb) {
+        for (int64_t i = 1; i <= dlimb; i++) {
+            reps.limbs_end[-i] = source.limbs_end[-i] + LIMB_OFFSET;
+        }
+    } else {
+        for (int64_t i = 1; i <= slimb; i++) {
+            reps.limbs_end[-i] = source.limbs_end[-i] + LIMB_OFFSET;
+        }
+        for (int64_t i = slimb + 1; i <= dlimb; i++) {
+            reps.limbs_end[-i] = LIMB_OFFSET;
+        }
+    }
+}
+
 
 int64_t bitdecomp_coef32(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_prec) {
     assert(j >= 1);
@@ -69,6 +87,10 @@ int64_t bitdecomp_coef32(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_
     } else return 0;
 }
 
+int64_t bitdecomp_signed_coef32(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_prec) {
+    static const int64_t bitDecomp_out_offset = -(int64_t(1) << int64_t(31)); // -Bg/2
+    return bitdecomp_coef32(tmpDec, j, limb_prec) + bitDecomp_out_offset;
+}
 
 void trivial(TRLwe &out, const BigTorusRef &in, const UINT64 out_limb_prec) {
     zero(out.a[0]);

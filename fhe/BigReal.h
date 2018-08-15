@@ -48,6 +48,9 @@ void div2ui(BigReal &dest, const BigReal &a, UINT64 b);
 /** copy */
 void copy(BigReal &dest, const BigReal &a);
 
+/** zero */
+void zero(BigReal &dest);
+
 /** conversion torus to bigreal (outputs v between -1/2 and 1/2) */
 void to_BigReal(BigReal &dest, const BigTorusRef &v);
 

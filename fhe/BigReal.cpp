@@ -172,3 +172,7 @@ void to_BigTorus(BigTorusRef dest, const BigReal &a, UINT64 lshift_bits, UINT64 
     delete[] tmp;
 }
 
+void zero(BigReal &dest) {
+    mpz_set_ui(dest.value, 0);
+}
+
