@@ -280,7 +280,7 @@ TEST(BIGTORUS_ARITHMETIC, BigReal_to_BigTorus) {
                 RR rsource = random_RR();
                 to_BigReal(source, rsource);
                 // expected: source * 2^a centermod 1
-                RR rbi = to_RR(source) * pow(to_RR(2), to_RR(bits_a));
+                RR rbi = to_RR(source) * pow(to_RR(2), to_RR(long(bits_a)));
                 rbi -= to_RR(RoundToZZ(rbi));
                 // actual:
                 to_BigTorus(dest, source, bits_a, nblimbs);
@@ -344,7 +344,7 @@ TEST(BIGTORUS_ARITHMETIC, int2_To_BigReal) {
             int64_t source = (random() & bit_mask) - bit_offset;
 
             RR::SetPrecision(nblimbs * BITS_PER_LIMBS + 10);
-            RR ai = to_RR(source) / pow(to_RR(2), to_RR(bits_a));
+            RR ai = to_RR(long(source)) / pow(to_RR(2), to_RR(long(bits_a)));
             to_BigReal(dest, source, bits_a);
             RR rai = to_RR(dest);
             ASSERT_LE(log2Diff(ai, rai), -nblimbs * BITS_PER_LIMBS);
