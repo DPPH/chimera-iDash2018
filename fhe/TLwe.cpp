@@ -21,7 +21,7 @@ BigTorusRef TLwe::getBT() const {
 }
 
 TLweKey::TLweKey(const TLweParams &params) :
-        key(new int8_t[params.N]) {
+        key(new int64_t[params.N]) {
 }
 
 TLweKey::~TLweKey() {

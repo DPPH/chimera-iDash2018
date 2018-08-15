@@ -8,7 +8,7 @@
 class TRGSWParams : public TRLweParams {
 public:
     static const UINT64 Bgbits = 32;
-    static const UINT64 max_ell = 3;
+    static const UINT64 max_ell = 4;
 
     TRGSWParams(const UINT64 N, const BigTorusParams &fixp_params);
 
@@ -18,7 +18,7 @@ public:
 class TRGSW {
 public:
     const TRGSWParams &params;
-    BigComplex *(a[2][3][2]);
+    BigComplex *(a[2][TRGSWParams::max_ell][2]);
     UINT64 bits_a;     //plaintext norm 1 bits
     UINT64 fft_nlimbs; //fft limbs in all BigComplex
     UINT64 ell;        //actual decomposition length

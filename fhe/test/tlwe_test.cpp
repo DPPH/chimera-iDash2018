@@ -5,8 +5,6 @@
 
 NTL_CLIENT;
 
-double log2Diff(const RR &a, const RR &b);
-
 
 TEST(TLWE_TEST, tlwe_keygen) {
     UINT64 nblimbs = 5;

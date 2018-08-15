@@ -2,6 +2,13 @@
 #include "TRGSW.h"
 #include "BigFFT.h"
 
+#include <NTL/RR.h>
+
+NTL_CLIENT;
+
+double log2Diff(const RR &a, const RR &b);
+
+
 TRGSW::TRGSW(const TRGSWParams &params) : params(params), bits_a(0), fft_nlimbs(0), ell(0) {
     for (UINT64 k = 0; k < 2; k++) {
         for (UINT64 i = 0; i < params.max_ell; i++) {
@@ -44,7 +51,7 @@ void intPoly_encrypt(
     const UINT64 N = reps.params.N;
     const UINT64 n = N * 2;
     const UINT64 Ns2 = N / 2;
-    const UINT64 nb_bits_decomp = alpha_bits + 2;
+    const UINT64 nb_bits_decomp = alpha_bits;
     const UINT64 ell = UINT64(ceil(double(nb_bits_decomp) / double(reps.params.Bgbits)));
     assert_dramatically(ell <= reps.params.max_ell, "TRGSW params ell is too small");
     const UINT64 fft_prec_bits = nb_bits_decomp + 32 + (UINT64) log2f(N);
@@ -75,6 +82,7 @@ void intPoly_encrypt(
     TRLweParams trLweParams(N, btParams);
     BigTorusPolynomial rescaled_plaintext(N, btParams);
     BigTorusPolynomial zero_plaintext(N, btParams);
+    zero(zero_plaintext);
     TRLwe zPlusMuH_ciphertext(trLweParams);
     BigReal *zPlusMuHRj = new_BigReal_array(N, fft_nlimbs);
     for (int64_t i = 0; i < int64_t(ell); i++) { //must be signed
@@ -87,17 +95,48 @@ void intPoly_encrypt(
                 rescaled_plaintext.getAT(k).limbs_end[-i / 2 - 1] = 1ul;
             }
             mulS64(rescaled_plaintext.getAT(k), plaintext[k], rescaled_plaintext.getAT(k), fft_nlimbs);
+            //just to make sure:
+            //RR::SetPrecision(fft_nlimbs*BITS_PER_LIMBS);
+            //cout << "---" << endl;
+            //cout << "rescPlaintext_k: " << to_RR(rescaled_plaintext.getAT(k)) << endl;
+            //cout << "expected: " << to_RR(plaintext[k])/pow(to_RR(2), to_RR(32*(i+1))) << endl;
+            //cout << log2Diff(to_RR(rescaled_plaintext.getAT(k)), to_RR(plaintext[k])/pow(to_RR(2), to_RR(32*(i+1)))) << endl;
         }
         for (int64_t j = 0; j < 2; j++) {
             //compute a ciphertext of zero
             native_encrypt(zPlusMuH_ciphertext, zero_plaintext, key, alpha_bits);
+            //just to make sure:
+            //RR::SetPrecision(fft_nlimbs*BITS_PER_LIMBS);
+            //BigTorusPolynomial test(N, btParams);
+            //native_phase(test, zPlusMuH_ciphertext, key, alpha_bits);
+            //for (int k=0; k<int(N); k++) {
+            //    cout << "test - " << log2Diff(test.getAT(i),zero_plaintext.getAT(0)) << endl;
+            //}
             //translate by the rescaled plaintext
             add(zPlusMuH_ciphertext.a[j], zPlusMuH_ciphertext.a[j], rescaled_plaintext);
+            /*
+            //just to make sure:
+            for (int64_t k = 0; k < int64_t(N); k++) {
+                RR::SetPrecision(fft_nlimbs * BITS_PER_LIMBS);
+                BigTorusPolynomial test(N, btParams);
+                BigTorusPolynomial test2(N, btParams);
+                native_phase(test, zPlusMuH_ciphertext, key, alpha_bits);
+                if (j == 0)
+                    fft_external_product(test2, key.key, rescaled_plaintext, 1, fft_nlimbs);
+                else
+                    ::copy(test2, rescaled_plaintext, fft_nlimbs);
+                cout << "---" << endl;
+                //cout << "phase_k: " << to_RR(test.getAT(k)) << endl;
+                //cout << "expected: " << to_RR(plaintext[k]) / pow(to_RR(2), to_RR(32 * (i + 1))) << endl;
+                cout << j << " " << i << " " << k << " " <<
+                     log2Diff(to_RR(test.getAT(k)), (j==0?-1:1)*to_RR(test2.getAT(k))) << endl;
+            }
+             */
 
             for (int64_t l = 0; l < 2; l++) {
                 //convert to BigReal
                 for (int64_t k = 0; k < int64_t(N); k++) {
-                    to_BigReal(zPlusMuHRj[k], zPlusMuH_ciphertext.a[j].getAT(k));
+                    to_BigReal(zPlusMuHRj[k], zPlusMuH_ciphertext.a[l].getAT(k));
                 }
                 //fft to BigComplex
                 iFFT(reps.a[j][i][l], zPlusMuHRj, n, powomega);

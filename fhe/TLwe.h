@@ -16,7 +16,7 @@ public:
 /** A TLwe is an array of BigTorus elements, with fix point parameters */
 class TLweKey {
 public:
-    int8_t *const key;
+    int64_t *const key;
 
     NO_COPY(TLweKey);
 
