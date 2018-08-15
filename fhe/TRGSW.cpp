@@ -30,7 +30,13 @@ TRGSWParams::TRGSWParams(const UINT64 N, const BigTorusParams &fixp_params) :
 
 
 void binary_encrypt(TRGSW &reps, const UINT64 plaintext, const TLweKey &key, UINT64 alpha_bits) {
-    abort(); //TODO
+
+    int64_t *poly_plaintext = new int64_t[reps.params.N];
+    poly_plaintext[0] = plaintext;
+    for (UINT64 i = 1; i < reps.params.N; i++) {
+        poly_plaintext[i] = 0;
+    }
+    intPoly_encrypt(reps, poly_plaintext, key, alpha_bits);
 }
 
 void intPoly_encrypt(
