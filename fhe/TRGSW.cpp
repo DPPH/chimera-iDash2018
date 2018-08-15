@@ -102,7 +102,7 @@ void intPoly_encrypt(
     delete_BigReal_array(N, zPlusMuHRj);
 }
 
-void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 bits_a, UINT64 out_alpha_bits) {
+void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits) {
     const UINT64 N = a.params.N;
     assert(b.params.N == N);
     assert(reps.params.N == N);

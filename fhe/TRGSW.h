@@ -28,12 +28,10 @@ public:
     ~TRGSW();
 };
 
-void intPoly_encrypt(
-        TRGSW &reps, const int64_t *plaintext, const TLweKey &key, UINT64 alpha_bits);
-
+void intPoly_encrypt(TRGSW &reps, const int64_t *plaintext, const TLweKey &key, UINT64 alpha_bits);
 
 void binary_encrypt(TRGSW &reps, const UINT64 plaintext, const TLweKey &key, UINT64 alpha_bits);
 
-void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 bits_a, UINT64 out_alpha_bits);
+void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits);
 
 #endif //FHE_TRGSW_H
