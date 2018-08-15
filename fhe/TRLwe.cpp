@@ -1,3 +1,4 @@
+#include <cassert>
 #include "TRLwe.h"
 
 // see if this out_prec_limbs still make sense?
@@ -47,9 +48,6 @@ void pubKS32(TRLwe &out, const TLwe &in, const pubKsKey32 &ks, const UINT64 out_
 }
 
 
-
-
-
 __int128 bitdecomp_coef128(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_prec) {
     const UINT64 nlimbs = tmpDec.params.torus_limbs;
     if (2 * j <= nlimbs) {
@@ -63,13 +61,13 @@ __int128 bitdecomp_coef128(const BigTorusRef &tmpDec, UINT64 j, const UINT64 lim
 
 
 int64_t bitdecomp_coef32(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_prec) {
+    assert(j >= 1);
     const UINT64 nlimbs = tmpDec.params.torus_limbs;
     if (j <= 2 * nlimbs) {
         if (j % 2 == 0) { return int64_t(tmpDec.limbs_end[-j / 2] & 0xFFFFFFFFUL); }
         else { return int64_t(tmpDec.limbs_end[-(j + 1) / 2] >> 32UL); }
     } else return 0;
 }
-
 
 
 void trivial(TRLwe &out, const BigTorusRef &in, const UINT64 out_limb_prec) {

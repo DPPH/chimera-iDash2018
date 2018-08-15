@@ -108,9 +108,16 @@ void trivial(TRLwe &out, const BigTorusRef &in, const UINT64 out_limb_prec);
  * the output can be signed, we don't care */
 __int128 bitdecomp_coef128(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_prec);
 
+/** @brief add the signed bitdecomp in offset */
+void bitdecomp_signed_offset32_apply(BigTorusRef reps, const BigTorusRef &source);
+
 /** @brief get the j-th coef of the base 2^128 decomposition between [0 and 2^128[
  * the output can be signed, we don't care */
-int64_t bitdecomp_coef32(const BigTorusRef &tmpDec, UINT64 j, const UINT64 limb_prec);
+int64_t bitdecomp_coef32(const BigTorusRef &tmpDec, UINT64 position, const UINT64 limb_prec);
+
+/** @brief add the signed bitdecomp in offset */
+int64_t bitdecomp_signed_coef32(const BigTorusRef &tmpDec, UINT64 position, const UINT64 limb_prec);
+
 
 
 /** @brief out = out - aij * in
