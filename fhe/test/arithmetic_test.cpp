@@ -2,6 +2,8 @@
 #include <NTL/LLL.h>
 #include "../commons.h"
 #include "../arithmetic.h"
+#include "../BigReal.h"
+#include "../BigComplex.h"
 
 NTL_CLIENT;
 
@@ -266,50 +268,86 @@ TEST(BIGTORUS_ARITHMETIC, mulS64) {
 }
 
 TEST(BIGTORUS_ARITHMETIC, BigReal_to_BigTorus) {
-/* //TODO
-    RR::SetPrecision(nblimbs*BITS_PER_LIMBS);
-    RR::SetOutputPrecision(nblimbs*BITS_PER_LIMBS/log2(10.));
-    RR rbi = to_RR(rb[i])*pow(to_RR(2),to_RR(bits_a));
-    rbi -= to_RR(RoundToZZ(rbi));
-    to_BigTorus(out.getAT(i), rb[i], bits_a, out_limb_prec);
-    RR outi = to_RR(out.getAT(i));
-    cout << rbi << endl;
-    cout << outi << endl;
-*/
+    for (const int64_t bits_a : {1, 17, 31}) {
+        for (const int64_t nblimbs : {1, 2, 5}) {
+            for (const int64_t rlimbs: {nblimbs, nblimbs + 1}) {
+                BigTorusParams params(nblimbs);
+
+                BigReal source(rlimbs);
+                BigTorus dest(params);
+
+                RR::SetPrecision(rlimbs * BITS_PER_LIMBS);
+                RR rsource = random_RR();
+                to_BigReal(source, rsource);
+                // expected: source * 2^a centermod 1
+                RR rbi = to_RR(source) * pow(to_RR(2), to_RR(bits_a));
+                rbi -= to_RR(RoundToZZ(rbi));
+                // actual:
+                to_BigTorus(dest, source, bits_a, nblimbs);
+                RR outi = to_RR(dest);
+                //RR::SetOutputPrecision(nblimbs * BITS_PER_LIMBS / log2(10.));
+                //cout << rbi << endl;
+                //cout << outi << endl;
+                ASSERT_LE(log2Diff(rbi, outi), -nblimbs * BITS_PER_LIMBS);
+            }
+        }
+    }
 }
 
 TEST(BIGCOMPLEX_ARITHMETIC, mulTo) {
-/* //TODO
-    RR::SetPrecision(nblimbs*BITS_PER_LIMBS);
-    RR cbre = to_RR(cb[i].real);
-    RR cbim = to_RR(cb[i].imag);
-    RR care = to_RR(ca[i].real);
-    RR caim = to_RR(ca[i].imag);
-    mulTo(cb[i], ca[i]);
-    RR targetre = cbre * care - cbim * caim;
-    RR targetim = cbre * caim + cbim * care;
-    RR actualre = to_RR(cb[i].real);
-    RR actualim = to_RR(cb[i].imag);
-    cout << i << " ---- " << log2Diff(targetre, actualre) << endl;
-    cout << i << " ---- " << log2Diff(targetim, actualim) << endl;
-*/
+    for (const int64_t nblimbs : {1, 2, 5}) {
+        RR::SetPrecision(nblimbs * BITS_PER_LIMBS + 10);
+        RR care = random_RR();
+        RR caim = random_RR();
+        RR cbre = random_RR();
+        RR cbim = random_RR();
+        BigComplex ca(nblimbs);
+        BigComplex cb(nblimbs);
+        to_BigReal(ca.real, care);
+        to_BigReal(cb.real, cbre);
+        to_BigReal(ca.imag, caim);
+        to_BigReal(cb.imag, cbim);
+        mulTo(cb, ca);
+        RR targetre = cbre * care - cbim * caim;
+        RR targetim = cbre * caim + cbim * care;
+        RR actualre = to_RR(cb.real);
+        RR actualim = to_RR(cb.imag);
+        ASSERT_LE(log2Diff(targetre, actualre), -nblimbs * BITS_PER_LIMBS + 1);
+        ASSERT_LE(log2Diff(targetim, actualim), -nblimbs * BITS_PER_LIMBS + 1);
+    }
 }
 
 TEST(BIGTORUS_ARITHMETIC, BigTorus_To_BigReal) {
-/* TODO
-    RR::SetPrecision(nblimbs*BITS_PER_LIMBS);
-    RR bi = to_RR(b.getAT(i));
-    to_BigReal(rb[i], b.getAT(i));
-    RR rbi = to_RR(rb[i]);
-    cout << i << " -rbi- " << log2Diff(bi, rbi) << endl;
-*/
+    for (const int64_t nblimbs : {1, 2, 5}) {
+        RR::SetPrecision(nblimbs * BITS_PER_LIMBS + 10);
+
+        BigTorusParams params(nblimbs);
+        BigTorus b(params);
+        random(b);
+        // expected:
+        RR bi = to_RR(b);
+        // actual:
+        BigReal rb(nblimbs);
+        to_BigReal(rb, b);
+        RR rbi = to_RR(rb);
+        ASSERT_LE(log2Diff(bi, rbi), -nblimbs * BITS_PER_LIMBS);
+    }
 }
 
-TEST(BIGTORUS_ARITHMETIC, int_To_BigReal) {
-/* TODO
-    RR ai = to_RR(a[i])/pow(to_RR(2), to_RR(bits_a));
-    to_BigReal(ra[i], a[i], bits_a);
-    RR rai = to_RR(ra[i]);
-    cout << i << " -rai- " << log2Diff(ai, rai) << endl;
-*/
+TEST(BIGTORUS_ARITHMETIC, int2_To_BigReal) {
+    for (const int64_t bits_a : {1, 17, 31}) {
+        for (const int64_t nblimbs : {1, 2, 5}) {
+            BigReal dest(nblimbs);
+
+            int64_t bit_mask = (1ul << bits_a) - 1;
+            int64_t bit_offset = (1ul << (bits_a - 1)) - 1;
+            int64_t source = (random() & bit_mask) - bit_offset;
+
+            RR::SetPrecision(nblimbs * BITS_PER_LIMBS + 10);
+            RR ai = to_RR(source) / pow(to_RR(2), to_RR(bits_a));
+            to_BigReal(dest, source, bits_a);
+            RR rai = to_RR(dest);
+            ASSERT_LE(log2Diff(ai, rai), -nblimbs * BITS_PER_LIMBS);
+        }
+    }
 }
