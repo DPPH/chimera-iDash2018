@@ -156,5 +156,8 @@ TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
     for (int64_t i = 0; i < N; i++) {
         EXPECT_LE(log2Diff(phase.getAT(i), phase_ref.a[1].getAT(i)), -out_alpha_bits);
     }
+    delete[] a;
+    delete[] s;
+    delete_TRGSW_array(n_in, c);
 }
 
