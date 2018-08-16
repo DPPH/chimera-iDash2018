@@ -153,7 +153,7 @@ extern int64_t *debug_plaintext;
 extern TLweKey *debug_key;
 #endif
 
-void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, int64_t out_alpha_bits) {
+void external_product(TRLwe &reps, const TRGSW &a, const TRLwe &b, int64_t out_alpha_bits) {
     const UINT64 N = a.params.N;
     assert(b.params.N == N);
     assert(reps.params.N == N);

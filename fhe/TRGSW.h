@@ -32,10 +32,18 @@ void intPoly_encrypt(TRGSW &reps, const int64_t *plaintext, const TLweKey &key, 
 
 void binary_encrypt(TRGSW &reps, const UINT64 plaintext, const TLweKey &key, UINT64 alpha_bits);
 
-void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, int64_t out_alpha_bits);
+void external_product(TRLwe &reps, const TRGSW &a, const TRLwe &b, int64_t out_alpha_bits);
 
 void
 native_phase_FFT(BigTorusPolynomial &reps, BigComplex *a, BigComplex *b, const TLweKey &key, const int64_t lshift = 0);
 
+// reps = b + c.(a-b)
+void cmux(TRLwe &reps, const TRGSW &c, const TRLwe &a, const TRLwe &b, int64_t out_alpha_bits);
+
+// reps *= X^power
+void rotate(TRLwe &reps, uint64_t power);
+
+// reps *= X^(b-sum a_i c_i)
+void blind_rotate(TRLwe &reps, uint64_t b, uint64_t *a, const TRGSW *c, int64_t n_in, int64_t out_alpha_bits);
 
 #endif //FHE_TRGSW_H
