@@ -48,4 +48,8 @@ void rotate_diff(TRLwe &out, const TRLwe &in, int64_t power);
 //reps *= X^-(b-sum c_i a_i)
 void blind_rotate(TRLwe &reps, uint64_t b, uint64_t *a, const TRGSW *c, int64_t n_in, int64_t out_alpha_bits);
 
+
+void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TRGSW &rk, int precision_bits);
+
+
 #endif //FHE_TRGSW_H

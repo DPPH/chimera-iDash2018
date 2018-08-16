@@ -373,3 +373,56 @@ void blind_rotate(TRLwe &reps, uint64_t b, uint64_t *a, const TRGSW *c, int64_t 
         cmux(reps, c[i], tmp, reps, out_alpha_bits);
     }
 }
+
+void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TRGSW &rk, int precision_bits) {
+    const int64_t N = reps.params.N;
+    const int64_t Ns2 = N / 2;
+    assert_dramatically(a.params.fixp_params.level_expo > 0, "missing level info in a");
+    assert_dramatically(b.params.fixp_params.level_expo > 0, "missing level info in b");
+    assert_dramatically(reps.params.fixp_params.level_expo > 0, "missing level info in reps");
+    assert_dramatically(a.params.N == N);
+    assert_dramatically(b.params.N == N);
+    assert_dramatically(rk.params.N == N);
+    //compute parameters
+    int64_t input_level_expo = reps.params.fixp_params.level_expo + precision_bits + 1;
+    assert_dramatically(a.params.fixp_params.level_expo >= input_level_expo, "level expo of a too small");
+    assert_dramatically(b.params.fixp_params.level_expo >= input_level_expo, "level expo of b too small");
+    //copy and resample the input to exactly input_level
+    int64_t fft_bits = 2 * input_level_expo + int64_t(log2(N)); //precision of the fft
+    int64_t fft_nlimbs = limb_precision(fft_bits);
+    BigReal *a1 = new_BigReal_array(N, fft_nlimbs);
+    BigReal *b1 = new_BigReal_array(N, fft_nlimbs);
+    BigReal *a2 = new_BigReal_array(N, fft_nlimbs);
+    BigReal *b2 = new_BigReal_array(N, fft_nlimbs);
+    BigReal *a1_a2 = new_BigReal_array(N, fft_nlimbs);
+    BigReal *a1_b2 = new_BigReal_array(N, fft_nlimbs);
+    BigReal *b1_a2 = new_BigReal_array(N, fft_nlimbs);
+    BigReal *b1_b2 = new_BigReal_array(N, fft_nlimbs);
+    precise_conv_toBigReal(a1, a.a[0], input_level_expo);
+    precise_conv_toBigReal(b1, a.a[1], input_level_expo);
+    precise_conv_toBigReal(a2, b.a[0], input_level_expo);
+    precise_conv_toBigReal(b2, b.a[1], input_level_expo);
+    fft_BigRealPoly_product(a1_a2, a1, a2, N, fft_nlimbs);
+    fft_BigRealPoly_product(a1_b2, a1, b2, N, fft_nlimbs);
+    fft_BigRealPoly_product(b1_a2, b1, a2, N, fft_nlimbs);
+    fft_BigRealPoly_product(b1_b2, b1, b2, N, fft_nlimbs);
+
+    //Now, we create the intermediate TRLWE ciphertexts
+    TRLwe tmp0(); //TODO find the intermediate params
+    TRLwe tmp1();
+    BigReal *C0 = b1_b2;
+    BigReal *C1 = a1_b2;
+    BigRealPoly_addTo(C1, b1_a2, N, fft_nlimbs);
+    BigReal *C2 = a1_a2;
+    // tmp0 = (C1 , C0) = ( a1.b2+a2.b1, b1.b2 )
+    // tmp1 = (C2 , 0)  = ( a1.a2      , 0     )
+    BigRealPoly_shift_toBigTorus(tmp0.a[0], C1, input_level_expo)
+    BigRealPoly_shift_toBigTorus(tmp0.a[1], C0, input_level_expo)
+    BigRealPoly_shift_toBigTorus(tmp1.a[0], C2, input_level_expo)
+    zero(tmp1.a[1]);
+
+    //finally return tmp0 - rk . c1
+    external_product(tmp1, rk, tmp1, out_alpha_bits);
+    sub(reps, tmp0, tmp1);
+
+}
