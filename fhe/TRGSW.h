@@ -41,9 +41,11 @@ native_phase_FFT(BigTorusPolynomial &reps, BigComplex *a, BigComplex *b, const T
 void cmux(TRLwe &reps, const TRGSW &c, const TRLwe &a, const TRLwe &b, int64_t out_alpha_bits);
 
 // reps *= X^power
-void rotate(TRLwe &reps, uint64_t power);
+void rotate(TRLwe &out, const TRLwe &in, int64_t power);
 
-// reps *= X^(b-sum a_i c_i)
+void rotate_diff(TRLwe &out, const TRLwe &in, int64_t power);
+
+//reps *= X^-(b-sum c_i a_i)
 void blind_rotate(TRLwe &reps, uint64_t b, uint64_t *a, const TRGSW *c, int64_t n_in, int64_t out_alpha_bits);
 
 #endif //FHE_TRGSW_H

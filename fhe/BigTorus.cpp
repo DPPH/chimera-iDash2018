@@ -185,3 +185,21 @@ void mulS64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 limb_prec)
     }
 }
 
+void neg(BigTorusRef out, const BigTorusRef &in, UINT64 limb_precision) {
+
+    UINT64 insize = in.params.torus_limbs;
+    UINT64 outsize = out.params.torus_limbs;
+    if (limb_precision == NA) {
+        limb_precision = std::min(insize, outsize);
+    } else {
+        assert_dramatically(limb_precision <= outsize, "destination is not precise enough");
+        assert_dramatically(limb_precision <= insize, "source is not precise enough");
+    }
+    //copy the significant bits
+    mpn_neg(out.limbs_end - limb_precision, in.limbs_end - limb_precision, limb_precision);
+
+
+}
+
+
+

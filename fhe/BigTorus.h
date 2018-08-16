@@ -116,6 +116,9 @@ void add(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, UINT64 li
 /** add two bigtorus (with the provided precision, wrapper function) */
 void sub(BigTorusRef dest, const BigTorusRef &a, const BigTorusRef &b, UINT64 limb_precision = NA);
 
+/** @brief compute out=in*/
+void neg(BigTorusRef out, const BigTorusRef &in, UINT64 limb_precision = NA);
+
 /** @brief compute the bigtorus equal to out= out-a.in */
 void subMulS128(BigTorusRef out, __int128 a, const BigTorusRef &in, UINT64 out_limb_prec);
 

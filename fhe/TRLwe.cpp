@@ -315,6 +315,26 @@ ks_keygen32(const TRLweParams &out_params, const TLweParams &in_params, const TL
     return std::shared_ptr<pubKsKey32>(reps);
 }
 
+void add(TRLwe &reps, const TRLwe &a, const TRLwe &b) {
+    add(reps.a[0], a.a[0], b.a[0]);
+    add(reps.a[1], a.a[1], b.a[1]);
+}
+
+void sub(TRLwe &reps, const TRLwe &a, const TRLwe &b) {
+    sub(reps.a[0], a.a[0], b.a[0]);
+    sub(reps.a[1], a.a[1], b.a[1]);
+}
+
+void copy(TRLwe &out, const TRLwe &in) {
+    copy(out.a[0], in.a[0]);
+    copy(out.a[1], in.a[1]);
+}
+
+
+void neg(TRLwe &out, const TRLwe &in) {
+    neg(out.a[0], in.a[0]);
+    neg(out.a[1], in.a[1]);
+}
 
 pubKsKey128::pubKsKey128(
         const TLweParams &in_params,
