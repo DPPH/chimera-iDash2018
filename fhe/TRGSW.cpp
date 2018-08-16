@@ -424,8 +424,8 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     fft_BigRealPoly_product(b1_b2, b1, b2, N, fft_nlimbs);
 
     //Now, we create the intermediate TRLWE ciphertexts
-    TRLwe tmp0(); //TODO find the intermediate params
-    TRLwe tmp1();
+    TRLwe tmp0; //TODO find the intermediate params
+    TRLwe tmp1;
     BigReal *C0 = b1_b2;
     BigReal *C1 = a1_b2;
     BigRealPoly_addTo(C1, b1_a2, N, fft_nlimbs);
