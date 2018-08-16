@@ -178,18 +178,22 @@ void zero(BigReal &dest) {
 }
 
 
-void precise_conv_toBigReal(BigReal &a, const BigTorusRef &b, int64_t msb) {
+void precise_conv_toBigReal(BigReal &reps, const BigTorusRef &b, int64_t msb) {
     int64_t nlimbs_to_copy = limb_precision(msb);
-    assert_dramatically(a.nblimbs >= nlimbs_to_copy, "a does is not large enough to store the result");
-    mpz_realloc2(a.value, a.nblimbs * BITS_PER_LIMBS);
-    assert(a.value->_mp_alloc >= a.nblimbs);
-    UINT64 *dest_end = a.value->_mp_d + a.nblimbs;
+    assert_dramatically(reps.nblimbs >= nlimbs_to_copy, "a does is not large enough to store the result");
+    mpz_realloc2(reps.value, reps.nblimbs * BITS_PER_LIMBS);
+    assert(reps.value->_mp_alloc >= reps.nblimbs);
+    UINT64 *dest_end = reps.value->_mp_d + reps.nblimbs;
     //copy the msb limbs
     for (int64_t i = 1; i <= nlimbs_to_copy; i++) {
-        dest_end[-i] = b.limbs_end[-i];
+        if (i <= b.params.torus_limbs)
+            dest_end[-i] = b.limbs_end[-i];
+        else
+            dest_end[-i] = 0;
+
     }
     //fill the lsb with zeros
-    for (int64_t i = nlimbs_to_copy + 1; i <= a.nblimbs; i++) {
+    for (int64_t i = nlimbs_to_copy + 1; i <= reps.nblimbs; i++) {
         dest_end[-i] = 0;
     }
     if (msb % 64 != 0) {
@@ -205,10 +209,10 @@ void precise_conv_toBigReal(BigReal &a, const BigTorusRef &b, int64_t msb) {
     }
     //re-compute the actual size of a
     int64_t i;
-    for (i = a.nblimbs; i >= 1; i--) {
-        if (a.value->_mp_d[i - 1] != 0) break;
+    for (i = reps.nblimbs; i >= 1; i--) {
+        if (reps.value->_mp_d[i - 1] != 0) break;
     }
-    a.value->_mp_size = vneg ? -i : i;
+    reps.value->_mp_size = vneg ? -i : i;
 }
 
 void fft_BigRealPoly_product(BigReal *reps, BigReal *a, BigReal *b, int64_t N, int64_t fft_nlimbs) {
