@@ -46,7 +46,14 @@ void rotate(TRLwe &out, const TRLwe &in, int64_t power);
 void rotate_diff(TRLwe &out, const TRLwe &in, int64_t power);
 
 //reps *= X^-(b-sum c_i a_i)
-void blind_rotate(TRLwe &reps, uint64_t b, uint64_t *a, const TRGSW *c, int64_t n_in, int64_t out_alpha_bits);
+void blind_rotate(TRLwe &reps, int64_t b, int64_t *a, const TRGSW *c, int64_t n_in, int64_t out_alpha_bits);
+
+
+/** create an array of TRGSW */
+TRGSW *new_TRGSW_array(UINT64 size, const TRGSWParams &params);
+
+/** delete an array of TRGSW */
+void delete_TRGSW_array(UINT64 size, TRGSW *array);
 
 
 void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TRGSW &rk, int precision_bits);

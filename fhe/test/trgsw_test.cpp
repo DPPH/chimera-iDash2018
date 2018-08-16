@@ -103,37 +103,61 @@ TEST(TRGSW_TEST, trgsw_external_product) {
     }
 }
 
-/*
-TEST(TRGSW_TEST, trgsw_external_product_trivial) {
-    int64_t N = 64;
-    int64_t nblimbs = 6;
-    int64_t ell;
+
+TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
+    int64_t N = 4096;
+    int64_t n_in = 500;
+    int64_t nblimbs = 2;
+    int64_t alpha_bits = 120; //signed
+    int64_t out_alpha_bits = alpha_bits - (32 + int(log2(N)));
 
     BigTorusParams bt_params(nblimbs);
-    TLweParams tlwe_params_in(N, bt_params);
+
     TRGSWParams trgswParams(N, bt_params);
 
-    TRLwe b(trgswParams);
-    TRGSW a(trgswParams);
+    BigTorusPolynomial phase(N, bt_params);
 
-    //make a trivial ciphertext in b
-    zero(b.a[0]);
-    random(b.a[1], nblimbs);
+    TRLwe reps(trgswParams);
+    TRGSW *c = new_TRGSW_array(n_in, trgswParams);
+    shared_ptr<TLweKey> key = tlwe_keygen(trgswParams);
+    int64_t b = (rand() % (2 * N));
 
-    int64_t plaintextA = (rand() & 0xffff) - 32768;
 
-    //make a trivial ciphertext in a
-    a.fft_nlimbs = nblimbs;
-    a.bits_a = 16;
-    a.ell = ell;
+    int64_t *s = new int64_t[n_in];
+    int64_t *a = new int64_t[n_in];
+    int64_t power = -b;
 
-    for (int j=0; j<2; j++) {
-        for (int i=0; i<ell; i++) {
-            for
-        }
+    cout << "start encrypt: " << clock() / double(CLOCKS_PER_SEC) << endl;
+    for (int i = 0; i < n_in; i++) {
+        s[i] = rand() % 2;
+        a[i] = rand() % (2 * N);
+        binary_encrypt(c[i], s[i], *key, alpha_bits);
+        power += s[i] * a[i];
     }
+    cout << "end encrypt: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
 
 
+    //make a trivial ciphertext in reps
+    zero(reps.a[0]);
+    random(reps.a[1], nblimbs);
+    TRLwe phase_ref(trgswParams);
+    copy(phase_ref, reps);
+
+
+    cout << "start blind rotate: " << clock() / double(CLOCKS_PER_SEC) << endl;
+    blind_rotate(reps, b, a, c, n_in, out_alpha_bits);
+    cout << "end blind rotate: " << clock() / double(CLOCKS_PER_SEC) << endl;
+
+    native_phase(phase, reps, *key, alpha_bits);
+    rotate(phase_ref, phase_ref, power);
+
+
+    for (int64_t i = 0; i < N; i++) {
+        EXPECT_LE(log2Diff(phase.getAT(i), phase_ref.a[1].getAT(i)), -out_alpha_bits);
+    }
+    delete[] a;
+    delete[] s;
+    delete_TRGSW_array(n_in, c);
 }
-*/
+

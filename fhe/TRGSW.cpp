@@ -363,7 +363,7 @@ void rotate(TRLwe &out, const TRLwe &in, int64_t power) {
 }
 
 //reps *= X^-(b-sum c_i a_i)
-void blind_rotate(TRLwe &reps, uint64_t b, uint64_t *a, const TRGSW *c, int64_t n_in, int64_t out_alpha_bits) {
+void blind_rotate(TRLwe &reps, int64_t b, int64_t *a, const TRGSW *c, int64_t n_in, int64_t out_alpha_bits) {
 
     TRLwe tmp(reps.params);
     rotate(reps, reps, -b);
@@ -372,6 +372,22 @@ void blind_rotate(TRLwe &reps, uint64_t b, uint64_t *a, const TRGSW *c, int64_t 
         rotate(tmp, reps, a[i]);
         cmux(reps, c[i], tmp, reps, out_alpha_bits);
     }
+}
+
+TRGSW *new_TRGSW_array(UINT64 size, const TRGSWParams &params) {
+
+    TRGSW *reps = (TRGSW *) malloc(size * sizeof(TRGSW));
+    for (UINT64 i = 0; i < size; i++) {
+        new(reps + i) TRGSW(params);
+    }
+    return reps;
+}
+
+void delete_TRGSW_array(UINT64 size, TRGSW *array) {
+    for (UINT64 i = 0; i < size; i++) {
+        (array + i)->~TRGSW();
+    }
+    free(array);
 }
 
 void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TRGSW &rk, int precision_bits) {
@@ -424,5 +440,4 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     //finally return tmp0 - rk . c1
     external_product(tmp1, rk, tmp1, out_alpha_bits);
     sub(reps, tmp0, tmp1);
-
 }
