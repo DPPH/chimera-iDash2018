@@ -133,6 +133,7 @@ TRLwe::TRLwe(const TRLweParams &params) :
 TRLwe::~TRLwe() {
     a->~BigTorusPolynomial();
     (a + 1)->~BigTorusPolynomial();
+    free(a);
 }
 
 void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLweKey &key, UINT64 alpha_bits) {

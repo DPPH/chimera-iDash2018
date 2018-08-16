@@ -87,7 +87,7 @@ static unsigned logPow2(int n) {
     return __builtin_popcount(n - 1);
 }
 
-void FFT(BigReal *out, BigComplex *in, int n, const BigComplex *powombar) {
+void FFT(BigReal *out, const BigComplex *cstin, int n, const BigComplex *powombar) {
     const UINT64 nblimbs = out[0].nblimbs;
     BigComplex t1(nblimbs);
     BigComplex t2(nblimbs);
@@ -95,8 +95,10 @@ void FFT(BigReal *out, BigComplex *in, int n, const BigComplex *powombar) {
     //const int N = n/2;
     const int ns4 = n / 4;
     const UINT64 LOG2Ns4 = logPow2(ns4);
-
-
+    BigComplex *in = new_BigComplex_array(ns4, nblimbs);
+    for (int i = 0; i < ns4; i++) {
+        copy(in[i], cstin[i]);
+    }
 
     //at the beginning of iteration nn
     // a_{j,i} has P_{i%nn}(omega^j)
@@ -124,6 +126,8 @@ void FFT(BigReal *out, BigComplex *in, int n, const BigComplex *powombar) {
         div2ui(out[j], in[j].real, LOG2Ns4);      // /ns4;  //divide by N/2
         div2ui(out[j + ns4], in[j].imag, LOG2Ns4);  // /ns4; //divide by N/2
     }
+
+    delete_BigComplex_array(ns4, in);
 }
 
 UINT64 FFTAutoPrecomp::precomp_id(uint32_t n, uint16_t nblimbs, uint16_t bar) {

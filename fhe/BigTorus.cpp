@@ -160,6 +160,7 @@ void subMulS64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 out_lim
         mpn_mul_1(tmp, in_ptr, in_limb_prec, a);
         mpn_add_n(out_ptr, out_ptr, tmp, out_limb_prec);
     }
+    delete[] tmp;
 }
 
 

@@ -13,7 +13,6 @@ TRGSW::TRGSW(const TRGSWParams &params) : params(params), bits_a(0), fft_nlimbs(
     for (UINT64 k = 0; k < 2; k++) {
         for (UINT64 i = 0; i < params.max_ell; i++) {
             for (UINT64 j = 0; j < 2; j++) {
-                a[k][i][j] = new_BigComplex_array(params.N / 2, params.fixp_params.torus_limbs); //TODO
                 a[k][i][j] = nullptr;
             }
         }
@@ -147,11 +146,14 @@ void intPoly_encrypt(
     delete_BigReal_array(N, zPlusMuHRj);
 }
 
-//TODO DEBUG!!!
-int64_t *debug_plaintext;
-TLweKey *debug_key;
+#define DEBUG_EXTERNAL_PRODUCT 0
 
-void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits) {
+#if DEBUG_EXTERNAL_PRODUCT
+extern int64_t *debug_plaintext;
+extern TLweKey *debug_key;
+#endif
+
+void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, int64_t out_alpha_bits) {
     const UINT64 N = a.params.N;
     assert(b.params.N == N);
     assert(reps.params.N == N);
@@ -168,8 +170,12 @@ void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits) {
     BigComplex *poly_fft = new_BigComplex_array(Ns2, fft_nlimbs);
 
     BigTorusPolynomial tmpDec(N, b.params.fixp_params);
-    BigComplex *accFFT[2] = {new_BigComplex_array(Ns2, fft_nlimbs), new_BigComplex_array(Ns2, fft_nlimbs)};
-    BigReal *acc[2] = {new_BigReal_array(N, fft_nlimbs), new_BigReal_array(N, fft_nlimbs)};;
+    BigComplex *accFFT[2];
+    accFFT[0] = new_BigComplex_array(Ns2, fft_nlimbs);
+    accFFT[1] = new_BigComplex_array(Ns2, fft_nlimbs);
+    BigReal *acc[2];
+    acc[0] = new_BigReal_array(N, fft_nlimbs);
+    acc[1] = new_BigReal_array(N, fft_nlimbs);
 
     //set the accumulator to 0
     for (UINT64 l = 0; l < 2; l++) {
@@ -178,7 +184,8 @@ void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits) {
         }
     }
 
-    //TODO DEBUG
+#if DEBUG_EXTERNAL_PRODUCT
+    //DEBUG: declare variables
     int64_t *debug_intpoly = new int64_t[N];
     TRLwe debug_acc(b.params);
     //TRLwe debug_acc2(b.params);
@@ -187,23 +194,27 @@ void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits) {
     BigTorusPolynomial debug_hji(N, b.params.fixp_params);
     BigTorusPolynomial debug_tmp(N, b.params.fixp_params);
     zero(debug_acc);
+#endif
 
+#if DEBUG_EXTERNAL_PRODUCT
     {
         // TODO debug: at this point, verify that the phase of the accumulator
         // contains the same info as the phase of the debug accum
         native_phase(debug_acc_phase, debug_acc, *debug_key, fft_nlimbs * BITS_PER_LIMBS);
         native_phase_FFT(debug_acc2_phase, accFFT[0], accFFT[1], *debug_key, 32);
         //fft_external_product(debug_tmp, debug_plaintext, debug_acc_phase, 32, fft_nlimbs);
-        cout << "init: " << endl;
+        //cout << "init: " << endl;
         for (int k = 0; k < int64_t(N); k++) {
-            cout << "yyyy " << k << endl;
+            //cout << "yyyy " << k << endl;
             RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
             RR::SetOutputPrecision(in_nblimbs * BITS_PER_LIMBS / log2(10.));
-            cout << to_RR(debug_acc_phase.getAT(k)) << endl;
-            cout << to_RR(debug_acc2_phase.getAT(k)) << endl;
-            cout << log2Diff(to_RR(debug_acc2_phase.getAT(k)), to_RR(debug_acc_phase.getAT(k))) << endl;
+            //cout << to_RR(debug_acc_phase.getAT(k)) << endl;
+            //cout << to_RR(debug_acc2_phase.getAT(k)) << endl;
+            assert(log2Diff(to_RR(debug_acc2_phase.getAT(k)), to_RR(debug_acc_phase.getAT(k)))<=-1e40);
         }
     }
+#endif
+
     for (UINT64 j = 0; j < 2; j++) {
         //tmpDec = b.a[j] + (bitDecomp_in_offset,...,bitDecomp_in_offset)
         for (UINT64 k = 0; k < N; ++k) {
@@ -214,51 +225,61 @@ void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits) {
         for (int64_t i = 0; i < int64_t(ell); i++) {
             for (UINT64 k = 0; k < N; ++k) {
                 int64_t polyk = bitdecomp_signed_coef32(tmpDec.getAT(k), i + 1, in_nblimbs);
-                to_BigReal(poly[k], polyk, 32); //warning, in the bigReal, shift by 32
+#if DEBUG_EXTERNAL_PRODUCT
                 debug_intpoly[k] = polyk;
+#endif
+                to_BigReal(poly[k], polyk, 32); //warning, in the bigReal, shift by 32
             }
+#if DEBUG_EXTERNAL_PRODUCT
             // TODO debug
             zero(debug_hji);
             debug_hji.getAT(0).limbs_end[-(i + 2) / 2] = (((i % 2) == 0) ? 0x100000000ul : 0x1ul);
             fft_external_product(debug_tmp, debug_intpoly, debug_hji, 32, in_nblimbs);
+            //zero(debug_acc);
             add(debug_acc.a[j], debug_acc.a[j], debug_tmp);
-
+            //debug_acc contains debug_intpoly * hji
+#endif
             //now, poly contains the decomposition coef of the plaintext over H[j][i].
             iFFT(poly_fft, poly, n, powomega); //warning, in the bigcomplex, shift by 32
             //multiply the TRLWE a.a[j][i] with poly, and add it to accum
             for (UINT64 l = 0; l < 2; l++) {
                 for (UINT64 k = 0; k < Ns2; ++k) {
+                    //zero(accFFT[l][k]);
                     addMulTo(accFFT[l][k], poly_fft[k], a.a[j][i][l][k]);
                 }
             }
-            // TODO debug: at this point, verify that the phase of the accumulator
+#if DEBUG_EXTERNAL_PRODUCT
+            // debug: at this point, verify that the phase of the accumulator
             // contains the same info as the phase of the debug accum
-            native_phase(debug_acc_phase, debug_acc, *debug_key, fft_nlimbs * BITS_PER_LIMBS);
+            //cout << "j,i: " << j << " " << i << endl;
             native_phase_FFT(debug_acc2_phase, accFFT[0], accFFT[1], *debug_key, 32);
-            //fft_external_product(debug_tmp, debug_plaintext, debug_acc_phase, 32, fft_nlimbs);
-            cout << "j,i: " << j << " " << i << endl;
+            native_phase(debug_acc_phase, debug_acc, *debug_key, fft_nlimbs * BITS_PER_LIMBS);
+            fft_external_product(debug_tmp, debug_plaintext, debug_acc_phase, 32, fft_nlimbs);
             for (int k = 0; k < int64_t(N); k++) {
-                cout << "yyyy " << k << endl;
                 RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
                 RR::SetOutputPrecision(in_nblimbs * BITS_PER_LIMBS / log2(10.));
-                cout << to_RR(debug_acc_phase.getAT(k)) << endl;
-                cout << to_RR(debug_acc2_phase.getAT(k)) << endl;
-                cout << log2Diff(to_RR(debug_acc2_phase.getAT(k)), to_RR(debug_acc_phase.getAT(k))) << endl;
+                //cout << "yyyy " << k << endl;
+                //cout << to_RR(debug_tmp.getAT(k)) << endl;
+                //cout << to_RR(debug_acc2_phase.getAT(k)) << endl;
+                assert(log2Diff(to_RR(debug_acc2_phase.getAT(k)), to_RR(debug_tmp.getAT(k))) <= -out_alpha_bits);
             }
-
+#endif
 
         }
     }
+#if DEBUG_EXTERNAL_PRODUCT
     //TODO debug verify that the accumulator contains b
     for (int l = 0; l < 2; l++) {
         for (int k = 0; k < int64_t(N); k++) {
-            cout << "xxxxx" << endl;
+            //cout << "xxxxx" << endl;
             RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
             RR::SetOutputPrecision(in_nblimbs * BITS_PER_LIMBS / log2(10.));
-            cout << to_RR(debug_acc.a[l].getAT(k)) << endl;
-            cout << to_RR(b.a[l].getAT(k)) << endl;
+            //cout << to_RR(debug_acc.a[l].getAT(k)) << endl;
+            //cout << to_RR(b.a[l].getAT(k)) << endl;
+            assert(log2Diff(to_RR(debug_acc.a[l].getAT(k)), to_RR(b.a[l].getAT(k))) <= -ell*32);
         }
     }
+#endif
 
     //finally, un-FFT the accumulator into the final answer
     for (UINT64 l = 0; l < 2; l++) {
@@ -274,6 +295,9 @@ void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits) {
     delete_BigComplex_array(Ns2, accFFT[1]);
     delete_BigComplex_array(Ns2, poly_fft);
     delete_BigReal_array(N, poly);
+#if DEBUG_EXTERNAL_PRODUCT
+    delete[] debug_intpoly;
+#endif
 }
 
 

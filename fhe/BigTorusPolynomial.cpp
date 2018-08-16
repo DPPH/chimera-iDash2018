@@ -76,6 +76,10 @@ void fft_internal_product(BigTorusPolynomial &out, const BigTorusPolynomial &a, 
         to_BigTorus(out.getAT(i), rb[i], 0, out_limb_prec); //TODO
     }
 
+    delete_BigReal_array(N, rb);
+    delete_BigReal_array(N, ra);
+    delete_BigComplex_array(N / 2, cb);
+    delete_BigComplex_array(N / 2, ca);
 }
 
 void fft_semi_external_product(BigTorusPolynomial &out, const BigComplex *ca, const BigTorusPolynomial &b,
@@ -142,6 +146,10 @@ void fft_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPol
         to_BigTorus(out.getAT(i), rb[i], bits_a, out_limb_prec);
     }
 
+    delete_BigComplex_array(N / 2, cb);
+    delete_BigComplex_array(N / 2, ca);
+    delete_BigReal_array(N, rb);
+    delete_BigReal_array(N, ra);
 }
 
 void add(BigTorusPolynomial &reps, const BigTorusPolynomial &a, const BigTorusPolynomial &b) {

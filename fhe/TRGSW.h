@@ -32,7 +32,7 @@ void intPoly_encrypt(TRGSW &reps, const int64_t *plaintext, const TLweKey &key, 
 
 void binary_encrypt(TRGSW &reps, const UINT64 plaintext, const TLweKey &key, UINT64 alpha_bits);
 
-void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, UINT64 out_alpha_bits);
+void external_product(TRLwe &reps, TRGSW &a, TRLwe &b, int64_t out_alpha_bits);
 
 void
 native_phase_FFT(BigTorusPolynomial &reps, BigComplex *a, BigComplex *b, const TLweKey &key, const int64_t lshift = 0);

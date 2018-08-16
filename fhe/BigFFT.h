@@ -66,6 +66,6 @@ void iFFT(BigComplex *out, const BigReal *in, int n, const BigComplex *powomega)
  * @param n the logical dimension (= 2N)
  * @param powombar the precomputed FFT structure
  */
-void FFT(BigReal *out, BigComplex *in, int n, const BigComplex *powombar);
+void FFT(BigReal *out, const BigComplex *in, int n, const BigComplex *powombar);
 
 #endif //FHE_BIGFFT_H

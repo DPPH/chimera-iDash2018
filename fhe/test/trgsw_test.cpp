@@ -8,29 +8,29 @@
 using namespace std;
 using namespace NTL;
 
-extern int64_t *debug_plaintext;
-extern TLweKey *debug_key;
+int64_t *debug_plaintext;
+TLweKey *debug_key;
 
 TEST(TRGSW_TEST, trgsw_external_product) {
 
 
-    int64_t N = 8;
+    int64_t N = 4096;
     //int64_t n = 2 * N;
     int64_t nblimbs_in = 3;
 
 
-    int64_t alpha_bits = 112;
+    int64_t alpha_bits = 120; //signed
     int64_t bits_a = 15;
-    UINT64 out_alpha_bits = alpha_bits;
+    UINT64 out_alpha_bits = alpha_bits - (32 + int(log2(N)));
 
     BigTorusParams bt_params_in(nblimbs_in);
     TRGSWParams trgswParams(N, bt_params_in);
 
     shared_ptr<TLweKey> key = tlwe_keygen(trgswParams);
     debug_key = key.get();
-    for (int64_t i = 0; i < N; i++) {
-        key->key[i] = 0;
-    }
+    //for (int64_t i = 0; i < N; i++) {
+    //    key->key[i] = 0;
+    //}
 
     TRGSW a(trgswParams);
 
@@ -43,8 +43,8 @@ TEST(TRGSW_TEST, trgsw_external_product) {
     debug_plaintext = plaintext_a;
 
     for (UINT64 i = 0; i < a.params.N; i++) {
-        plaintext_a[i] = ((i == 0) ? 1 : 0);
-        //plaintext_a[i] = (rand() % (1l << bits_a)) - (1l << (bits_a - 1));
+        //plaintext_a[i] = ((i == 0) ? 1 : 0);
+        plaintext_a[i] = (rand() % (1l << bits_a)) - (1l << (bits_a - 1));
     }
 
     intPoly_encrypt(a, plaintext_a, *key, alpha_bits);
@@ -69,11 +69,13 @@ TEST(TRGSW_TEST, trgsw_external_product) {
                 fft_external_product(phaseRef, key->key, phaseRef, 1, nblimbs_in);
             }
             fft_external_product(phaseRef, plaintext_a, phaseRef, 16, nblimbs_in);
+            //cout << "phase of a[" << j << "][" << i << "]: " << endl;
             for (int k = 0; k < N; k++) {
-                cout << j << "," << i << "," << k << ": "
-                     << log2Diff(phaseRef.getAT(k), phaseAC.getAT(k)) << endl;
+                //cout << j << "," << i << "," << k << ": "
+                //     << log2Diff(phaseRef.getAT(k), phaseAC.getAT(k)) << endl;
                 //cout << to_RR(phaseRef.getAT(k)) << endl;
                 //cout << to_RR(phaseAC.getAT(k)) << endl;
+                ASSERT_LE(log2Diff(phaseRef.getAT(k), phaseAC.getAT(k)), -alpha_bits + 2);
             }
         }
     }
@@ -83,7 +85,11 @@ TEST(TRGSW_TEST, trgsw_external_product) {
 
     native_encrypt(b, plaintext_b, *key, alpha_bits);
 
+    cout << "external 1 start: " << clock() / double(CLOCKS_PER_SEC) << endl;
     external_product(reps, a, b, out_alpha_bits);
+    cout << "external 2 start: " << clock() / double(CLOCKS_PER_SEC) << endl;
+    external_product(reps, a, b, out_alpha_bits);
+    cout << "external 2 end: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
     BigTorusPolynomial phase(N, bt_params_in);
 
@@ -93,7 +99,7 @@ TEST(TRGSW_TEST, trgsw_external_product) {
     fft_external_product(phase2, plaintext_a, plaintext_b, bits_a, limb_precision(out_alpha_bits));
 
     for (int64_t i = 0; i < N; i++) {
-        ASSERT_LE(log2Diff(phase.getAT(i), phase2.getAT(i)), -1000);
+        ASSERT_LE(log2Diff(phase.getAT(i), phase2.getAT(i)), -out_alpha_bits);
     }
 }
 

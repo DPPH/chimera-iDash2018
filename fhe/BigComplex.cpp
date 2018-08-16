@@ -66,7 +66,6 @@ void mulTo(BigComplexRef dest, BigComplexRef a) {
 
 void add(BigComplexRef dest, BigComplexRef a, BigComplexRef b) {
     add(*dest.real, *a.real, *b.real);
-    add(*dest.real, *a.real, *b.real);
     add(*dest.imag, *a.imag, *b.imag);
 }
 

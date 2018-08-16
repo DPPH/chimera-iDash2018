@@ -195,6 +195,8 @@ TEST(FFT_EXT_MUL_TEST, external_product_FFT) {
                 //cout << "out1_i: " << to_RR(out1.getAT(i)) << endl;
                 ASSERT_LE(log2Diff(out.getAT(i), out1.getAT(i)), -nblimbs_out * BITS_PER_LIMBS);
             }
+
+            delete[] a;
         }
     }
 }
