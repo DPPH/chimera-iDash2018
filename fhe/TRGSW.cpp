@@ -392,7 +392,6 @@ void delete_TRGSW_array(UINT64 size, TRGSW *array) {
 
 void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TRGSW &rk, int precision_bits) {
     const int64_t N = reps.params.N;
-    const int64_t Ns2 = N / 2;
     assert_dramatically(a.params.fixp_params.level_expo > 0, "missing level info in a");
     assert_dramatically(b.params.fixp_params.level_expo > 0, "missing level info in b");
     assert_dramatically(reps.params.fixp_params.level_expo > 0, "missing level info in reps");
@@ -400,11 +399,14 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     assert_dramatically(b.params.N == N);
     assert_dramatically(rk.params.N == N);
     //compute parameters
-    int64_t input_level_expo = reps.params.fixp_params.level_expo + precision_bits + 1;
+    // input level noise: bit precision of the FFT of the first part of the product
+    //                    we round everything to exact multiples of 1/2^input_level_expo
+    int64_t input_level_expo = reps.params.fixp_params.level_expo + precision_bits;
+    int64_t input_level_noise = reps.params.fixp_params.level_expo + 2 * precision_bits + 1;
     assert_dramatically(a.params.fixp_params.level_expo >= input_level_expo, "level expo of a too small");
     assert_dramatically(b.params.fixp_params.level_expo >= input_level_expo, "level expo of b too small");
     //copy and resample the input to exactly input_level
-    int64_t fft_bits = 2 * input_level_expo + int64_t(log2(N)); //precision of the fft
+    int64_t fft_bits = 2 * input_level_noise + int64_t(log2(N)); //precision of the fft: twice as large
     int64_t fft_nlimbs = limb_precision(fft_bits);
     BigReal *a1 = new_BigReal_array(N, fft_nlimbs);
     BigReal *b1 = new_BigReal_array(N, fft_nlimbs);
@@ -414,18 +416,32 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     BigReal *a1_b2 = new_BigReal_array(N, fft_nlimbs);
     BigReal *b1_a2 = new_BigReal_array(N, fft_nlimbs);
     BigReal *b1_b2 = new_BigReal_array(N, fft_nlimbs);
-    precise_conv_toBigReal(a1, a.a[0], input_level_expo);
-    precise_conv_toBigReal(b1, a.a[1], input_level_expo);
-    precise_conv_toBigReal(a2, b.a[0], input_level_expo);
-    precise_conv_toBigReal(b2, b.a[1], input_level_expo);
+    precise_conv_toBigReal(a1, a.a[0], input_level_noise);
+    precise_conv_toBigReal(b1, a.a[1], input_level_noise);
+    precise_conv_toBigReal(a2, b.a[0], input_level_noise);
+    precise_conv_toBigReal(b2, b.a[1], input_level_noise);
     fft_BigRealPoly_product(a1_a2, a1, a2, N, fft_nlimbs);
     fft_BigRealPoly_product(a1_b2, a1, b2, N, fft_nlimbs);
     fft_BigRealPoly_product(b1_a2, b1, a2, N, fft_nlimbs);
     fft_BigRealPoly_product(b1_b2, b1, b2, N, fft_nlimbs);
 
     //Now, we create the intermediate TRLWE ciphertexts
-    TRLwe tmp0; //TODO find the intermediate params
-    TRLwe tmp1;
+    int64_t intermediate_level_expo = reps.params.fixp_params.level_expo;
+    int64_t intermediate_plaintext_expo = reps.params.fixp_params.plaintext_expo;
+    int64_t intermediate_level_noise = reps.params.fixp_params.level_expo + precision_bits + 1;
+    int64_t intermediate_trgsw_noise = input_level_noise + 32 + log(N);
+    int64_t target_ell = (intermediate_level_noise + 5 + 31) / 32;
+    assert_dramatically(target_ell <= rk.ell, "relinearization key is not precise enough");
+    assert_dramatically(limb_precision(intermediate_trgsw_noise) <= rk.fft_nlimbs);
+    int64_t intermediate_trlwe_limbs = limb_precision(intermediate_level_noise);
+
+    BigTorusParams bt_intermediateParams(
+            intermediate_trlwe_limbs,
+            intermediate_plaintext_expo,
+            intermediate_level_expo);
+    TRLweParams intermediateParams(N, bt_intermediateParams);
+    TRLwe tmp0(intermediateParams); //TODO find the intermediate params
+    TRLwe tmp1(intermediateParams);
     BigReal *C0 = b1_b2;
     BigReal *C1 = a1_b2;
     BigRealPoly_addTo(C1, b1_a2, N, fft_nlimbs);
@@ -438,6 +454,8 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     zero(tmp1.a[1]);
 
     //finally return tmp0 - rk . c1
-    external_product(tmp1, rk, tmp1, out_alpha_bits);
+    external_product(tmp1, rk, tmp1, intermediate_level_noise);
+    //sub here is native, because the plaintext level and exponent of the output match
+    //if you change that, make sure to call fixp_sub or something like that.
     sub(reps, tmp0, tmp1);
 }

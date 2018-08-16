@@ -74,7 +74,7 @@ BigReal *new_BigReal_array(UINT64 n, UINT64 nblimbs);
 void delete_BigReal_array(UINT64 n, BigReal *array);
 
 
-/** copy msb bits  of b in  BigReal a*/
+/** copy exactly msb bits of b in  BigReal a*/
 void precise_conv_toBigReal(BigReal &a, const BigTorusRef &b, int64_t msb);
 
 /** copy reps= a*b */

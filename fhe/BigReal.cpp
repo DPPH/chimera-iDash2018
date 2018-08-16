@@ -179,7 +179,36 @@ void zero(BigReal &dest) {
 
 
 void precise_conv_toBigReal(BigReal &a, const BigTorusRef &b, int64_t msb) {
-    abort();
+    int64_t nlimbs_to_copy = limb_precision(msb);
+    assert_dramatically(a.nblimbs >= nlimbs_to_copy, "a does is not large enough to store the result");
+    mpz_realloc2(a.value, a.nblimbs * BITS_PER_LIMBS);
+    assert(a.value->_mp_alloc >= a.nblimbs);
+    UINT64 *dest_end = a.value->_mp_d + a.nblimbs;
+    //copy the msb limbs
+    for (int64_t i = 1; i <= nlimbs_to_copy; i++) {
+        dest_end[-i] = b.limbs_end[-i];
+    }
+    //fill the lsb with zeros
+    for (int64_t i = nlimbs_to_copy + 1; i <= a.nblimbs; i++) {
+        dest_end[-i] = 0;
+    }
+    if (msb % 64 != 0) {
+        //zeroify 64-(msb%64) bits on the least significant limb copied
+        int64_t k = 64 - (msb % 64);
+        int64_t mask = -(1l << k);
+        dest_end[-nlimbs_to_copy] &= mask;
+    }
+    //if the result is negative, negate it
+    bool vneg = ((dest_end[-1] & 0x8000000000000000UL) != 0);
+    if (vneg) {
+        mpn_neg(dest_end - nlimbs_to_copy, dest_end - nlimbs_to_copy, nlimbs_to_copy);
+    }
+    //re-compute the actual size of a
+    int64_t i;
+    for (i = a.nblimbs; i >= 1; i--) {
+        if (a.value->_mp_d[i - 1] != 0) break;
+    }
+    a.value->_mp_size = vneg ? -i : i;
 }
 
 void fft_BigRealPoly_product(BigReal *reps, BigReal *a, BigReal *b, int64_t N, int64_t fft_nlimbs) {
@@ -212,6 +241,29 @@ void BigRealPoly_addTo(BigReal *reps, BigReal *in, int64_t N, int64_t fft_nlimbs
 }
 
 void shift_toBigTorus(BigTorusRef out, const BigReal &a, int64_t left_shift) {
-    abort();
+    //treat the sero corner case first
+    if (a.value->_mp_size == 0) {
+        zero(out);
+        return;
+    }
+    // out = a * 2^left_shift / 2^64.(a.nblimbs)
+    const int64_t outlimbs = out.params.torus_limbs;
+    mpz_t tmp;
+    mpz_init(tmp);
+    mpz_mul_2exp(tmp, a.value, left_shift);
+    const int64_t tlimbs = abs(tmp->_mp_size);
+    //copy  outlimbs limbs starting from position alimbs
+    for (int64_t i = 1; i <= outlimbs; i++) {
+        int64_t j = a.nblimbs - i;
+        if (j >= tlimbs) out.limbs_end[-i] = 0;
+        else if (j >= 0) out.limbs_end[-i] = tmp->_mp_d[j];
+        else out.limbs_end[-i] = 0;
+    }
+    //negate if a is negative
+    if (a.value->_mp_size < 0) {
+        mpn_neg(out.limbs_end - outlimbs, out.limbs_end - outlimbs, outlimbs);
+    }
+    //free resources
+    mpz_clear(tmp);
 }
 
