@@ -160,3 +160,27 @@ void add(BigTorusPolynomial &reps, const BigTorusPolynomial &a, const BigTorusPo
         add(reps.getAT(i), a.getAT(i), b.getAT(i));
     }
 }
+
+void sub(BigTorusPolynomial &reps, const BigTorusPolynomial &a, const BigTorusPolynomial &b) {
+    const UINT64 N = reps.length;
+    assert(a.length == N);
+    assert(b.length == N);
+    for (UINT64 i = 0; i < N; i++) {
+        sub(reps.getAT(i), a.getAT(i), b.getAT(i));
+    }
+}
+
+void neg(BigTorusPolynomial &out, const BigTorusPolynomial &in) {
+
+    assert(in.length == out.length);
+    for (UINT64 i = 0; i < in.length; i++) {
+        neg(out.getAT(i), in.getAT(i));
+    }
+}
+
+void copy(BigTorusPolynomial &out, const BigTorusPolynomial &in) {
+    assert(in.length == out.length);
+    for (UINT64 i = 0; i < in.length; i++) {
+        copy(out.getAT(i), in.getAT(i));
+    }
+}

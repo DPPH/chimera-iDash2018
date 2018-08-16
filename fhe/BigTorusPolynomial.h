@@ -21,6 +21,16 @@ void const_poly(BigTorusPolynomial &out, const BigTorusRef &in, UINT64 out_limb_
 /** @brief addition */
 void add(BigTorusPolynomial &reps, const BigTorusPolynomial &a, const BigTorusPolynomial &b);
 
+/** @brief substraction */
+void sub(BigTorusPolynomial &reps, const BigTorusPolynomial &a, const BigTorusPolynomial &b);
+
+
+/** @brief out=-in*/
+void neg(BigTorusPolynomial &out, const BigTorusPolynomial &in);
+
+/** @brief out=in*/
+void copy(BigTorusPolynomial &out, const BigTorusPolynomial &in);
+
 /** @brief int-polynomial torus-polynomial external product  */
 void naive_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPolynomial &b, UINT64 out_limb_prec);
 

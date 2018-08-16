@@ -136,4 +136,12 @@ void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, 
 
 void zero(TRLwe &out);
 
+void add(TRLwe &reps, const TRLwe &a, const TRLwe &b);
+
+void sub(TRLwe &reps, const TRLwe &a, const TRLwe &b);
+
+void neg(TRLwe &out, const TRLwe &in);
+
+void copy(TRLwe &out, const TRLwe &in);
+
 #endif //FHE_TRLWE_H

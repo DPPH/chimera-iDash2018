@@ -322,3 +322,70 @@ void native_phase_FFT(BigTorusPolynomial &reps, BigComplex *a, BigComplex *b, co
     delete_BigReal_array(N, ra);
 }
 
+// reps = b + c.(a-b)
+void cmux(TRLwe &reps, const TRGSW &c, const TRLwe &a, const TRLwe &b, int64_t out_alpha_bits) {
+    TRLwe tmp(a.params);
+    sub(tmp, a, b);
+    external_product(tmp, c, tmp, out_alpha_bits);
+    add(reps, tmp, b);
+}
+
+
+// reps *= X^power
+void rotate_diff(TRLwe &out, const TRLwe &in, int64_t power) {
+    assert(&out != &in);
+
+    int64_t N = in.params.N;
+    power = (power % (2 * N) + (2 * N)) % (2 * N);
+
+    for (int i = 0; i < N; i++) {
+        if (power + i < N) {
+            copy(out.a[0].getAT(i + power), in.a[0].getAT(i));
+            copy(out.a[1].getAT(i + power), in.a[1].getAT(i));
+        } else if (power + i < 2 * N) {
+            neg(out.a[0].getAT(i + power - N), in.a[0].getAT(i));
+            neg(out.a[1].getAT(i + power - N), in.a[1].getAT(i));
+        } else {
+            copy(out.a[0].getAT(i + power - 2 * N), in.a[0].getAT(i));
+            copy(out.a[1].getAT(i + power - 2 * N), in.a[1].getAT(i));
+        }
+
+    }
+}
+
+void rotate(TRLwe &out, const TRLwe &in, int64_t power) {
+
+    if (&out == &in) {
+        TRLwe tmp(in.params);
+        copy(tmp, in);
+        rotate_diff(out, tmp, power);
+    } else rotate_diff(out, in, power);
+}
+
+//reps *= X^-(b-sum c_i a_i)
+void blind_rotate(TRLwe &reps, int64_t b, int64_t *a, const TRGSW *c, int64_t n_in, int64_t out_alpha_bits) {
+
+    TRLwe tmp(reps.params);
+    rotate(reps, reps, -b);
+
+    for (int i = 0; i < n_in; i++) {
+        rotate(tmp, reps, a[i]);
+        cmux(reps, c[i], tmp, reps, out_alpha_bits);
+    }
+}
+
+TRGSW *new_TRGSW_array(UINT64 size, const TRGSWParams &params) {
+
+    TRGSW *reps = (TRGSW *) malloc(size * sizeof(TRGSW));
+    for (UINT64 i = 0; i < size; i++) {
+        new(reps + i) TRGSW(params);
+    }
+    return reps;
+}
+
+void delete_TRGSW_array(UINT64 size, TRGSW *array) {
+    for (UINT64 i = 0; i < size; i++) {
+        (array + i)->~TRGSW();
+    }
+    free(array);
+}
