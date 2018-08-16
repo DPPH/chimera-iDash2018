@@ -432,9 +432,9 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     BigReal *C2 = a1_a2;
     // tmp0 = (C1 , C0) = ( a1.b2+a2.b1, b1.b2 )
     // tmp1 = (C2 , 0)  = ( a1.a2      , 0     )
-    BigRealPoly_shift_toBigTorus(tmp0.a[0], C1, input_level_expo)
-    BigRealPoly_shift_toBigTorus(tmp0.a[1], C0, input_level_expo)
-    BigRealPoly_shift_toBigTorus(tmp1.a[0], C2, input_level_expo)
+    BigRealPoly_shift_toBigTorus(tmp0.a[0], C1, input_level_expo);
+    BigRealPoly_shift_toBigTorus(tmp0.a[1], C0, input_level_expo);
+    BigRealPoly_shift_toBigTorus(tmp1.a[0], C2, input_level_expo);
     zero(tmp1.a[1]);
 
     //finally return tmp0 - rk . c1

@@ -1,5 +1,6 @@
 #include <cassert>
 #include "BigReal.h"
+#include "BigFFT.h"
 
 BigReal::BigReal(UINT64 nblimbs) : nblimbs(nblimbs) {
     mpz_init(value);
@@ -174,5 +175,43 @@ void to_BigTorus(BigTorusRef dest, const BigReal &a, UINT64 lshift_bits, UINT64 
 
 void zero(BigReal &dest) {
     mpz_set_ui(dest.value, 0);
+}
+
+
+void precise_conv_toBigReal(BigReal &a, const BigTorusRef &b, int64_t msb) {
+    abort();
+}
+
+void fft_BigRealPoly_product(BigReal *reps, BigReal *a, BigReal *b, int64_t N, int64_t fft_nlimbs) {
+
+    int64_t n = 2 * N;
+    int64_t Ns2 = N / 2;
+
+    BigComplex *ca = new_BigComplex_array(Ns2, fft_nlimbs);
+    BigComplex *cb = new_BigComplex_array(Ns2, fft_nlimbs);
+
+    const BigComplex *powomega = fftAutoPrecomp.omega(n, fft_nlimbs);
+    const BigComplex *powombar = fftAutoPrecomp.omegabar(n, fft_nlimbs);
+    iFFT(ca, a, n, powomega);
+    iFFT(cb, b, n, powomega);
+
+    for (int i = 0; i < Ns2; i++) {
+        mulTo(ca[i], cb[i]);
+    }
+
+    FFT(reps, ca, n, powombar);
+    delete_BigComplex_array(Ns2, ca);
+    delete_BigComplex_array(Ns2, cb);
+}
+
+void BigRealPoly_addTo(BigReal *reps, BigReal *in, int64_t N, int64_t fft_nlimbs) {
+
+    for (int i = 0; i < N; i++) {
+        add(reps[i], in[i], reps[i]);
+    }
+}
+
+void shift_toBigTorus(BigTorusRef out, const BigReal &a, int64_t left_shift) {
+    abort();
 }
 

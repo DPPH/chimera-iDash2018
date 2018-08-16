@@ -7,6 +7,7 @@
 #include "commons.h"
 #include "BigTorus.h"
 
+
 /**
  * BigReal represent fixed precision real numbers between [-1,1] having a no-overflow guarantee.
  * (for all arithmetic operations they are involved in, their value stay between [-1,1])
@@ -71,5 +72,18 @@ BigReal *new_BigReal_array(UINT64 n, UINT64 nblimbs);
 
 /** delete an array of BigReal */
 void delete_BigReal_array(UINT64 n, BigReal *array);
+
+
+/** copy msb bits  of b in  BigReal a*/
+void precise_conv_toBigReal(BigReal &a, const BigTorusRef &b, int64_t msb);
+
+/** copy reps= a*b */
+void fft_BigRealPoly_product(BigReal *reps, BigReal *a, BigReal *b, int64_t N, int64_t fft_nlimbs);
+
+/** compute reps=+in */
+void BigRealPoly_addTo(BigReal *reps, BigReal *in, int64_t N, int64_t fft_nlimbs);
+
+/** compute  out= array* 2^left_shift mod 1  */
+void shift_toBigTorus(BigTorusRef out, const BigReal &a, int64_t left_shift);
 
 #endif //FHE_BIG_REAL_H

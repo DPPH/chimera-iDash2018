@@ -145,3 +145,4 @@ void neg(TRLwe &out, const TRLwe &in);
 void copy(TRLwe &out, const TRLwe &in);
 
 #endif //FHE_TRLWE_H
+
