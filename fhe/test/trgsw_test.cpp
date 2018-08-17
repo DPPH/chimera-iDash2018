@@ -4,6 +4,7 @@
 #include "../TRGSW.h"
 #include "../BigFFT.h"
 #include "../arithmetic.h"
+#include "../BigTorus.h"
 
 using namespace std;
 using namespace NTL;
@@ -161,3 +162,76 @@ TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
     delete_TRGSW_array(n_in, c);
 }
 
+TEST(TRGSW_TEST, trlwe_internal_product) {
+
+    int64_t N = 32;
+    int64_t nblimbs_in = 3;
+
+    int64_t L_a = 80;
+    int64_t L_b = 75;
+    int64_t rho = 16;
+    int64_t L = std::min(L_a, L_b) - rho - 1;
+
+    BigTorusParams bt_params_a(nblimbs_in, 0, L_a);
+    BigTorusParams bt_params_b(nblimbs_in, 0, L_b);
+    BigTorusParams bt_params_reps(nblimbs_in, 0, L);
+
+    TRLweParams trlweParams_a(N, bt_params_a);
+    TRLweParams trlweParams_b(N, bt_params_b);
+    TRLweParams trlweParams_reps(N, bt_params_reps);
+
+    BigTorusParams bt_params_rk(nblimbs_in);
+    TRGSWParams trgswParams_rk(N, bt_params_rk);
+
+    shared_ptr<TLweKey> key = tlwe_keygen(trlweParams_reps);
+
+    TRLwe a(trlweParams_a);
+    TRLwe b(trlweParams_b);
+    TRLwe reps(trlweParams_reps);
+    TRGSW rk(trgswParams_rk);
+
+    BigTorusPolynomial plaintext_a(N, bt_params_a);
+    BigTorusPolynomial plaintext_b(N, bt_params_b);
+    int64_t p_a = 0;
+    //p_a=(rand()%(1ul<<16ul)-(1ul<<15ul))%(1ul<<16ul);
+    int64_t p_b = 0;
+    //p_b=(rand()%(1ul<<16ul)-(1ul<<15ul))%(1ul<<16ul);
+
+    zero(plaintext_a);
+    zero(plaintext_b);
+
+    RR ra;
+    RR rb;
+    cout << ra << endl;
+    cout << rb << endl;
+    cout << ra * rb << endl;
+    ra = to_RR(long(p_a)) / pow(to_RR(2), to_RR(long(L_a + rho)));
+    rb = to_RR(long(p_b)) / pow(to_RR(2), to_RR(long(L_b + rho)));
+
+    //cout << ra << endl;
+    //cout << rb << endl;
+    //cout << ra*rb << endl;
+
+    to_torus(plaintext_a.getAT(0), ra);
+    to_torus(plaintext_b.getAT(0), rb);
+
+    native_encrypt(a, plaintext_a, *key, L_a + rho);
+    native_encrypt(b, plaintext_b, *key, L_b + rho);
+
+    intPoly_encrypt(rk, key->key, *key, L + 32 + rho);
+
+    fixp_internal_product(reps, a, b, rk, rho);
+
+    BigTorusPolynomial phase(N, bt_params_reps);
+
+    native_phase(phase, reps, *key, L + rho);
+
+
+    RR exp_phase;
+    exp_phase = to_RR(long(p_a * p_b)) / pow(to_RR(2), to_RR(long(L + 2 * rho)));
+
+    for (int64_t i = 1; i < N; i++) {
+        EXPECT_LE(log2Diff(to_RR(phase.getAT(i)), to_RR(0)), -L - rho);
+    }
+    EXPECT_LE(log2Diff(to_RR(phase.getAT(0)), exp_phase), -L - rho);
+}

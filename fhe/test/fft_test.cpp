@@ -228,3 +228,52 @@ TEST(FFT_INTERNAL_MUL_TEST, internal_product_FFT) {
 
     //}
 }
+
+TEST(FFT_BIGREALPOLY_PRODUCT, fft_BigRealPoly_product) {
+
+    int64_t N = 128;
+    int64_t fft_nlimbs = 5;
+
+    BigReal *a = new_BigReal_array(N, fft_nlimbs);
+    BigReal *b = new_BigReal_array(N, fft_nlimbs);
+    RR::SetPrecision(fft_nlimbs * BITS_PER_LIMBS);
+
+
+    RR *ra = new RR[N];
+    RR *rb = new RR[N];
+    RR *rreps = new RR[N];
+    for (int i = 0; i < N; i++) {
+        ra[i] = random_RR();
+        to_BigReal(a[i], ra[i]);
+        rb[i] = random_RR();
+        to_BigReal(b[i], rb[i]);
+    }
+
+    BigReal *reps = new_BigReal_array(N, fft_nlimbs);
+    fft_BigRealPoly_product(reps, a, b, N, fft_nlimbs);
+
+    for (UINT64 i = 0; i < N; i++) {
+        RR ri;
+        ri = 0;
+        for (UINT64 j = 0; j <= i; j++) {
+            ri += ra[j] * rb[i - j];
+
+        }
+        for (UINT64 j = i + 1; j < N; j++) {
+            ri -= ra[j] * rb[N + i - j];
+        }
+        rreps[i] = ri;
+    }
+
+
+    for (int i = 0; i < N; ++i) {
+        ASSERT_LE(log2Diff(to_RR(reps[i]), rreps[i]), -fft_nlimbs * BITS_PER_LIMBS + log2(N) + 1);
+    }
+    delete_BigReal_array(N, a);
+    delete_BigReal_array(N, b);
+    delete_BigReal_array(N, reps);
+    delete[] ra;
+    delete[] rb;
+    delete[] rreps;
+}
+
