@@ -395,9 +395,9 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     assert_dramatically(a.params.fixp_params.level_expo > 0, "missing level info in a");
     assert_dramatically(b.params.fixp_params.level_expo > 0, "missing level info in b");
     assert_dramatically(reps.params.fixp_params.level_expo > 0, "missing level info in reps");
-    assert_dramatically(a.params.N == N);
-    assert_dramatically(b.params.N == N);
-    assert_dramatically(rk.params.N == N);
+    assert_dramatically(int64_t(a.params.N) == N);
+    assert_dramatically(int64_t(b.params.N) == N);
+    assert_dramatically(int64_t(rk.params.N) == N);
     //compute parameters
     // input level noise: bit precision of the FFT of the first part of the product
     //                    we round everything to exact multiples of 1/2^input_level_expo
@@ -431,8 +431,8 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     int64_t intermediate_level_noise = reps.params.fixp_params.level_expo + precision_bits + 1;
     int64_t intermediate_trgsw_noise = input_level_noise + 32 + log(N);
     int64_t target_ell = (intermediate_level_noise + 5 + 31) / 32;
-    assert_dramatically(target_ell <= rk.ell, "relinearization key is not precise enough");
-    assert_dramatically(limb_precision(intermediate_trgsw_noise) <= rk.fft_nlimbs);
+    assert_dramatically(target_ell <= int64_t(rk.ell), "relinearization key is not precise enough");
+    assert_dramatically(limb_precision(intermediate_trgsw_noise) <= int64_t(rk.fft_nlimbs));
     int64_t intermediate_trlwe_limbs = limb_precision(intermediate_level_noise);
 
     BigTorusParams bt_intermediateParams(

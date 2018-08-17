@@ -180,20 +180,20 @@ void zero(BigReal &dest) {
 
 void precise_conv_toBigReal(BigReal &reps, const BigTorusRef &b, int64_t msb) {
     int64_t nlimbs_to_copy = limb_precision(msb);
-    assert_dramatically(reps.nblimbs >= nlimbs_to_copy, "a does is not large enough to store the result");
+    assert_dramatically(int64_t(reps.nblimbs) >= nlimbs_to_copy, "a does is not large enough to store the result");
     mpz_realloc2(reps.value, reps.nblimbs * BITS_PER_LIMBS);
-    assert(reps.value->_mp_alloc >= reps.nblimbs);
+    assert(int64_t(reps.value->_mp_alloc) >= int64_t(reps.nblimbs));
     UINT64 *dest_end = reps.value->_mp_d + reps.nblimbs;
     //copy the msb limbs
     for (int64_t i = 1; i <= nlimbs_to_copy; i++) {
-        if (i <= b.params.torus_limbs)
+        if (i <= int64_t(b.params.torus_limbs))
             dest_end[-i] = b.limbs_end[-i];
         else
             dest_end[-i] = 0;
 
     }
     //fill the lsb with zeros
-    for (int64_t i = nlimbs_to_copy + 1; i <= reps.nblimbs; i++) {
+    for (int64_t i = nlimbs_to_copy + 1; i <= int64_t(reps.nblimbs); i++) {
         dest_end[-i] = 0;
     }
     if (msb % 64 != 0) {

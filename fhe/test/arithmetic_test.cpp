@@ -379,42 +379,54 @@ TEST(BIGTORUS_ARITHMETIC, bitdecomp32) {
 /** compute  out= a* 2^left_shift mod 1  */
 TEST(BIGTORUS_ARITHMETIC, shift_toBigTorus) {
 
-    int64_t nblimbs = 6;
-    int64_t left_shift = 210;
+    for (int64_t nblimbs : {1, 2, 3, 6}) {
+        for (int64_t left_shift : {10, 31, 53, 80, 210}) {
 
-    BigTorusParams params(nblimbs);
-    BigTorus out(params);
+            BigTorusParams params(nblimbs);
+            BigTorus out(params);
 
 
-    RR::SetPrecision(nblimbs * BITS_PER_LIMBS);
-    RR ra = random_RR();
-    BigReal a(nblimbs);
-    to_BigReal(a, ra);
-    shift_toBigTorus(out, a, left_shift);
+            RR::SetPrecision(nblimbs * BITS_PER_LIMBS);
+            RR ra = random_RR();
+            BigReal a(nblimbs);
+            to_BigReal(a, ra);
+            shift_toBigTorus(out, a, left_shift);
 
-    ra = ra * power2_RR(left_shift);
-    ra = ra - to_RR(RoundToZZ(ra));
+            ra = ra * power2_RR(left_shift);
+            ra = ra - to_RR(RoundToZZ(ra));
 
-    ASSERT_LE(log2Diff(to_RR(out), ra), -1000);
+            ASSERT_LE(log2Diff(to_RR(out), ra), -1000);
+        }
+    }
 }
 
 /** copy exactly msb bits of b in  BigReal a */
 TEST(BIGTORUS_ARITHMETIC, precise_conv_toBigReal) {
+    for (int64_t nblimbs_torus: {1, 2, 6}) {
+        for (int64_t nblimbs_real: {1, 2, 5}) {
+            for (int64_t msb:  {10, 20, 50, 82, 123}) {
+                if (msb > nblimbs_real * BITS_PER_LIMBS) continue;
+                //int64_t prec = 30;
 
-    int64_t nblimbs = 6;
-    int64_t msb = 10;
-    int64_t prec = 30;
+                RR::SetPrecision(max(nblimbs_torus, nblimbs_real) * BITS_PER_LIMBS);
 
-    BigTorusParams params(nblimbs);
-    BigTorus b(params);
+                BigTorusParams params(nblimbs_torus);
+                BigTorus atorus(params);
 
-    int64_t ia = (rand() % (1ul << 16ul) - (1ul << 15ul)) % (1ul << 16ul);
-    RR ra;
-    ra = to_RR(long(ia)) / pow(to_RR(2), to_RR(long(prec)));
-    to_torus(b, ra);
+                BigReal breal(nblimbs_real);
 
-    BigReal reps(nblimbs);
-    precise_conv_toBigReal(reps, b, msb);
+                random(atorus);
+                RR a = to_RR(atorus);
+
+                precise_conv_toBigReal(breal, atorus, msb);
+
+                RR b = to_RR(breal);
+                RR b1 = b * power2_RR(msb);
 
 
+                ASSERT_EQ(b1, to_RR(RoundToZZ(b1))); //b1 is integer
+                EXPECT_LE(log2Diff(b, a), -msb);
+            }
+        }
+    }
 }
