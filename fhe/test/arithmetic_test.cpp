@@ -376,3 +376,45 @@ TEST(BIGTORUS_ARITHMETIC, bitdecomp32) {
         ASSERT_LE(log2Diff(b, recomp_b), -nblimbs * BITS_PER_LIMBS);
     }
 }
+/** compute  out= a* 2^left_shift mod 1  */
+TEST(BIGTORUS_ARITHMETIC, shift_toBigTorus) {
+
+    int64_t nblimbs = 6;
+    int64_t left_shift = 210;
+
+    BigTorusParams params(nblimbs);
+    BigTorus out(params);
+
+
+    RR::SetPrecision(nblimbs * BITS_PER_LIMBS);
+    RR ra = random_RR();
+    BigReal a(nblimbs);
+    to_BigReal(a, ra);
+    shift_toBigTorus(out, a, left_shift);
+
+    ra = ra * power2_RR(left_shift);
+    ra = ra - to_RR(RoundToZZ(ra));
+
+    ASSERT_LE(log2Diff(to_RR(out), ra), -1000);
+}
+
+/** copy exactly msb bits of b in  BigReal a */
+TEST(BIGTORUS_ARITHMETIC, precise_conv_toBigReal) {
+
+    int64_t nblimbs = 6;
+    int64_t msb = 10;
+    int64_t prec = 30;
+
+    BigTorusParams params(nblimbs);
+    BigTorus b(params);
+
+    int64_t ia = (rand() % (1ul << 16ul) - (1ul << 15ul)) % (1ul << 16ul);
+    RR ra;
+    ra = to_RR(long(ia)) / pow(to_RR(2), to_RR(long(prec)));
+    to_torus(b, ra);
+
+    BigReal reps(nblimbs);
+    precise_conv_toBigReal(reps, b, msb);
+
+
+}
