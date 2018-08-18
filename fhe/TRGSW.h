@@ -8,7 +8,7 @@
 class TRGSWParams : public TRLweParams {
 public:
     static const UINT64 Bgbits = 32;
-    static const UINT64 max_ell = 4;
+    static const UINT64 max_ell = 5;
 
     TRGSWParams(const UINT64 N, const BigTorusParams &fixp_params);
 

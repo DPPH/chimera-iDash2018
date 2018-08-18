@@ -164,16 +164,16 @@ TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
 
 TEST(TRGSW_TEST, trlwe_internal_product) {
 
-    int64_t N = 128;
+    int64_t N = 4096;
 
-    int64_t L_a = 80; //level expo of a
-    int64_t L_b = 75; //level expo of b
+    int64_t L_a = 100; //level expo of a
+    int64_t L_b = 110; //level expo of b
     int64_t rho = 20; //precision bits
     int64_t nblimbs_a = limb_precision(L_a + rho + 5);
     int64_t nblimbs_b = limb_precision(L_b + rho + 5);
     int64_t L = std::min(L_a, L_b) - rho - 1; //output level expo
     int64_t nblimbs_reps = limb_precision(L + rho + 5);
-    int64_t alpha_rk = L + rho + 32 + 5;
+    int64_t alpha_rk = L + rho + 32 + log2(N / 2);
     int64_t nblimbs_rk = limb_precision(alpha_rk);
 
     BigTorusParams bt_params_a(nblimbs_a, 0, L_a);
@@ -221,7 +221,11 @@ TEST(TRGSW_TEST, trlwe_internal_product) {
 
     intPoly_encrypt(rk, key->key, *key, alpha_rk);
 
+    cout << "time: " << clock() / double(CLOCKS_PER_SEC) << endl;
     fixp_internal_product(reps, a, b, rk, rho);
+    cout << "time: " << clock() / double(CLOCKS_PER_SEC) << endl;
+    fixp_internal_product(reps, a, b, rk, rho);
+    cout << "time: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
     BigTorusPolynomial phase(N, bt_params_reps);
 
@@ -231,7 +235,7 @@ TEST(TRGSW_TEST, trlwe_internal_product) {
     RR exp_phase = to_RR(long(p_a * p_b)) / power2_RR(L + 2 * rho);
 
     for (int64_t i = 1; i < N; i++) {
-        EXPECT_LE(log2Diff(to_RR(phase.getAT(i)), to_RR(0)), -L - rho);
+        EXPECT_LE(log2Diff(to_RR(phase.getAT(i)), to_RR(0)), -L - rho + log2(N / 2));
     }
-    EXPECT_LE(log2Diff(to_RR(phase.getAT(0)), exp_phase), -L - rho);
+    EXPECT_LE(log2Diff(to_RR(phase.getAT(0)), exp_phase), -L - rho + log2(N / 2));
 }

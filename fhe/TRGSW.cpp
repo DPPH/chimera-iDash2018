@@ -457,7 +457,9 @@ vec_RR centerMod1(const vec_RR &ra) {
     return rreps;
 }
 
+#ifdef DEBUG_INTERNAL_PRODUCT
 extern TLweKey *debug_key;
+#endif
 
 void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TRGSW &rk, int precision_bits) {
     const int64_t N = reps.params.N;
@@ -492,6 +494,7 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     precise_conv_toBigReal(a2, b.a[0], b_lshift, input_level_noise);
     precise_conv_toBigReal(b2, b.a[1], b_lshift, input_level_noise);
 
+#ifdef DEBUG_INTERNAL_PRODUCT
     // verify that b1 - s . a is small
     RR::SetOutputPrecision(fft_nlimbs * BITS_PER_LIMBS / log2(10));
     vec_RR ra1 = to_vec_RR(a1, N);
@@ -502,12 +505,14 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     vec_RR rb2 = to_vec_RR(b2, N);
     vec_RR rphase2 = rb2 - productModXNp1(debug_key->key, ra2);
     cout << centerMod1(rphase2) * power2_RR(input_level_noise) << endl;
+#endif
 
     fft_BigRealPoly_product(a1_a2, a1, a2, N, fft_nlimbs);
     fft_BigRealPoly_product(a1_b2, a1, b2, N, fft_nlimbs);
     fft_BigRealPoly_product(b1_a2, b1, a2, N, fft_nlimbs);
     fft_BigRealPoly_product(b1_b2, b1, b2, N, fft_nlimbs);
 
+#ifdef DEBUG_INTERNAL_PRODUCT
     vec_RR ra1a2 = to_vec_RR(a1_a2, N);
     vec_RR ra1b2 = to_vec_RR(a1_b2, N);
     vec_RR rb1a2 = to_vec_RR(b1_a2, N);
@@ -516,7 +521,7 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
                      - productModXNp1(debug_key->key, ra1b2 + rb1a2)
                      + productModXNp1(debug_key->key, productModXNp1(debug_key->key, ra1a2));
     cout << centerMod1(rphase3 * power2_RR(input_level_noise)) * power2_RR(input_level_noise) << endl;
-
+#endif
 
     //Now, we create the intermediate TRLWE ciphertexts
     int64_t intermediate_level_expo = reps.params.fixp_params.level_expo;
@@ -542,6 +547,7 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     // tmp0 = (C1 , C0) = ( a1.b2+a2.b1, b1.b2 )
     // tmp1 = (C2 , 0)  = ( a1.a2      , 0     )
 
+#ifdef DEBUG_INTERNAL_PRODUCT
     vec_RR rC0 = to_vec_RR(C0, N);
     vec_RR rC1 = to_vec_RR(C1, N);
     vec_RR rC2 = to_vec_RR(C2, N);
@@ -549,13 +555,14 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
                      - productModXNp1(debug_key->key, rC1)
                      + productModXNp1(debug_key->key, productModXNp1(debug_key->key, rC2));
     cout << centerMod1(rphase4 * power2_RR(input_level_noise)) * power2_RR(input_level_noise) << endl;
-
+#endif
 
     BigRealPoly_shift_toBigTorus(tmp0.a[0], C1, input_level_noise);
     BigRealPoly_shift_toBigTorus(tmp0.a[1], C0, input_level_noise);
     BigRealPoly_shift_toBigTorus(tmp1.a[0], C2, input_level_noise);
     zero(tmp1.a[1]);
 
+#ifdef DEBUG_INTERNAL_PRODUCT
     vec_RR rrC0 = to_vec_RR(tmp0.a[1]);
     vec_RR rrC1 = to_vec_RR(tmp0.a[0]);
     vec_RR rrC2 = to_vec_RR(tmp1.a[0]);
@@ -563,15 +570,18 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
                     - productModXNp1(debug_key->key, rrC1)
                     + productModXNp1(debug_key->key, productModXNp1(debug_key->key, rrC2));
     cout << centerMod1(phase5) * power2_RR(input_level_noise) << endl;
+#endif
 
     //finally return tmp0 - rk . c1
     external_product(tmp1, rk, tmp1, intermediate_level_noise);
     //sub here is native, because the plaintext level and exponent of the output match
     //if you change that, make sure to call fixp_sub or something like that.
     sub(reps, tmp0, tmp1);
+
+#ifdef DEBUG_INTERNAL_PRODUCT
     vec_RR xrb = to_vec_RR(tmp0.a[1]) - to_vec_RR(tmp1.a[1]);
     vec_RR xra = to_vec_RR(tmp0.a[0]) - to_vec_RR(tmp1.a[0]);;
     vec_RR phase6 = xrb - productModXNp1(debug_key->key, xra);
     cout << centerMod1(phase6) * power2_RR(input_level_noise) << endl;
-
+#endif
 }
