@@ -165,7 +165,7 @@ TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
 
 TEST(TRGSW_TEST, trlwe_internal_product) {
 
-    int64_t N = 4096;
+    int64_t N = 128;
 
     int64_t L_a = 100; //level expo of a
     int64_t L_b = 110; //level expo of b
@@ -236,7 +236,7 @@ TEST(TRGSW_TEST, trlwe_internal_product) {
     RR exp_phase = to_RR(long(p_a * p_b)) / power2_RR(L + 2 * rho);
 
     for (int64_t i = 1; i < N; i++) {
-        EXPECT_LE(log2Diff(to_RR(phase.getAT(i)), to_RR(0)), -L - rho + log2(N / 2));
+        EXPECT_LE(log2Diff(to_RR(phase.getAT(i)), to_RR(0)), -L - rho + 2);
     }
-    EXPECT_LE(log2Diff(to_RR(phase.getAT(0)), exp_phase), -L - rho + log2(N / 2));
+    EXPECT_LE(log2Diff(to_RR(phase.getAT(0)), exp_phase), -L - rho + 2);
 }
