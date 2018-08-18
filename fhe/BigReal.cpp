@@ -107,6 +107,7 @@ void delete_BigReal_array(UINT64 n, BigReal *array) {
 
 #include <NTL/ZZ_limbs.h>
 #include <gmp.h>
+#include <vector>
 
 using namespace NTL;
 
@@ -178,16 +179,34 @@ void zero(BigReal &dest) {
 }
 
 
-void precise_conv_toBigReal(BigReal &reps, const BigTorusRef &b, int64_t msb) {
-    int64_t nlimbs_to_copy = limb_precision(msb);
+void precise_conv_toBigReal(BigReal &reps, const BigTorusRef &b, int64_t lshift, int64_t msbToKeep) {
+    int64_t blimbs = b.params.torus_limbs;
+    int64_t shift_mod_64 = lshift % BITS_PER_LIMBS;
+    int64_t shift_over_64 = lshift / BITS_PER_LIMBS;
+    int64_t newblimbs = blimbs - shift_over_64; //new size of b
+    if (newblimbs <= 0) {
+        //corner case: the answer is 0
+        zero(reps);
+        return;
+    }
+    //shift b by lshift positions and store the limbs in btmp
+    std::vector<UINT64> btmp(newblimbs);
+    UINT64 *newbbegin = btmp.data();
+    UINT64 *newbend = newbbegin + newblimbs;
+    mpn_copyi(newbbegin, b.limbs_end - blimbs, newblimbs);
+    if (shift_mod_64 != 0) {
+        mpn_lshift(newbbegin, newbbegin, newblimbs, shift_mod_64);
+    }
+
+    int64_t nlimbs_to_copy = limb_precision(msbToKeep);
     assert_dramatically(int64_t(reps.nblimbs) >= nlimbs_to_copy, "a does is not large enough to store the result");
     mpz_realloc2(reps.value, reps.nblimbs * BITS_PER_LIMBS);
     assert(int64_t(reps.value->_mp_alloc) >= int64_t(reps.nblimbs));
     UINT64 *dest_end = reps.value->_mp_d + reps.nblimbs;
     //copy the msb limbs
     for (int64_t i = 1; i <= nlimbs_to_copy; i++) {
-        if (i <= int64_t(b.params.torus_limbs))
-            dest_end[-i] = b.limbs_end[-i];
+        if (i <= int64_t(newblimbs))
+            dest_end[-i] = newbend[-i];
         else
             dest_end[-i] = 0;
 
@@ -196,9 +215,9 @@ void precise_conv_toBigReal(BigReal &reps, const BigTorusRef &b, int64_t msb) {
     for (int64_t i = nlimbs_to_copy + 1; i <= int64_t(reps.nblimbs); i++) {
         dest_end[-i] = 0;
     }
-    if (msb % 64 != 0) {
+    if (msbToKeep % 64 != 0) {
         //zeroify 64-(msb%64) bits on the least significant limb copied
-        int64_t k = 64 - (msb % 64);
+        int64_t k = 64 - (msbToKeep % 64);
         int64_t mask = -(1l << k);
         dest_end[-nlimbs_to_copy] &= mask;
     }

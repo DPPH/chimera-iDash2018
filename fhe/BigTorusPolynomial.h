@@ -48,8 +48,8 @@ void fft_semi_external_product(BigTorusPolynomial &out, const BigComplex *ca, co
                                const UINT64 bits_a, UINT64 out_limb_prec);
 
 
-/** copy msb bits of each coefficient of b in  array of BigReal */
-void precise_conv_toBigReal(BigReal *array, const BigTorusPolynomial &b, int64_t msb);
+/** copy msb bits of each coefficient of b*2^lshift in an array of BigReal */
+void precise_conv_toBigReal(BigReal *array, const BigTorusPolynomial &b, int64_t lshift, int64_t msbToKeep);
 
 
 /** compute  out= array* 2^left_shift mod 1  */

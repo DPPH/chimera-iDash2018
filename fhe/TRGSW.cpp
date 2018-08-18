@@ -390,6 +390,75 @@ void delete_TRGSW_array(UINT64 size, TRGSW *array) {
     free(array);
 }
 
+void productModXNp1(vec_RR &rreps, const vec_RR &ra, const vec_RR &rb) {
+    const int64_t N = ra.length();
+    rreps.SetLength(N);
+    for (int64_t i = 0; i < N; i++) {
+        RR ri;
+        ri = 0;
+        for (int64_t j = 0; j <= i; j++) {
+            ri += ra[j] * rb[i - j];
+
+        }
+        for (int64_t j = i + 1; j < N; j++) {
+            ri -= ra[j] * rb[N + i - j];
+        }
+        rreps[i] = ri;
+    }
+}
+
+vec_RR productModXNp1(const int64_t *ra, const vec_RR &rb) {
+    const int64_t N = rb.length();
+    vec_RR rreps;
+    rreps.SetLength(N);
+    for (int64_t i = 0; i < N; i++) {
+        RR ri;
+        ri = 0;
+        for (int64_t j = 0; j <= i; j++) {
+            ri += ra[j] * rb[i - j];
+
+        }
+        for (int64_t j = i + 1; j < N; j++) {
+            ri -= ra[j] * rb[N + i - j];
+        }
+        rreps[i] = ri;
+    }
+    return rreps;
+}
+
+vec_RR to_vec_RR(const BigReal *ra, const int64_t N) {
+    RR::SetPrecision(ra->nblimbs * BITS_PER_LIMBS);
+    vec_RR rreps;
+    rreps.SetLength(N);
+    for (int64_t i = 0; i < N; i++) {
+        rreps[i] = to_RR(ra[i]);
+    }
+    return rreps;
+}
+
+vec_RR to_vec_RR(const BigTorusPolynomial &ra) {
+    RR::SetPrecision(ra.btp.torus_limbs * BITS_PER_LIMBS);
+    int64_t N = ra.length;
+    vec_RR rreps;
+    rreps.SetLength(N);
+    for (int64_t i = 0; i < N; i++) {
+        rreps[i] = to_RR(ra.getAT(i));
+    }
+    return rreps;
+}
+
+vec_RR centerMod1(const vec_RR &ra) {
+    int64_t N = ra.length();
+    vec_RR rreps;
+    rreps.SetLength(N);
+    for (int64_t i = 0; i < N; i++) {
+        rreps[i] = ra[i] - to_RR(RoundToZZ(ra[i]));
+    }
+    return rreps;
+}
+
+extern TLweKey *debug_key;
+
 void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TRGSW &rk, int precision_bits) {
     const int64_t N = reps.params.N;
     assert_dramatically(a.params.fixp_params.level_expo > 0, "missing level info in a");
@@ -402,10 +471,11 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     // input level noise: bit precision of the FFT of the first part of the product
     //                    we round everything to exact multiples of 1/2^input_level_expo
     int64_t input_level_expo = reps.params.fixp_params.level_expo + precision_bits;
-    int64_t input_level_noise = reps.params.fixp_params.level_expo + 2 * precision_bits + 1;
-    assert_dramatically(a.params.fixp_params.level_expo >= input_level_expo, "level expo of a too small");
-    assert_dramatically(b.params.fixp_params.level_expo >= input_level_expo, "level expo of b too small");
-    //copy and resample the input to exactly input_level
+    int64_t a_lshift = a.params.fixp_params.level_expo - input_level_expo;
+    int64_t b_lshift = b.params.fixp_params.level_expo - input_level_expo;
+    assert_dramatically(a_lshift >= 0, "level expo of a too small");
+    assert_dramatically(b_lshift >= 0, "level expo of b too small");
+    int64_t input_level_noise = reps.params.fixp_params.level_expo + 2 * precision_bits;
     int64_t fft_bits = 2 * input_level_noise + int64_t(log2(N)); //precision of the fft: twice as large
     int64_t fft_nlimbs = limb_precision(fft_bits);
     BigReal *a1 = new_BigReal_array(N, fft_nlimbs);
@@ -416,14 +486,37 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     BigReal *a1_b2 = new_BigReal_array(N, fft_nlimbs);
     BigReal *b1_a2 = new_BigReal_array(N, fft_nlimbs);
     BigReal *b1_b2 = new_BigReal_array(N, fft_nlimbs);
-    precise_conv_toBigReal(a1, a.a[0], input_level_noise);
-    precise_conv_toBigReal(b1, a.a[1], input_level_noise);
-    precise_conv_toBigReal(a2, b.a[0], input_level_noise);
-    precise_conv_toBigReal(b2, b.a[1], input_level_noise);
+    //copy and resample the input to exactly input_level
+    precise_conv_toBigReal(a1, a.a[0], a_lshift, input_level_noise);
+    precise_conv_toBigReal(b1, a.a[1], a_lshift, input_level_noise);
+    precise_conv_toBigReal(a2, b.a[0], b_lshift, input_level_noise);
+    precise_conv_toBigReal(b2, b.a[1], b_lshift, input_level_noise);
+
+    // verify that b1 - s . a is small
+    RR::SetOutputPrecision(fft_nlimbs * BITS_PER_LIMBS / log2(10));
+    vec_RR ra1 = to_vec_RR(a1, N);
+    vec_RR rb1 = to_vec_RR(b1, N);
+    vec_RR rphase1 = rb1 - productModXNp1(debug_key->key, ra1);
+    cout << centerMod1(rphase1) * power2_RR(input_level_noise) << endl;
+    vec_RR ra2 = to_vec_RR(a2, N);
+    vec_RR rb2 = to_vec_RR(b2, N);
+    vec_RR rphase2 = rb2 - productModXNp1(debug_key->key, ra2);
+    cout << centerMod1(rphase2) * power2_RR(input_level_noise) << endl;
+
     fft_BigRealPoly_product(a1_a2, a1, a2, N, fft_nlimbs);
     fft_BigRealPoly_product(a1_b2, a1, b2, N, fft_nlimbs);
     fft_BigRealPoly_product(b1_a2, b1, a2, N, fft_nlimbs);
     fft_BigRealPoly_product(b1_b2, b1, b2, N, fft_nlimbs);
+
+    vec_RR ra1a2 = to_vec_RR(a1_a2, N);
+    vec_RR ra1b2 = to_vec_RR(a1_b2, N);
+    vec_RR rb1a2 = to_vec_RR(b1_a2, N);
+    vec_RR rb1b2 = to_vec_RR(b1_b2, N);
+    vec_RR rphase3 = rb1b2
+                     - productModXNp1(debug_key->key, ra1b2 + rb1a2)
+                     + productModXNp1(debug_key->key, productModXNp1(debug_key->key, ra1a2));
+    cout << centerMod1(rphase3 * power2_RR(input_level_noise)) * power2_RR(input_level_noise) << endl;
+
 
     //Now, we create the intermediate TRLWE ciphertexts
     int64_t intermediate_level_expo = reps.params.fixp_params.level_expo;
@@ -440,7 +533,7 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
             intermediate_plaintext_expo,
             intermediate_level_expo);
     TRLweParams intermediateParams(N, bt_intermediateParams);
-    TRLwe tmp0(intermediateParams); //TODO find the intermediate params
+    TRLwe tmp0(intermediateParams);
     TRLwe tmp1(intermediateParams);
     BigReal *C0 = b1_b2;
     BigReal *C1 = a1_b2;
@@ -448,14 +541,37 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     BigReal *C2 = a1_a2;
     // tmp0 = (C1 , C0) = ( a1.b2+a2.b1, b1.b2 )
     // tmp1 = (C2 , 0)  = ( a1.a2      , 0     )
-    BigRealPoly_shift_toBigTorus(tmp0.a[0], C1, input_level_expo);
-    BigRealPoly_shift_toBigTorus(tmp0.a[1], C0, input_level_expo);
-    BigRealPoly_shift_toBigTorus(tmp1.a[0], C2, input_level_expo);
+
+    vec_RR rC0 = to_vec_RR(C0, N);
+    vec_RR rC1 = to_vec_RR(C1, N);
+    vec_RR rC2 = to_vec_RR(C2, N);
+    vec_RR rphase4 = rC0
+                     - productModXNp1(debug_key->key, rC1)
+                     + productModXNp1(debug_key->key, productModXNp1(debug_key->key, rC2));
+    cout << centerMod1(rphase4 * power2_RR(input_level_noise)) * power2_RR(input_level_noise) << endl;
+
+
+    BigRealPoly_shift_toBigTorus(tmp0.a[0], C1, input_level_noise);
+    BigRealPoly_shift_toBigTorus(tmp0.a[1], C0, input_level_noise);
+    BigRealPoly_shift_toBigTorus(tmp1.a[0], C2, input_level_noise);
     zero(tmp1.a[1]);
+
+    vec_RR rrC0 = to_vec_RR(tmp0.a[1]);
+    vec_RR rrC1 = to_vec_RR(tmp0.a[0]);
+    vec_RR rrC2 = to_vec_RR(tmp1.a[0]);
+    vec_RR phase5 = rrC0
+                    - productModXNp1(debug_key->key, rrC1)
+                    + productModXNp1(debug_key->key, productModXNp1(debug_key->key, rrC2));
+    cout << centerMod1(phase5) * power2_RR(input_level_noise) << endl;
 
     //finally return tmp0 - rk . c1
     external_product(tmp1, rk, tmp1, intermediate_level_noise);
     //sub here is native, because the plaintext level and exponent of the output match
     //if you change that, make sure to call fixp_sub or something like that.
     sub(reps, tmp0, tmp1);
+    vec_RR xrb = to_vec_RR(tmp0.a[1]) - to_vec_RR(tmp1.a[1]);
+    vec_RR xra = to_vec_RR(tmp0.a[0]) - to_vec_RR(tmp1.a[0]);;
+    vec_RR phase6 = xrb - productModXNp1(debug_key->key, xra);
+    cout << centerMod1(phase6) * power2_RR(input_level_noise) << endl;
+
 }

@@ -185,12 +185,10 @@ void copy(BigTorusPolynomial &out, const BigTorusPolynomial &in) {
     }
 }
 
-void precise_conv_toBigReal(BigReal *array, const BigTorusPolynomial &b, int64_t msb) {
-
+void precise_conv_toBigReal(BigReal *array, const BigTorusPolynomial &b, int64_t lshift, int64_t msbToKeep) {
     for (uint64_t i = 0; i < b.length; i++) {
-        precise_conv_toBigReal(array[i], b.getAT(i), msb);
+        precise_conv_toBigReal(array[i], b.getAT(i), lshift, msbToKeep);
     }
-
 }
 
 void BigRealPoly_shift_toBigTorus(BigTorusPolynomial &out, BigReal *array, int64_t left_shift) {

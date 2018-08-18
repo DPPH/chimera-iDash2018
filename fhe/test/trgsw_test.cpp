@@ -164,26 +164,31 @@ TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
 
 TEST(TRGSW_TEST, trlwe_internal_product) {
 
-    int64_t N = 32;
-    int64_t nblimbs_in = 3;
+    int64_t N = 128;
 
-    int64_t L_a = 80;
-    int64_t L_b = 75;
-    int64_t rho = 16;
-    int64_t L = std::min(L_a, L_b) - rho - 1;
+    int64_t L_a = 80; //level expo of a
+    int64_t L_b = 75; //level expo of b
+    int64_t rho = 20; //precision bits
+    int64_t nblimbs_a = limb_precision(L_a + rho + 5);
+    int64_t nblimbs_b = limb_precision(L_b + rho + 5);
+    int64_t L = std::min(L_a, L_b) - rho - 1; //output level expo
+    int64_t nblimbs_reps = limb_precision(L + rho + 5);
+    int64_t alpha_rk = L + rho + 32 + 5;
+    int64_t nblimbs_rk = limb_precision(alpha_rk);
 
-    BigTorusParams bt_params_a(nblimbs_in, 0, L_a);
-    BigTorusParams bt_params_b(nblimbs_in, 0, L_b);
-    BigTorusParams bt_params_reps(nblimbs_in, 0, L);
+    BigTorusParams bt_params_a(nblimbs_a, 0, L_a);
+    BigTorusParams bt_params_b(nblimbs_b, 0, L_b);
+    BigTorusParams bt_params_reps(nblimbs_reps, 0, L);
 
     TRLweParams trlweParams_a(N, bt_params_a);
     TRLweParams trlweParams_b(N, bt_params_b);
     TRLweParams trlweParams_reps(N, bt_params_reps);
 
-    BigTorusParams bt_params_rk(nblimbs_in);
+    BigTorusParams bt_params_rk(nblimbs_rk);
     TRGSWParams trgswParams_rk(N, bt_params_rk);
 
     shared_ptr<TLweKey> key = tlwe_keygen(trlweParams_reps);
+    debug_key = key.get();
 
     TRLwe a(trlweParams_a);
     TRLwe b(trlweParams_b);
@@ -192,33 +197,29 @@ TEST(TRGSW_TEST, trlwe_internal_product) {
 
     BigTorusPolynomial plaintext_a(N, bt_params_a);
     BigTorusPolynomial plaintext_b(N, bt_params_b);
-    int64_t p_a = 0;
-    //p_a=(rand()%(1ul<<16ul)-(1ul<<15ul))%(1ul<<16ul);
-    int64_t p_b = 0;
-    //p_b=(rand()%(1ul<<16ul)-(1ul<<15ul))%(1ul<<16ul);
+    int64_t p_a = (rand() % (1ul << rho)) - (1ul << (rho - 1));
+    int64_t p_b = (rand() % (1ul << rho)) - (1ul << (rho - 1));
 
     zero(plaintext_a);
     zero(plaintext_b);
 
+    RR::SetPrecision(alpha_rk + 10);
     RR ra;
     RR rb;
-    cout << ra << endl;
-    cout << rb << endl;
-    cout << ra * rb << endl;
-    ra = to_RR(long(p_a)) / pow(to_RR(2), to_RR(long(L_a + rho)));
-    rb = to_RR(long(p_b)) / pow(to_RR(2), to_RR(long(L_b + rho)));
+    ra = to_RR(long(p_a)) / power2_RR(L_a + rho);
+    rb = to_RR(long(p_b)) / power2_RR(L_b + rho);
 
-    //cout << ra << endl;
-    //cout << rb << endl;
-    //cout << ra*rb << endl;
+    cout << "plain_a" << p_a / power2_RR(rho) << endl;
+    cout << "plain_b" << p_b / power2_RR(rho) << endl;
+    cout << "plain_prod" << p_a * p_b / power2_RR(2 * rho) << endl;
 
     to_torus(plaintext_a.getAT(0), ra);
     to_torus(plaintext_b.getAT(0), rb);
 
-    native_encrypt(a, plaintext_a, *key, L_a + rho);
-    native_encrypt(b, plaintext_b, *key, L_b + rho);
+    native_encrypt(a, plaintext_a, *key, L_a + rho + 1);
+    native_encrypt(b, plaintext_b, *key, L_b + rho + 1);
 
-    intPoly_encrypt(rk, key->key, *key, L + 32 + rho);
+    intPoly_encrypt(rk, key->key, *key, alpha_rk);
 
     fixp_internal_product(reps, a, b, rk, rho);
 
@@ -227,8 +228,7 @@ TEST(TRGSW_TEST, trlwe_internal_product) {
     native_phase(phase, reps, *key, L + rho);
 
 
-    RR exp_phase;
-    exp_phase = to_RR(long(p_a * p_b)) / pow(to_RR(2), to_RR(long(L + 2 * rho)));
+    RR exp_phase = to_RR(long(p_a * p_b)) / power2_RR(L + 2 * rho);
 
     for (int64_t i = 1; i < N; i++) {
         EXPECT_LE(log2Diff(to_RR(phase.getAT(i)), to_RR(0)), -L - rho);

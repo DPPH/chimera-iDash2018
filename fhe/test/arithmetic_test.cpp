@@ -395,6 +395,10 @@ TEST(BIGTORUS_ARITHMETIC, shift_toBigTorus) {
             ra = ra * power2_RR(left_shift);
             ra = ra - to_RR(RoundToZZ(ra));
 
+            //RR::SetOutputPrecision(nblimbs * BITS_PER_LIMBS / log2(10));
+            //cout << nblimbs << " " << left_shift << " : " << ra << endl;
+            //cout << nblimbs << " " << left_shift << " : " << to_RR(out) << endl;
+
             ASSERT_LE(log2Diff(to_RR(out), ra), -1000);
         }
     }
@@ -404,28 +408,32 @@ TEST(BIGTORUS_ARITHMETIC, shift_toBigTorus) {
 TEST(BIGTORUS_ARITHMETIC, precise_conv_toBigReal) {
     for (int64_t nblimbs_torus: {1, 2, 6}) {
         for (int64_t nblimbs_real: {1, 2, 5}) {
-            for (int64_t msb:  {10, 20, 50, 82, 123}) {
-                if (msb > nblimbs_real * BITS_PER_LIMBS) continue;
-                //int64_t prec = 30;
+            for (int64_t lshift:  {0, 6, 13, 31, 110}) {
+                for (int64_t msbToKeep:  {10, 20, 50, 82, 123}) {
+                    if (msbToKeep > nblimbs_real * BITS_PER_LIMBS) continue;
+                    //int64_t prec = 30;
 
-                RR::SetPrecision(max(nblimbs_torus, nblimbs_real) * BITS_PER_LIMBS);
+                    RR::SetPrecision(max(nblimbs_torus, nblimbs_real) * BITS_PER_LIMBS);
 
-                BigTorusParams params(nblimbs_torus);
-                BigTorus atorus(params);
+                    BigTorusParams params(nblimbs_torus);
+                    BigTorus atorus(params);
 
-                BigReal breal(nblimbs_real);
+                    BigReal breal(nblimbs_real);
 
-                random(atorus);
-                RR a = to_RR(atorus);
+                    random(atorus);
+                    RR a = to_RR(atorus);
+                    RR ashift = a * power2_RR(lshift);
+                    ashift -= to_RR(RoundToZZ(ashift));
 
-                precise_conv_toBigReal(breal, atorus, msb);
+                    precise_conv_toBigReal(breal, atorus, lshift, msbToKeep);
 
-                RR b = to_RR(breal);
-                RR b1 = b * power2_RR(msb);
+                    RR b = to_RR(breal);
+                    RR b1 = b * power2_RR(msbToKeep);
 
 
-                ASSERT_EQ(b1, to_RR(RoundToZZ(b1))); //b1 is integer
-                EXPECT_LE(log2Diff(b, a), -msb);
+                    ASSERT_EQ(b1, to_RR(RoundToZZ(b1))); //b1 is integer
+                    EXPECT_LE(log2Diff(b, ashift), -msbToKeep);
+                }
             }
         }
     }
