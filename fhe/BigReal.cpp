@@ -211,7 +211,7 @@ void precise_conv_toBigReal(BigReal &reps, const BigTorusRef &b, int64_t lshift,
             dest_end[-i] = 0;
 
     }
-    //fill the lsb with zeros
+    //fill the lsb with zeros if needed
     for (int64_t i = nlimbs_to_copy + 1; i <= int64_t(reps.nblimbs); i++) {
         dest_end[-i] = 0;
     }
@@ -219,7 +219,15 @@ void precise_conv_toBigReal(BigReal &reps, const BigTorusRef &b, int64_t lshift,
         //zeroify 64-(msb%64) bits on the least significant limb copied
         int64_t k = 64 - (msbToKeep % 64);
         int64_t mask = -(1l << k);
+        //add 1<<(k-1)
+        mpn_add_1(dest_end - nlimbs_to_copy, dest_end - nlimbs_to_copy, nlimbs_to_copy, (1ul << uint64_t(k - 1)));
+        //then zeroify
         dest_end[-nlimbs_to_copy] &= mask;
+    } else {
+        //recenter too
+        if (nlimbs_to_copy < newblimbs && (newbend[-nlimbs_to_copy - 1] & 0x8000000000000000ul) != 0) {
+            mpn_add_1(dest_end - nlimbs_to_copy, dest_end - nlimbs_to_copy, nlimbs_to_copy, 1ul);
+        }
     }
     //if the result is negative, negate it
     bool vneg = ((dest_end[-1] & 0x8000000000000000UL) != 0);

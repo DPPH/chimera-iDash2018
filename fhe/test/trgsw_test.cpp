@@ -106,7 +106,8 @@ TEST(TRGSW_TEST, trgsw_external_product) {
 
 
 TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
-    int64_t N = 4096;
+    //int64_t N = 4096;
+    int64_t N = 256;
     int64_t n_in = 500;
     int64_t nblimbs = 2;
     int64_t alpha_bits = 120; //signed
@@ -155,7 +156,7 @@ TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
 
 
     for (int64_t i = 0; i < N; i++) {
-        EXPECT_LE(log2Diff(phase.getAT(i), phase_ref.a[1].getAT(i)), -out_alpha_bits);
+        EXPECT_LE(log2Diff(phase.getAT(i), phase_ref.a[1].getAT(i)), -out_alpha_bits + 2);
     }
     delete[] a;
     delete[] s;
@@ -164,7 +165,7 @@ TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
 
 TEST(TRGSW_TEST, trlwe_internal_product) {
 
-    int64_t N = 128;
+    int64_t N = 4096;
 
     int64_t L_a = 100; //level expo of a
     int64_t L_b = 110; //level expo of b
@@ -197,8 +198,8 @@ TEST(TRGSW_TEST, trlwe_internal_product) {
 
     BigTorusPolynomial plaintext_a(N, bt_params_a);
     BigTorusPolynomial plaintext_b(N, bt_params_b);
-    int64_t p_a = 0;//(rand() % (1ul << rho)) - (1ul << (rho - 1));
-    int64_t p_b = 0;//(rand() % (1ul << rho)) - (1ul << (rho - 1));
+    int64_t p_a = (rand() % (1ul << rho)) - (1ul << (rho - 1));
+    int64_t p_b = (rand() % (1ul << rho)) - (1ul << (rho - 1));
 
     zero(plaintext_a);
     zero(plaintext_b);
