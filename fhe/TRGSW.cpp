@@ -457,6 +457,7 @@ vec_RR centerMod1(const vec_RR &ra) {
     return rreps;
 }
 
+#define DEBUG_INTERNAL_PRODUCT
 #ifdef DEBUG_INTERNAL_PRODUCT
 extern TLweKey *debug_key;
 #endif
