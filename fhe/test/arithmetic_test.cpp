@@ -376,3 +376,65 @@ TEST(BIGTORUS_ARITHMETIC, bitdecomp32) {
         ASSERT_LE(log2Diff(b, recomp_b), -nblimbs * BITS_PER_LIMBS);
     }
 }
+/** compute  out= a* 2^left_shift mod 1  */
+TEST(BIGTORUS_ARITHMETIC, shift_toBigTorus) {
+
+    for (int64_t nblimbs : {1, 2, 3, 6}) {
+        for (int64_t left_shift : {10, 31, 53, 80, 210}) {
+
+            BigTorusParams params(nblimbs);
+            BigTorus out(params);
+
+
+            RR::SetPrecision(nblimbs * BITS_PER_LIMBS);
+            RR ra = random_RR();
+            BigReal a(nblimbs);
+            to_BigReal(a, ra);
+            shift_toBigTorus(out, a, left_shift);
+
+            ra = ra * power2_RR(left_shift);
+            ra = ra - to_RR(RoundToZZ(ra));
+
+            //RR::SetOutputPrecision(nblimbs * BITS_PER_LIMBS / log2(10));
+            //cout << nblimbs << " " << left_shift << " : " << ra << endl;
+            //cout << nblimbs << " " << left_shift << " : " << to_RR(out) << endl;
+
+            ASSERT_LE(log2Diff(to_RR(out), ra), -1000);
+        }
+    }
+}
+
+/** copy exactly msb bits of b in  BigReal a */
+TEST(BIGTORUS_ARITHMETIC, precise_conv_toBigReal) {
+    for (int64_t nblimbs_torus: {1, 2, 6}) {
+        for (int64_t nblimbs_real: {1, 2, 5}) {
+            for (int64_t lshift:  {0, 6, 13, 31, 110}) {
+                for (int64_t msbToKeep:  {10, 20, 50, 82, 123}) {
+                    if (msbToKeep > nblimbs_real * BITS_PER_LIMBS) continue;
+                    //int64_t prec = 30;
+
+                    RR::SetPrecision(max(nblimbs_torus, nblimbs_real) * BITS_PER_LIMBS);
+
+                    BigTorusParams params(nblimbs_torus);
+                    BigTorus atorus(params);
+
+                    BigReal breal(nblimbs_real);
+
+                    random(atorus);
+                    RR a = to_RR(atorus);
+                    RR ashift = a * power2_RR(lshift);
+                    ashift -= to_RR(RoundToZZ(ashift));
+
+                    precise_conv_toBigReal(breal, atorus, lshift, msbToKeep);
+
+                    RR b = to_RR(breal);
+                    RR b1 = b * power2_RR(msbToKeep);
+
+
+                    ASSERT_EQ(b1, to_RR(RoundToZZ(b1))); //b1 is integer
+                    EXPECT_LE(log2Diff(b, ashift), -msbToKeep);
+                }
+            }
+        }
+    }
+}

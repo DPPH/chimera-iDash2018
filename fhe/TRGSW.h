@@ -8,7 +8,7 @@
 class TRGSWParams : public TRLweParams {
 public:
     static const UINT64 Bgbits = 32;
-    static const UINT64 max_ell = 4;
+    static const UINT64 max_ell = 5;
 
     TRGSWParams(const UINT64 N, const BigTorusParams &fixp_params);
 
@@ -54,5 +54,9 @@ TRGSW *new_TRGSW_array(UINT64 size, const TRGSWParams &params);
 
 /** delete an array of TRGSW */
 void delete_TRGSW_array(UINT64 size, TRGSW *array);
+
+
+void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TRGSW &rk, int precision_bits);
+
 
 #endif //FHE_TRGSW_H

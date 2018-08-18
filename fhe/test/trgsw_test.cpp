@@ -4,6 +4,7 @@
 #include "../TRGSW.h"
 #include "../BigFFT.h"
 #include "../arithmetic.h"
+#include "../BigTorus.h"
 
 using namespace std;
 using namespace NTL;
@@ -161,3 +162,80 @@ TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
     delete_TRGSW_array(n_in, c);
 }
 
+TEST(TRGSW_TEST, trlwe_internal_product) {
+
+    int64_t N = 4096;
+
+    int64_t L_a = 100; //level expo of a
+    int64_t L_b = 110; //level expo of b
+    int64_t rho = 20; //precision bits
+    int64_t nblimbs_a = limb_precision(L_a + rho + 5);
+    int64_t nblimbs_b = limb_precision(L_b + rho + 5);
+    int64_t L = std::min(L_a, L_b) - rho - 1; //output level expo
+    int64_t nblimbs_reps = limb_precision(L + rho + 5);
+    int64_t alpha_rk = L + rho + 32 + log2(N / 2);
+    int64_t nblimbs_rk = limb_precision(alpha_rk);
+
+    BigTorusParams bt_params_a(nblimbs_a, 0, L_a);
+    BigTorusParams bt_params_b(nblimbs_b, 0, L_b);
+    BigTorusParams bt_params_reps(nblimbs_reps, 0, L);
+
+    TRLweParams trlweParams_a(N, bt_params_a);
+    TRLweParams trlweParams_b(N, bt_params_b);
+    TRLweParams trlweParams_reps(N, bt_params_reps);
+
+    BigTorusParams bt_params_rk(nblimbs_rk);
+    TRGSWParams trgswParams_rk(N, bt_params_rk);
+
+    shared_ptr<TLweKey> key = tlwe_keygen(trlweParams_reps);
+    debug_key = key.get();
+
+    TRLwe a(trlweParams_a);
+    TRLwe b(trlweParams_b);
+    TRLwe reps(trlweParams_reps);
+    TRGSW rk(trgswParams_rk);
+
+    BigTorusPolynomial plaintext_a(N, bt_params_a);
+    BigTorusPolynomial plaintext_b(N, bt_params_b);
+    int64_t p_a = (rand() % (1ul << rho)) - (1ul << (rho - 1));
+    int64_t p_b = (rand() % (1ul << rho)) - (1ul << (rho - 1));
+
+    zero(plaintext_a);
+    zero(plaintext_b);
+
+    RR::SetPrecision(alpha_rk + 10);
+    RR ra;
+    RR rb;
+    ra = to_RR(long(p_a)) / power2_RR(L_a + rho);
+    rb = to_RR(long(p_b)) / power2_RR(L_b + rho);
+
+    cout << "plain_a" << p_a / power2_RR(rho) << endl;
+    cout << "plain_b" << p_b / power2_RR(rho) << endl;
+    cout << "plain_prod" << p_a * p_b / power2_RR(2 * rho) << endl;
+
+    to_torus(plaintext_a.getAT(0), ra);
+    to_torus(plaintext_b.getAT(0), rb);
+
+    native_encrypt(a, plaintext_a, *key, L_a + rho + 1);
+    native_encrypt(b, plaintext_b, *key, L_b + rho + 1);
+
+    intPoly_encrypt(rk, key->key, *key, alpha_rk);
+
+    cout << "time: " << clock() / double(CLOCKS_PER_SEC) << endl;
+    fixp_internal_product(reps, a, b, rk, rho);
+    cout << "time: " << clock() / double(CLOCKS_PER_SEC) << endl;
+    fixp_internal_product(reps, a, b, rk, rho);
+    cout << "time: " << clock() / double(CLOCKS_PER_SEC) << endl;
+
+    BigTorusPolynomial phase(N, bt_params_reps);
+
+    native_phase(phase, reps, *key, L + rho);
+
+
+    RR exp_phase = to_RR(long(p_a * p_b)) / power2_RR(L + 2 * rho);
+
+    for (int64_t i = 1; i < N; i++) {
+        EXPECT_LE(log2Diff(to_RR(phase.getAT(i)), to_RR(0)), -L - rho + log2(N / 2));
+    }
+    EXPECT_LE(log2Diff(to_RR(phase.getAT(0)), exp_phase), -L - rho + log2(N / 2));
+}
