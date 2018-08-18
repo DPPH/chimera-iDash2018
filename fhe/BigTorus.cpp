@@ -3,6 +3,8 @@
 #include "commons.h"
 #include "arithmetic.h"
 
+using namespace std;
+
 BigTorusParams::BigTorusParams(UINT64 torus_limbs, int64_t plaintext_expo, int64_t level_expo) :
         torus_limbs(torus_limbs),
         plaintext_expo(plaintext_expo),
@@ -199,6 +201,56 @@ void neg(BigTorusRef out, const BigTorusRef &in, UINT64 limb_precision) {
     mpn_neg(out.limbs_end - limb_precision, in.limbs_end - limb_precision, limb_precision);
 
 
+}
+
+void serializeBigTorusParams(std::ostream &out, const BigTorusParams &params) {
+    int64_t x = BIGTORUS_PARAMS_SERIAL_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    ostream_write_binary(out, &params.torus_limbs, sizeof(UINT64));
+    ostream_write_binary(out, &params.plaintext_expo, sizeof(int64_t));
+    ostream_write_binary(out, &params.level_expo, sizeof(int64_t));
+}
+
+std::shared_ptr<BigTorusParams> deserializeBigTorusParams(std::istream &in) {
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == BIGTORUS_PARAMS_SERIAL_ID);
+    UINT64 torus_limbs;
+    istream_read_binary(in, &torus_limbs, sizeof(UINT64));
+    int64_t plaintext_expo;
+    istream_read_binary(in, &plaintext_expo, sizeof(int64_t));
+    int64_t level_expo;
+    istream_read_binary(in, &level_expo, sizeof(int64_t));
+    BigTorusParams *reps = new BigTorusParams(torus_limbs, plaintext_expo, level_expo);
+    /// nothing else to do here
+    return std::shared_ptr<BigTorusParams>(reps);
+}
+
+void serializeBigTorus(std::ostream &out, const BigTorus &value) {
+    serializeBigTorusParams(out, value.params);
+    serializeBigTorusContent(out, value);
+}
+
+std::shared_ptr<BigTorus> deserializeBigTorus(std::istream &in) {
+    shared_ptr<BigTorusParams> params = deserializeBigTorusParams(in);
+    store_forever(params);
+    BigTorus *reps = new BigTorus(*params);
+    deserializeBigTorusContent(in, *reps);
+    return std::shared_ptr<BigTorus>(reps);
+}
+
+void serializeBigTorusContent(std::ostream &out, const BigTorusRef &value) {
+    int64_t x = BIGTORUS_SERIAL_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    //copy the limb array (attention, taille en bytes)
+    ostream_write_binary(out, value.limbs_end - value.params.torus_limbs, value.params.torus_limbs * sizeof(UINT64));
+}
+
+void deserializeBigTorusContent(std::istream &in, BigTorusRef reps) {
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == BIGTORUS_SERIAL_ID);
+    istream_read_binary(in, reps.limbs_end - reps.params.torus_limbs, reps.params.torus_limbs * sizeof(UINT64));
 }
 
 
