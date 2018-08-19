@@ -336,6 +336,21 @@ void neg(TRLwe &out, const TRLwe &in) {
     neg(out.a[1], in.a[1]);
 }
 
+TRLwe *new_TRLwe_array(UINT64 size, const TRLweParams &params) {
+    TRLwe *reps = (TRLwe *) malloc(size * sizeof(TRLwe));
+    for (UINT64 i = 0; i < size; i++) {
+        new(reps + i) TRLwe(params);
+    }
+    return reps;
+}
+
+void delete_TRLwe_array(UINT64 size, TRLwe *array) {
+    for (UINT64 i = 0; i < size; i++) {
+        (array + i)->~TRLwe();
+    }
+    free(array);
+}
+
 pubKsKey128::pubKsKey128(
         const TLweParams &in_params,
         const TRLweParams &out_params,

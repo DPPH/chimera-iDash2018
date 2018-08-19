@@ -2,21 +2,48 @@
 #define FHE_MAINALGO_H
 
 #include "TRGSW.h"
+#include "TRLwe.h"
 #include <NTL/mat_RR.h>
 
 class TRGSWMatrix {
 public:
-    TRGSW** data;
-    int64_t rows;
-    int64_t cols;
+    TRGSW **const data;
+    const int64_t rows;
+    const int64_t cols;
 private:
-    TRGSW *data_raw;
+    TRGSW *const data_raw;
 public:
-    TRGSWMatrix(int64_t rows, int64_t cols, const TRGSWParams &params);
+    TRGSWMatrix(int64_t rows, int64_t cols, const TRGSWParams &params) :
+            data(new TRGSW *[rows]),
+            rows(rows),
+            cols(cols),
+            data_raw(new_TRGSW_array(rows * cols, params)) {
+        for (int i = 0; i < rows; ++i) data[i] = data_raw + i * cols;
+    }
 
-    ~TRGSWMatrix();
+    ~TRGSWMatrix() {
+        delete_TRGSW_array(rows * cols, data_raw);
+        delete[] data;
+    }
 
     NO_COPY(TRGSWMatrix);
+};
+
+class TRLWEVector {
+public:
+    TRLwe *const data;
+    const int64_t length;
+public:
+    TRLWEVector(int64_t length, const TRLweParams &params) :
+            data(new_TRLwe_array(length, params)),
+            length(length) {
+    }
+
+    ~TRLWEVector() {
+        delete_TRLwe_array(length, data);
+    }
+
+    NO_COPY(TRLWEVector);
 };
 
 /**
@@ -25,6 +52,24 @@ public:
  */
 std::shared_ptr<TRGSWMatrix>
 encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bits, int64_t plaintext_precision_bits);
+
+/**
+ * encrypt y and/or p as individual TRLWE slots
+ */
+std::shared_ptr<TRLWEVector>
+encrypt_yp(NTL::vec_RR plaintext, const TLweKey &key, int64_t N,
+           int64_t level_expo, int64_t plaintext_expo, int64_t plaintext_precision);
+
+/**
+ * @brief encrypted vector - Matrix multiplication
+ */
+std::shared_ptr<TRLWEVector>
+mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_expo, int64_t plaintext_precision_bits);
+
+/**
+ * @brief decrypt TRLWE slots as RR
+ */
+NTL::vec_RR decrypt_slots(const TRLWEVector &ciphertext, const TLweKey &key, int64_t length);
 
 
 #endif //FHE_MAINALGO_H

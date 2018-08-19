@@ -144,5 +144,13 @@ void neg(TRLwe &out, const TRLwe &in);
 
 void copy(TRLwe &out, const TRLwe &in);
 
+
+/** create an array of TRGSW */
+TRLwe *new_TRLwe_array(UINT64 size, const TRLweParams &params);
+
+/** delete an array of TRGSW */
+void delete_TRLwe_array(UINT64 size, TRLwe *array);
+
+
 #endif //FHE_TRLWE_H
 
