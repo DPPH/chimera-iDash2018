@@ -26,7 +26,7 @@ add_library(chimera-dpph
         BigComplex.cpp
         BigComplex.h
         TLwe.cpp
-        TLwe.h BigTorusVector.cpp BigTorusVector.h BigTorusPolynomial.cpp BigTorusPolynomial.h TRLwe.cpp TRLwe.h TRGSW.cpp TRGSW.h)
+        TLwe.h BigTorusVector.cpp BigTorusVector.h BigTorusPolynomial.cpp BigTorusPolynomial.h TRLwe.cpp TRLwe.h TRGSW.cpp TRGSW.h mainalgo.cpp mainalgo.h)
 
 add_executable(fhe main.cpp )
 target_link_libraries(fhe chimera-dpph -lntl -lmpfr -lgmp -lntl -lm -pthread)
