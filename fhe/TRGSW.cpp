@@ -9,7 +9,7 @@ NTL_CLIENT;
 double log2Diff(const RR &a, const RR &b);
 
 
-TRGSW::TRGSW(const TRGSWParams &params) : params(params), bits_a(0), fft_nlimbs(0), ell(0) {
+TRGSW::TRGSW(const TRGSWParams &params) : params(params), shift_exponent(0), fft_nlimbs(0), ell(0) {
     for (UINT64 k = 0; k < 2; k++) {
         for (UINT64 i = 0; i < params.max_ell; i++) {
             for (UINT64 j = 0; j < 2; j++) {
@@ -64,7 +64,7 @@ void intPoly_encrypt(
     for (UINT64 k = 0; k < N; k++) {
         norm_plaintext += fabs(double(plaintext[k]));
     }
-    reps.bits_a = UINT64(log2(norm_plaintext));
+    //reps.bits_a = UINT64(log2(norm_plaintext));
 
     //initialize the ciphertext
     for (UINT64 k = 0; k < 2; k++) {
