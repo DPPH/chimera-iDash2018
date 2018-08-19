@@ -146,7 +146,6 @@ void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLwe
     // b = plaintext + sum s_i a_i
     copy(b, plaintext, alpha_limbs);
     random(reps.a[0], alpha_limbs);
-    //zero(reps.a[0]);                        //todo warning !!!
     BigTorusPolynomial temp(N, bt_out_params);
     int64_t *K = new int64_t[N];
 
