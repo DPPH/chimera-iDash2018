@@ -49,11 +49,8 @@ void ostream_write_binary(std::ostream &out, const void *const data, size_t byte
  */
 void istream_read_binary(std::istream &in, void *const data, size_t bytes);
 
-template<typename T>
-void store_forever(std::shared_ptr<T> object) {
-    static std::vector<std::shared_ptr<void>> v;
-    v.push_back(object);
-}
+
+void store_forever(std::shared_ptr<void> object);
 
 
 #define NO_COPY(TypeName) \
