@@ -15,32 +15,28 @@
 NTL_CLIENT;
 
 void to_fixP(BigTorusRef reps, const NTL::RR &a) {
-    const int64_t n = reps.params.torus_limbs;
-    RR::SetPrecision(n * BITS_PER_LIMBS + 2);
-    BigTorusRef ta(reps.limbs_end, reps.params);
-    to_torus(ta, a * pow(2, -(reps.params.plaintext_expo + reps.params.level_expo)));
+    assert_dramatically(abs(a) <= power2_RR(reps.params.plaintext_expo)); //"plaintext expo overflow";
+    //RR::SetPrecision(reps.params.limbs * BITS_PER_LIMBS + 2); //will be set by to_torus
+    to_torus(reps, a * power2_RR(-(reps.params.plaintext_expo + reps.params.level_expo)));
 }
 
 void to_torus(BigTorusRef reps, const NTL::RR &a) {
     assert(abs(a) <= 0.5);
-    const int64_t n = reps.params.torus_limbs;
-    RR::SetPrecision(n * BITS_PER_LIMBS + 2);
-    ZZ az = RoundToZZ((a + 2) * pow(2, n * BITS_PER_LIMBS));
+    const int64_t nlimbs = reps.params.torus_limbs;
+    RR::SetPrecision(nlimbs * BITS_PER_LIMBS + 2);
+    ZZ az = RoundToZZ((a + 2) * power2_RR(nlimbs * BITS_PER_LIMBS)); //necessarily > 2^nlimbs*BITS_PER_LIMB
     //cout << "az:" << az << endl;
     const UINT64 *limbs = ZZ_limbs_get(az);
-    mpn_copyi(reps.limbs_end - n, limbs, n);
+    mpn_copyi(reps.limbs_end - nlimbs, limbs, nlimbs);
 }
 
 NTL::RR fixp_to_RR(const BigTorusRef &a) {
-    BigTorusRef ta(a.limbs_end, a.params);
-    RR reps = to_RR(ta);
-    reps *= NTL::pow(to_RR(2), to_RR(long(a.params.level_expo + a.params.plaintext_expo)));
-    return reps;
+    return to_RR(a) * power2_RR(a.params.plaintext_expo + a.params.level_expo);
 }
 
 NTL::RR to_RR(const BigTorusRef &a) {
     const long n = a.params.torus_limbs;
-    NTL::RR pow2m32 = NTL::pow(to_RR(2), to_RR(-32));
+    NTL::RR pow2m32 = power2_RR(-32);
     static const UINT64 mask32 = 0xFFFFFFFFul;
     NTL::RR::SetPrecision(n * BITS_PER_LIMBS + 2);
     NTL::RR reps;

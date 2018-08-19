@@ -1,6 +1,7 @@
 #include <cassert>
 #include <vector>
 #include "TRLwe.h"
+#include "arithmetic.h"
 
 
 // see if this out_prec_limbs still make sense?
@@ -181,6 +182,46 @@ void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, 
     sub(reps, b, temp, alpha_limbs);
     delete[] K;
 }
+
+void fixp_encrypt(TRLwe &reps, const NTL::vec_RR &plaintext, const TLweKey &key, UINT64 plaintext_precision) {
+    assert(reps.params.fixp_params.level_expo > 0); //"level exponent is not set";
+    int64_t alpha_bits = reps.params.fixp_params.level_expo + plaintext_precision;
+    assert(int64_t(reps.params.fixp_params.torus_limbs) >=
+           limb_precision(alpha_bits)); //"the bigtorus is not precise enough";
+    int64_t N = reps.params.N;
+    BigTorusPolynomial tmp(N, reps.params.fixp_params);
+    for (int64_t i = 0; i < N; i++) {
+        if (i <= plaintext.length())
+            to_fixP(tmp.getAT(i), plaintext[i]);
+        else
+            zero(tmp.getAT(i));
+    }
+    native_encrypt(reps, tmp, key, alpha_bits);
+}
+
+NTL::vec_RR fixp_decrypt(const TRLwe &tlwe, const TLweKey &key) {
+    assert(tlwe.params.fixp_params.level_expo > 0); //"level exponent is not set";
+    int64_t N = tlwe.params.N;
+    BigTorusPolynomial tmp(N, tlwe.params.fixp_params);
+    native_phase(tmp, tlwe, key, tlwe.params.fixp_params.torus_limbs * BITS_PER_LIMBS);
+    NTL::vec_RR reps;
+    reps.SetLength(N);
+    for (int64_t i = 0; i < N; i++) {
+        reps[i] = fixp_to_RR(tmp.getAT(i));
+    }
+    return reps;
+}
+
+void fixp_encrypt_number(TRLwe &reps, const NTL::RR &plaintext, const TLweKey &key, UINT64 plaintext_precision) {
+    NTL::vec_RR tmp(NTL::INIT_SIZE, 1);
+    tmp[0] = plaintext;
+    fixp_encrypt(reps, tmp, key, plaintext_precision);
+}
+
+NTL::RR fixp_decrypt_number(const TRLwe &tlwe, const TLweKey &key) {
+    return fixp_decrypt(tlwe, key)[0];
+}
+
 
 void zero(TRLwe &out) {
     zero(out.a[0]);

@@ -134,6 +134,14 @@ void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLwe
 
 void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, UINT64 alpha_bits);
 
+void fixp_encrypt(TRLwe &reps, const NTL::vec_RR &plaintext, const TLweKey &key, UINT64 plaintext_precision);
+
+NTL::vec_RR fixp_decrypt(const TRLwe &tlwe, const TLweKey &key);
+
+void fixp_encrypt_number(TRLwe &reps, const NTL::RR &plaintext, const TLweKey &key, UINT64 plaintext_precision);
+
+NTL::RR fixp_decrypt_number(const TRLwe &tlwe, const TLweKey &key);
+
 void zero(TRLwe &out);
 
 void add(TRLwe &reps, const TRLwe &a, const TRLwe &b);
