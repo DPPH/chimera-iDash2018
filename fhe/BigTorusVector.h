@@ -30,27 +30,27 @@ public:
 
 /** serialize:
  *  magic number:   int64 on 8 bytes
- *  length: UINT64
- *  vector of limb array:     length*torus_limbs*UINT64, with torus_limbs in the parameters
+ *  vector of BigTorus:     length*torus_limbs*UINT64
  */
 void serializeBigTorusVectorContent(std::ostream &out, const BigTorusVector &value);
 
 /** serialize:
  *  magic number:   int64 on 8 bytes
- *  length: UINT64
- *  vector of limb array:     length*torus_limbs*UINT64, with torus_limbs in the parameters
+ *  vector of BigTorus:     length*torus_limbs*UINT64
  */
 void deserializeBigTorusVectorContent(std::istream &in, BigTorusVector &reps);
 
 /** serialize:
- *  param:          BigTorusParams
- *  value:        BigTorusContent
+ *  param:        BigTorusParams
+ *  length:       UINT64
+ *  value:        BigTorusVectorContent
  */
 void serializeBigTorusVector(std::ostream &out, const BigTorusVector &value);
 
 /** serialize:
  *  param:          BigTorusParams
- *  content:        BigTorusVector
+ *  length:         UINT64
+ *  content:        BigTorusVectorContent
  */
 std::shared_ptr<BigTorusVector> deserializeBigTorusVector(std::istream &in);
 
@@ -82,6 +82,7 @@ public:
 
     ~BigTorusMatrix();
 };
+
 
 void zero(const BigTorusVector &v);
 

@@ -156,3 +156,9 @@ std::shared_ptr<BigTorusVector> deserializeBigTorusVector(std::istream &in) {
     deserializeBigTorusVectorContent(in, *reps);
     return std::shared_ptr<BigTorusVector>(reps);
 }
+
+
+
+
+
+
