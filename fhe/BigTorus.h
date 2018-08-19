@@ -2,6 +2,7 @@
 #define FHE_BIGTORUS_H
 
 #include <cstdint>
+#include <memory>
 #include "commons.h"
 
 /**
@@ -27,6 +28,23 @@ public:
 };
 
 static_assert(sizeof(BigTorusParams) == 24, "Bad compiler");
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  torus_limbs:    UINT64,
+ *  plaintext_expo: int64,
+ *  level_expo:     int64
+ */
+void serializeBigTorusParams(std::ostream &out, const BigTorusParams &params);
+
+/** deserialize:
+ *  magic number:   int64 on 8 bytes
+ *  torus_limbs:    UINT64,
+ *  plaintext_expo: int64,
+ *  level_expo:     int64
+ */
+std::shared_ptr<BigTorusParams> deserializeBigTorusParams(std::istream &in);
+
 
 /**
  * A standalone BigTorus (owns its limbs memory space)
@@ -55,7 +73,7 @@ public:
 
     BigTorus(const BigTorus &) = delete;
 
-    void operator=(const BigTorus &)= delete;
+    void operator=(const BigTorus &) = delete;
 };
 
 /**
@@ -74,6 +92,32 @@ public:
 
     BigTorusRef(BigTorus &&torus) = delete; //cannot pass a temporary
 };
+
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  limb array:     n*UINT64, with n in the parameters
+ */
+void serializeBigTorusContent(std::ostream &out, const BigTorusRef &value);
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  limb array:     n*UINT64, with n in the parameters
+ */
+void deserializeBigTorusContent(std::istream &in, BigTorusRef reps);
+
+/** serialize:
+ *  param:          BigTorusParams
+ *  content:        BigTorusContent
+ */
+void serializeBigTorus(std::ostream &out, const BigTorus &value);
+
+/** serialize:
+ *  param:          BigTorusParams
+ *  content:        BigTorusContent
+ */
+std::shared_ptr<BigTorus> deserializeBigTorus(std::istream &in);
+
 
 /** multiply a bigTorus by an integer (modulo 1) */
 void bigTorusRawScaleU64(UINT64 *limbs_end, int64_t coef, UINT64 nblimbs);

@@ -585,4 +585,13 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     vec_RR phase6 = xrb - productModXNp1(debug_key->key, xra);
     cout << centerMod1(phase6) * power2_RR(input_level_noise) << endl;
 #endif
+
+    delete_BigReal_array(N, a1_a2);
+    delete_BigReal_array(N, a1_b2);
+    delete_BigReal_array(N, b1_a2);
+    delete_BigReal_array(N, b1_b2);
+    delete_BigReal_array(N, a1);
+    delete_BigReal_array(N, b1);
+    delete_BigReal_array(N, a2);
+    delete_BigReal_array(N, b2);
 }
