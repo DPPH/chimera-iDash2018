@@ -67,5 +67,8 @@ static const int64_t BIGTORUSVECTOR_SERIAL_ID = 1234569;
 static const int64_t TLWE_PARAMS_SERIAL_ID = 1234570;
 static const int64_t TLWE_KEY_SERIAL_ID = 1234571;
 static const int64_t TLWE_SERIAL_ID = 1234571;
+static const int64_t TRLWE_PARAMS_SERIAL_ID = 1234572;
+static const int64_t TRLWE_SERIAL_ID = 1234572;
+
 
 #endif //FHE_COMMONS_H

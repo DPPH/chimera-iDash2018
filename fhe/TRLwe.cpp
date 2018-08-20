@@ -2,6 +2,7 @@
 #include <vector>
 #include "TRLwe.h"
 
+using namespace std;
 
 // see if this out_prec_limbs still make sense?
 void pubKS128(TRLwe &out, const TLwe &in, const pubKsKey128 &ks, const UINT64 out_prec_limbs) {
@@ -144,7 +145,7 @@ void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLwe
 
     BigTorusPolynomial &b = reps.a[1];
     // b = plaintext + sum s_i a_i
-    copy(b, plaintext, alpha_limbs);
+    ::copy(b, plaintext, alpha_limbs);
     random(reps.a[0], alpha_limbs);
     BigTorusPolynomial temp(N, bt_out_params);
     int64_t *K = new int64_t[N];
@@ -167,7 +168,7 @@ void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, 
     BigTorusParams bt_params(alpha_limbs);
 
     const BigTorusPolynomial &b = c.a[1];
-    copy(reps, b, alpha_limbs);
+    ::copy(reps, b, alpha_limbs);
 
     BigTorusPolynomial temp(N, bt_params);
     int64_t *K = new int64_t[N];
@@ -334,6 +335,47 @@ void copy(TRLwe &out, const TRLwe &in) {
 void neg(TRLwe &out, const TRLwe &in) {
     neg(out.a[0], in.a[0]);
     neg(out.a[1], in.a[1]);
+}
+
+void serializeTRLweParams(std::ostream &out, const TRLweParams &value) {
+    int64_t x = TRLWE_PARAMS_SERIAL_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    TLweParams tLweParams(value.N, value.fixp_params);
+    serializeTLweParams(out, tLweParams);
+}
+
+std::shared_ptr<TRLweParams> deserializeTRLweParams(std::istream &in) {
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == TRLWE_PARAMS_SERIAL_ID);
+
+    shared_ptr<TLweParams> tLweParams = deserializeTLweParams(in);
+    store_forever(tLweParams);
+    TRLweParams *reps = new TRLweParams(tLweParams->N, tLweParams->fixp_params);
+    return std::shared_ptr<TRLweParams>(reps);
+}
+
+void serializeTRLwe(std::ostream &out, const TRLwe &value) {
+    int64_t x = TRLWE_SERIAL_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+
+    serializeTRLweParams(out, value.params);
+    serializeBigTorusVectorContent(out, value.a[0]);
+    serializeBigTorusVectorContent(out, value.a[1]);
+
+}
+
+std::shared_ptr<TRLwe> deserializeTRLwe(std::istream &in) {
+
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == TRLWE_SERIAL_ID);
+    shared_ptr<TRLweParams> params = deserializeTRLweParams(in);
+    store_forever(params);
+    TRLwe *reps = new TRLwe(*params);
+    deserializeBigTorusVectorContent(in, reps->a[0]);
+    deserializeBigTorusVectorContent(in, reps->a[1]);
+    return shared_ptr<TRLwe>(reps);
 }
 
 pubKsKey128::pubKsKey128(

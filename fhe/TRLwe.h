@@ -4,6 +4,10 @@
 
 #include "BigTorusPolynomial.h"
 #include "TLwe.h"
+#include <memory>
+#include "commons.h"
+#include <cstdint>
+
 
 class TRLweParams : public TLweParams {
 public:
@@ -11,6 +15,22 @@ public:
 
     ~TRLweParams() = default;
 };
+
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:        TRLweParams
+ */
+void serializeTRLweParams(std::ostream &out, const TRLweParams &value);
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  content:        TRLweParams
+ */
+std::shared_ptr<TRLweParams> deserializeTRLweParams(std::istream &in);
+
+
+
 
 class TRLwe {
 public:
@@ -21,6 +41,18 @@ public:
 
     ~TRLwe();
 };
+
+
+/** serialize:
+
+ *  value:        N* size(TLWE)
+ */
+void serializeTRLwe(std::ostream &out, const TRLwe &value);
+
+/** serialize:
+ *  content:        N* size(TLWE)
+ */
+std::shared_ptr<TRLwe> deserializeTRLwe(std::istream &in);
 
 /** @brief allocates a matrix of TRLWE */
 TRLwe **new_TRLweMatrix(UINT64 rows, UINT64 cols, const TRLweParams &params);
