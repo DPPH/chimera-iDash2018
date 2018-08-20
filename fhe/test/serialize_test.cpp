@@ -303,3 +303,56 @@ TEST(SERIALIZE_TEST, TRGSWParams) {
     ASSERT_EQ(value.fixp_params.torus_limbs, res->fixp_params.torus_limbs);
 }
 
+TEST(SERIALIZE_TEST, TRGSW) {
+    BigTorusParams bt_params(123, random(), random());
+    int64_t N = 8;
+    int64_t ell = 3;
+    int64_t fft_nlimbs = 5;
+    TRGSWParams params(N, bt_params);
+
+    TRGSW value(params);
+    value.ell = ell;
+    value.plaintext_exponent = random();
+    value.bits_a = random();
+    value.fft_nlimbs = fft_nlimbs;
+
+    for (int64_t j = 0; j < 2; j++) {
+        for (int64_t i = 0; i < ell; i++) {
+            for (int64_t l = 0; l < 2; l++) {
+                value.a[j][i][l] = new_BigComplex_array(N / 2, fft_nlimbs);
+                for (int64_t k = 0; k < N / 2; k++) {
+                    to_BigReal(value.a[j][i][l][k].real, random_RR());
+                    to_BigReal(value.a[j][i][l][k].imag, random_RR());
+                }
+            }
+        }
+    }
+
+    //serialize it into a string (instead of a file)
+    ostringstream oss;
+    serializeTRGSW(oss, value);
+    string serial_result = oss.str();
+
+    //deserialize
+    istringstream iss(serial_result);
+    shared_ptr<TRGSW> res = deserializeTRGSW(iss);
+
+    ASSERT_EQ(res->ell, value.ell);
+    ASSERT_EQ(res->plaintext_exponent, value.plaintext_exponent);
+    ASSERT_EQ(res->bits_a, value.bits_a);
+    ASSERT_EQ(res->fft_nlimbs, value.fft_nlimbs);
+
+    for (int64_t j = 0; j < 2; j++) {
+        for (int64_t i = 0; i < ell; i++) {
+            for (int64_t l = 0; l < 2; l++) {
+                for (int64_t k = 0; k < N / 2; k++) {
+                    ASSERT_LE(log2Diff(to_RR(value.a[j][i][l][k].real), to_RR(res->a[j][i][l][k].real)),
+                              -fft_nlimbs * BITS_PER_LIMBS);
+                    ASSERT_LE(log2Diff(to_RR(value.a[j][i][l][k].imag), to_RR(res->a[j][i][l][k].imag)),
+                              -fft_nlimbs * BITS_PER_LIMBS);
+                }
+            }
+        }
+    }
+}
+
