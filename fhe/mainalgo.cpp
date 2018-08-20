@@ -101,19 +101,19 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
 
     //plaintext exponent of the result
     int64_t default_plaintext_exponent = v.data[0].params.fixp_params.plaintext_expo +
-                                         A.data[0].plaintext_expo;
-    int64_t default_level_exponent =     v.data[0].params.fixp_params.level_expo -
-                                         A.data[0].bits_a;
+                                         A.data[0][0].plaintext_expo;
+    int64_t default_level_exponent = v.data[0].params.fixp_params.level_expo -
+                                     A.data[0][0].bits_a;
     int64_t actual_plaintext_exponent =  default_plaintext_exponent;
     int64_t actual_level_exponent =      default_level_exponent;
     // If there is a plaintext exponent override, correct the level info
-    if (override_plaintext_exponent != NA) {
+    if (override_plaintext_exponent != int64_t(NA)) {
         int64_t difference = override_plaintext_exponent - actual_plaintext_exponent;
         actual_plaintext_exponent += difference;
         actual_level_exponent -= difference;
     }
     assert_dramatically(actual_level_exponent>0, "impossible to perform the requested multiplication, level too low");
-    if (target_level_expo==NA) {
+    if (target_level_expo == int64_t(NA)) {
         target_level_expo = actual_level_exponent;
     } else {
         assert_dramatically(target_level_expo > 0,
@@ -121,6 +121,7 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
         assert_dramatically(actual_level_exponent >= target_level_expo,
                             "impossible to perform the requested multiplication, level too low");
     }
-    //
+    //RS to apply to the input ciphertext before calling the external product
+    int64_t rsBits = actual_level_exponent - target_level_expo;
     return shared_ptr<TRLWEVector>();
 }
