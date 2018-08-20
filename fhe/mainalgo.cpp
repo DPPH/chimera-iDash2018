@@ -124,5 +124,27 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
     //RS to apply to the input ciphertext before calling the external product
     int64_t rsBits = actual_level_exponent - target_level_expo;
 
+    //step 1: RS left shift the input by rsBits
+    int64_t N = v.data[0].params.N;
+    int64_t shifted_input_level = v.data[0].params.fixp_params.level_expo - rsBits;
+    int64_t shifted_input_plaintext_expo = v.data[0].params.fixp_params.plaintext_expo;
+    int64_t shifted_input_alpha_bits = shifted_input_level + plaintext_precision_bits;
+    int64_t shifted_input_limbs = limb_precision(shifted_input_alpha_bits + 5);
+    BigTorusParams shifted_input_bt_params(shifted_input_limbs, shifted_input_plaintext_expo, shifted_input_level);
+    TRLweParams shifted_input_trlwe_params(N, shifted_input_bt_params);
+    TRLwe shifted_input(shifted_input_trlwe_params);
+
+    //step 2: Do the external product
+    int64_t accum_level = target_level_expo;
+    int64_t accum_plaintext_expo = actual_plaintext_exponent;
+    int64_t accum_alpha_bits = target_level_expo + plaintext_precision_bits;
+    int64_t accum_limbs = limb_precision(accum_alpha_bits + 5);
+    BigTorusParams accum_bt_params(accum_limbs, accum_plaintext_expo, accum_level);
+    TRLweParams accum_trlwe_params(N, accum_bt_params);
+    TRLwe accum(accum_trlwe_params);
+
+    int64_t trgsw_alpha_bits = accum_alpha_bits + A.data[0][0].bits_a + log2(N);
+
+
     return shared_ptr<TRLWEVector>();
 }
