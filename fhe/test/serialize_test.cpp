@@ -42,10 +42,10 @@ TEST(SERIALIZE_TEST, BigTorus) {
 
 TEST(SERIALIZE_TEST, BigTorusVector) {
     BigTorusParams params(123, random(), random());
-    UINT64 length = 10;
+    int64_t length = 10;
     BigTorusVector value(length, params);
 
-    for (int i = 0; i < length; ++i) {
+    for (int64_t i = 0; i < length; ++i) {
         random(value.getAT(i));
     }
 
@@ -88,10 +88,10 @@ TEST(SERIALIZE_TEST, TLweParams) {
 
 
 TEST(SERIALIZE_TEST, TLweKey) {
-    UINT64 N = 10;
+    int64_t N = 10;
     TLweKey key(N);
 
-    for (int i = 0; i < N; i++) {
+    for (int64_t i = 0; i < N; i++) {
         int8_t coef = rand();
         key.key[i] = coef;
     }
@@ -112,11 +112,12 @@ TEST(SERIALIZE_TEST, TLweKey) {
 
 TEST(SERIALIZE_TEST, TLwe) {
     BigTorusParams params(123, random(), random());
-    UINT64 N = 10;
+    int64_t N = 10;
     TLweParams tLweParams(N, params);
     TLwe value(tLweParams);
 
-    for (int i = 0; i < N + 1; ++i) {
+    //there are N+1 coeffs in a TLWE!
+    for (int64_t i = 0; i < N + 1; ++i) {
         random(value.getAT(i));
     }
     //serialize it into a string (instead of a file)

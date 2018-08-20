@@ -121,7 +121,7 @@ BigTorusMatrix::~BigTorusMatrix() {
 void serializeBigTorusVectorContent(std::ostream &out, const BigTorusVector &value) {
     int64_t x = BIGTORUSVECTOR_SERIAL_ID;
     ostream_write_binary(out, &x, sizeof(int64_t));
-    for (int i = 0; i < value.length; i++) {
+    for (int64_t i = 0; i < int64_t(value.length); i++) {
         serializeBigTorusContent(out, value.getAT(i));
     }
 }
@@ -132,7 +132,7 @@ void deserializeBigTorusVectorContent(std::istream &in, BigTorusVector &reps) {
     istream_read_binary(in, &magic, sizeof(int64_t));
     assert_dramatically(magic == BIGTORUSVECTOR_SERIAL_ID);
 
-    for (int i = 0; i < reps.length; i++) {
+    for (int64_t i = 0; i < int64_t(reps.length); i++) {
         deserializeBigTorusContent(in, reps.getAT(i));
     }
 

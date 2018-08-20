@@ -115,7 +115,7 @@ std::shared_ptr<TLweParams> deserializeTLweParams(std::istream &in) {
 void serializeTLweKey(std::ostream &out, const TLweKey &key, const UINT64 N) {
     int64_t x = TLWE_KEY_SERIAL_ID;
     ostream_write_binary(out, &x, sizeof(int64_t));
-    for (int i = 0; i < N; i++) {
+    for (int64_t i = 0; i < int64_t(N); i++) {
         int8_t coef = key.key[i];
         ostream_write_binary(out, &coef, sizeof(int8_t));
     }
@@ -129,7 +129,7 @@ std::shared_ptr<TLweKey> deserializeTLweKey(std::istream &in, const UINT64 N) {
 
     TLweKey *key = new TLweKey(N);
 
-    for (int i = 0; i < N; i++) {
+    for (int64_t i = 0; i < int64_t(N); i++) {
         int8_t coef;
         istream_read_binary(in, &coef, sizeof(int8_t));
         key->key[i] = coef;
