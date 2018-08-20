@@ -392,8 +392,8 @@ void serializepubKsKey32(std::ostream &out, const pubKsKey32 &key) {
     serializeTRLweParams(out, key.out_params);
     serializeTRLweParams(out, key.ks_params);
     ostream_write_binary(out, &key.l_dec, sizeof(UINT64));
-    for (int i = 0; i < key.in_params.N; i++) {
-        for (int j = 0; j < key.l_dec; j++) {
+    for (int64_t i = 0; i < int64_t(key.in_params.N); i++) {
+        for (int64_t j = 0; j < int64_t(key.l_dec); j++) {
             serializeTRLwe(out, key.kskey[i][j]);
         }
     }
@@ -425,8 +425,8 @@ std::shared_ptr<pubKsKey32> deserializepubKsKey32(std::istream &in) {
 
     pubKsKey32 *reps = new pubKsKey32(*in_params, *out_params, std::move(*ks_params), l_dec);
 
-    for (int i = 0; i < in_params->N; i++) {
-        for (int j = 0; j < l_dec; j++) {
+    for (int64_t i = 0; i < int64_t(in_params->N); i++) {
+        for (int64_t j = 0; j < int64_t(l_dec); j++) {
             deserializeTRLweContent(in, reps->kskey[i][j]);
         }
     }
