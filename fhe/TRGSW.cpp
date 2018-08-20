@@ -595,3 +595,37 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     delete_BigReal_array(N, a2);
     delete_BigReal_array(N, b2);
 }
+
+void serializeTRGSWParams(std::ostream &out, const TRGSWParams &params) {
+    int64_t x = TRGSW_PARAMS_SERIAL_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    serializeTRLweParams(out, params);
+}
+
+
+std::shared_ptr<TRGSWParams> deserializeTRGSWParams(std::istream &in) {
+
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == TRGSW_PARAMS_SERIAL_ID);
+    shared_ptr<TRLweParams> tlwereps = deserializeTRLweParams(in);
+    store_forever(tlwereps);
+    TRGSWParams *reps = new TRGSWParams(tlwereps->N, tlwereps->fixp_params);
+    return shared_ptr<TRGSWParams>(reps);
+}
+
+void serializeTRGSWContent(std::ostream &out, const TRGSW &value) {
+
+}
+
+void deserializeTRGSWContent(std::istream &in, TRGSW &reps) {
+
+}
+
+void serializeTRGSW(std::ostream &out, const TRGSW &value) {
+
+}
+
+std::shared_ptr<TRGSW> deserializeTRGSW(std::istream &in) {
+    return shared_ptr<TRGSW>();
+}

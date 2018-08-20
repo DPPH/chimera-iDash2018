@@ -119,7 +119,7 @@ void serializeBigcomplexContent(std::ostream &out, const BigComplexRef &value) {
     serializeBigRealContent(out, *value.imag);
 }
 
-void deserializeBigComplexContent(std::istream &in, BigComplexRef &value) {
+void deserializeBigComplexContent(std::istream &in, BigComplexRef value) {
     int64_t magic;
     istream_read_binary(in, &magic, sizeof(int64_t));
     assert_dramatically(magic == BIG_COMPLEX_ID);
@@ -140,7 +140,7 @@ std::shared_ptr<BigComplex> deserializeBigComplex(std::istream &in) {
 
     BigComplex *reps = new BigComplex(nblimbs);
 
-    deserializeBigComplexContent(in, **reps);
+    deserializeBigComplexContent(in, *reps);
 
     return std::shared_ptr<BigComplex>(reps);
 }

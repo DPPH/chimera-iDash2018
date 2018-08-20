@@ -3,6 +3,7 @@
 #include "../BigTorusVector.h"
 #include "../TLwe.h"
 #include "../TRLwe.h"
+#include "../TRGSW.h"
 #include "../arithmetic.h"
 #include <sstream>
 #include <NTL/RR.h>
@@ -279,3 +280,26 @@ TEST(SERIALIZE_TEST, BigComplex) {
     ASSERT_LE(log2Diff(to_RR(value.imag), to_RR(res->imag)),
               -int64_t(nblimbs * BITS_PER_LIMBS));
 }
+
+TEST(SERIALIZE_TEST, TRGSWParams) {
+    BigTorusParams params(123, random(), random());
+    UINT64 N = 10;
+    TRGSWParams value(N, params);
+
+
+    //serialize it into a string (instead of a file)
+    ostringstream oss;
+    serializeTRGSWParams(oss, value);
+    string serial_result = oss.str();
+
+    //deserialize
+    istringstream iss(serial_result);
+    shared_ptr<TRGSWParams> res = deserializeTRGSWParams(iss);
+
+    //verify that they are equal
+    ASSERT_EQ(value.N, res->N);
+    ASSERT_EQ(value.fixp_params.level_expo, res->fixp_params.level_expo);
+    ASSERT_EQ(value.fixp_params.plaintext_expo, res->fixp_params.plaintext_expo);
+    ASSERT_EQ(value.fixp_params.torus_limbs, res->fixp_params.torus_limbs);
+}
+
