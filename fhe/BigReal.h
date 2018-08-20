@@ -28,6 +28,40 @@ public:
     void operator=(const BigReal &)= delete;
 };
 
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:   int
+ *
+ */
+void serializeBigRealContent(std::ostream &out, const BigReal &value);
+
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:   int
+ *
+ */
+void deserializeBigRealContent(std::istream &in, BigReal &value);
+
+
+/** serialize:
+ *  nblimbs: UINT64
+ *  value:   int
+ *
+ */
+void serializeBigReal(std::ostream &out, const BigReal &value);
+
+
+/** serialize:
+ *  nblimbs: UINT64
+ *  value:   int
+ *
+ */
+std::shared_ptr<BigReal> deserializeBigReal(std::istream &in);
+
+
+
 /** addition (warning, you must ensure that the result does not overflows) */
 void add(BigReal &dest, const BigReal &a, const BigReal &b);
 

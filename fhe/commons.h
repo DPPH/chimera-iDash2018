@@ -70,7 +70,7 @@ static const int64_t TLWE_SERIAL_ID = 1234572;
 static const int64_t TRLWE_PARAMS_SERIAL_ID = 1234573;
 static const int64_t TRLWE_SERIAL_ID = 1234574;
 static const int64_t PUBKSKEY32_SERIAL_ID = 1234575;
-
-
+static const int64_t BIG_REAL_ID = 1234576;
+static const int64_t BIG_COMPLEX_ID = 1234577;
 
 #endif //FHE_COMMONS_H

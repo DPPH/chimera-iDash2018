@@ -3,9 +3,12 @@
 #include "../BigTorusVector.h"
 #include "../TLwe.h"
 #include "../TRLwe.h"
+#include "../arithmetic.h"
 #include <sstream>
+#include <NTL/RR.h>
 
 using namespace std;
+using namespace NTL;
 
 TEST(SERIALIZE_TEST, BigTorusParams) {
     BigTorusParams params(random(), random(), random());
@@ -235,4 +238,44 @@ TEST(SERIALIZE_TEST, pubKsKey32) {
     ASSERT_LE(log2Diff(ks_key->bitDecomp_in_offset, res->bitDecomp_in_offset),
               -int64_t(ks_key->ks_params.fixp_params.torus_limbs * BITS_PER_LIMBS));
     ASSERT_EQ(ks_key->bitDecomp_out_offset, res->bitDecomp_out_offset);
+}
+
+TEST(SERIALIZE_TEST, BigReal) {
+    UINT64 nblimbs = 3;
+    BigReal value(nblimbs);
+    RR::SetPrecision(nblimbs * BITS_PER_LIMBS);
+    to_BigReal(value, random_RR() - 0.5);
+
+    ostringstream oss;
+    serializeBigReal(oss, value);
+    string serial_result = oss.str();
+
+    //deserialize
+    istringstream iss(serial_result);
+    shared_ptr<BigReal> res = deserializeBigReal(iss);
+
+    ASSERT_LE(log2Diff(to_RR(value), to_RR(*res)),
+              -int64_t(nblimbs * BITS_PER_LIMBS));
+}
+
+TEST(SERIALIZE_TEST, BigComplex) {
+    UINT64 nblimbs = 3;
+    BigComplex value(nblimbs);
+
+    RR::SetPrecision(nblimbs * BITS_PER_LIMBS);
+    to_BigReal(value.real, random_RR() - 0.5);
+    to_BigReal(value.imag, random_RR() - 0.5);
+
+    ostringstream oss;
+    serializeBigComplex(oss, value);
+    string serial_result = oss.str();
+
+    //deserialize
+    istringstream iss(serial_result);
+    shared_ptr<BigComplex> res = deserializeBigComplex(iss);
+
+    ASSERT_LE(log2Diff(to_RR(value.real), to_RR(res->real)),
+              -int64_t(nblimbs * BITS_PER_LIMBS));
+    ASSERT_LE(log2Diff(to_RR(value.imag), to_RR(res->imag)),
+              -int64_t(nblimbs * BITS_PER_LIMBS));
 }

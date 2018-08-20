@@ -298,3 +298,42 @@ void shift_toBigTorus(BigTorusRef out, const BigReal &a, int64_t left_shift) {
     mpz_clear(tmp);
 }
 
+void serializeBigRealContent(std::ostream &out, const BigReal &value) {
+    int64_t x = BIG_REAL_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    ostream_write_binary(out, &value.value->_mp_size, sizeof(int32_t));
+    if (value.value->_mp_size != 0) {
+        ostream_write_binary(out, value.value->_mp_d, sizeof(UINT64) * abs(value.value->_mp_size));
+    }
+}
+
+void deserializeBigRealContent(std::istream &in, BigReal &value) {
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == BIG_REAL_ID);
+
+    int32_t size;
+    istream_read_binary(in, &size, sizeof(int32_t));
+    if (size == 0) { mpz_set_ui(value.value, 0); }
+    else {
+        mpz_realloc2(value.value, abs(size) * BITS_PER_LIMBS);
+        assert(value.value->_mp_alloc >= abs(size));
+        istream_read_binary(in, value.value->_mp_d, sizeof(UINT64) * abs(size));
+        value.value->_mp_size = size;
+    }
+}
+
+void serializeBigReal(std::ostream &out, const BigReal &value) {
+
+    ostream_write_binary(out, &value.nblimbs, sizeof(UINT64));
+    serializeBigRealContent(out, value);
+}
+
+std::shared_ptr<BigReal> deserializeBigReal(std::istream &in) {
+    UINT64 nblimbs;
+    istream_read_binary(in, &nblimbs, sizeof(UINT64));
+    BigReal *reps = new BigReal(nblimbs);
+    deserializeBigRealContent(in, *reps);
+    return std::shared_ptr<BigReal>(reps);
+}
+
