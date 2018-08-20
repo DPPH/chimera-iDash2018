@@ -18,7 +18,7 @@ public:
 /** serialize:
  *  param:   TRGSWParams
  */
-void serializeTRGSWParams(std::ostream &out, const TLweParams &params);
+void serializeTRGSWParams(std::ostream &out, const TRGSWParams &params);
 
 /** serialize:
  *  param:   TRGSWParams
