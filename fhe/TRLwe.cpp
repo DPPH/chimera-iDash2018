@@ -394,10 +394,10 @@ void serializepubKsKey32(std::ostream &out, const pubKsKey32 &key) {
     ostream_write_binary(out, &key.l_dec, sizeof(UINT64));
     for (int64_t i = 0; i < int64_t(key.in_params.N); i++) {
         for (int64_t j = 0; j < int64_t(key.l_dec); j++) {
-            serializeTRLwe(out, key.kskey[i][j]);
+            serializeTRLweContent(out, key.kskey[i][j]);
         }
     }
-    serializeBigTorus(out, key.bitDecomp_in_offset);
+    serializeBigTorusContent(out, key.bitDecomp_in_offset);
     ostream_write_binary(out, &key.bitDecomp_out_offset, sizeof(int64_t));
 
 }
@@ -430,6 +430,10 @@ std::shared_ptr<pubKsKey32> deserializepubKsKey32(std::istream &in) {
             deserializeTRLweContent(in, reps->kskey[i][j]);
         }
     }
+
+    deserializeBigTorusContent(in, reps->bitDecomp_in_offset);
+    istream_read_binary(in, &reps->bitDecomp_out_offset, sizeof(int64_t));
+
     return shared_ptr<pubKsKey32>(reps);
 }
 

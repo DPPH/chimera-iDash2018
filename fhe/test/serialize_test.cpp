@@ -222,7 +222,7 @@ TEST(SERIALIZE_TEST, pubKsKey32) {
     //verify that they are equal
     for (int64_t i = 0; i < int64_t(ks_key->in_params.N); i++) {
         for (int64_t j = 0; j < int64_t(ks_key->l_dec); j++) {
-            for (int k = 0; k < ks_key->out_params.N; ++i) {
+            for (int k = 0; k < ks_key->out_params.N; ++k) {
                 ASSERT_LE(log2Diff(ks_key->kskey[i][j].a[0].getAT(k), res->kskey[i][j].a[0].getAT(k)),
                           -int64_t(ks_key->ks_params.fixp_params.torus_limbs * BITS_PER_LIMBS));
 
@@ -232,6 +232,7 @@ TEST(SERIALIZE_TEST, pubKsKey32) {
             }
         }
     }
-
-
+    ASSERT_LE(log2Diff(ks_key->bitDecomp_in_offset, res->bitDecomp_in_offset),
+              -int64_t(ks_key->ks_params.fixp_params.torus_limbs * BITS_PER_LIMBS));
+    ASSERT_EQ(ks_key->bitDecomp_out_offset, res->bitDecomp_out_offset);
 }
