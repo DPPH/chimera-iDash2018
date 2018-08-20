@@ -621,7 +621,7 @@ void serializeTRGSWContent(std::ostream &out, const TRGSW &value) {
     for (int j = 0; j < 2; j++) {
         for (int i = 0; i < value.ell; i++) {
             for (int l = 0; l < 2; l++) {
-                for (int k = 0; k < value.params.N; k++) {
+                for (int k = 0; k < value.params.N / 2; k++) {
                     serializeBigcomplexContent(out, value.a[j][i][l][k]);
                 }
             }
@@ -641,7 +641,7 @@ void deserializeTRGSWContent(std::istream &in, TRGSW &reps) {
     for (int j = 0; j < 2; j++) {
         for (int i = 0; i < reps.ell; i++) {
             for (int l = 0; l < 2; l++) {
-                for (int k = 0; k < reps.params.N; k++) {
+                for (int k = 0; k < reps.params.N / 2; k++) {
                     deserializeBigcomplexContent(in, reps.a[j][i][l][k]);
                 }
             }
