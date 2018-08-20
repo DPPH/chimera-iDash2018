@@ -19,7 +19,7 @@ class TRGSW {
 public:
     const TRGSWParams &params;
     BigComplex *(a[2][TRGSWParams::max_ell][2]);
-    UINT64 bits_a;     //plaintext norm 1 bits
+    UINT64 shift_exponent;     //the exponent we should multiply the trgsw to obtain the original plaintext
     UINT64 fft_nlimbs; //fft limbs in all BigComplex
     UINT64 ell;        //actual decomposition length
 

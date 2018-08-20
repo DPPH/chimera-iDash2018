@@ -2,6 +2,9 @@
 #define FHE_BIGTORUSVECTOR_H
 
 #include "BigTorus.h"
+#include "commons.h"
+#include <cstdint>
+#include <memory>
 
 /**
  * A vector of BigTorus (with shared params), owns its limbs memory space
@@ -23,6 +26,35 @@ public:
     BigTorusRef getAT(UINT64 i) const; ///< coef a[i] as a BigTorus
     BigTorusRef getAT(UINT64 i); ///< coef a[i] as a BigTorus
 };
+
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  vector of BigTorus:     length*torus_limbs*UINT64
+ */
+void serializeBigTorusVectorContent(std::ostream &out, const BigTorusVector &value);
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  vector of BigTorus:     length*torus_limbs*UINT64
+ */
+void deserializeBigTorusVectorContent(std::istream &in, BigTorusVector &reps);
+
+/** serialize:
+ *  param:        BigTorusParams
+ *  length:       UINT64
+ *  value:        BigTorusVectorContent
+ */
+void serializeBigTorusVector(std::ostream &out, const BigTorusVector &value);
+
+/** serialize:
+ *  param:          BigTorusParams
+ *  length:         UINT64
+ *  content:        BigTorusVectorContent
+ */
+std::shared_ptr<BigTorusVector> deserializeBigTorusVector(std::istream &in);
+
+
 
 /**
  * A matrix of BigTorus (with shared params), owns its limbs memory space
@@ -50,6 +82,7 @@ public:
 
     ~BigTorusMatrix();
 };
+
 
 void zero(const BigTorusVector &v);
 
