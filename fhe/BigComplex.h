@@ -60,7 +60,7 @@ void serializeBigcomplexContent(std::ostream &out, const BigComplexRef &value);
  *  value:   2*BigReal
  *
  */
-void deserializeBigComplexContent(std::istream &in, BigComplexRef &value);
+void deserializeBigComplexContent(std::istream &in, BigComplexRef value);
 
 
 /** serialize:
