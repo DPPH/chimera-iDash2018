@@ -90,3 +90,37 @@ encrypt_individual_trlwe(NTL::vec_RR plaintext, const TLweKey &key, int64_t N, i
 
     return shared_ptr<TRLWEVector>(reps);
 }
+
+std::shared_ptr<TRLWEVector>
+mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_expo, int64_t override_plaintext_exponent,
+             int64_t plaintext_precision_bits) {
+    //true plaintext: v * 2^(Lv + pl_v) * A * 2^shift_expo  where plaintext_expo = bits_a + shift_expo.
+    //        actual expo:          Lv + pl_v + shift_expo = Lv + pl_v + plaintext_expo - bits_a
+    //          new level:          Lv - bits_a
+    // ->  new plain expo:          pl_v + pl_A
+
+    //plaintext exponent of the result
+    int64_t default_plaintext_exponent = v.data[0].params.fixp_params.plaintext_expo +
+                                         A.data[0].plaintext_expo;
+    int64_t default_level_exponent =     v.data[0].params.fixp_params.level_expo -
+                                         A.data[0].bits_a;
+    int64_t actual_plaintext_exponent =  default_plaintext_exponent;
+    int64_t actual_level_exponent =      default_level_exponent;
+    // If there is a plaintext exponent override, correct the level info
+    if (override_plaintext_exponent != NA) {
+        int64_t difference = override_plaintext_exponent - actual_plaintext_exponent;
+        actual_plaintext_exponent += difference;
+        actual_level_exponent -= difference;
+    }
+    assert_dramatically(actual_level_exponent>0, "impossible to perform the requested multiplication, level too low");
+    if (target_level_expo==NA) {
+        target_level_expo = actual_level_exponent;
+    } else {
+        assert_dramatically(target_level_expo > 0,
+                            "invalid target level expo requested");
+        assert_dramatically(actual_level_exponent >= target_level_expo,
+                            "impossible to perform the requested multiplication, level too low");
+    }
+    //
+    return shared_ptr<TRLWEVector>();
+}

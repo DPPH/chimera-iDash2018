@@ -90,16 +90,30 @@ encrypt_individual_trlwe(NTL::vec_RR plaintext, const TLweKey &key, int64_t N,
                          int64_t plaintext_precision_bits = default_plaintext_precision);
 
 /**
- * @brief encrypted vector - Matrix multiplication -- autodeduce parameters
- */
+  * @brief encrypted vector - Matrix multiplication -- autodeduce parameters
+  *
+  * @param v  the vector to multiply, encrypted as individual TRLWE
+  * @param A  the matrix to multiply, encrypted as packed TRGSW slots
+  * @param target_level_expo        if available, the targeted output level exponent
+  * @param override_plaintext_expo  if available, the plaintext exponent of the result (overrides the default)
+  * @param plaintext_precision_bits the plaintext precision of the operation
+  * @return
+  */
 std::shared_ptr<TRLWEVector>
 mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A,
-             int64_t target_level_expo = NA, int64_t plaintext_precision_bits = default_plaintext_precision);
+             int64_t target_level_expo = NA,
+             int64_t override_plaintext_exponent = NA,
+             int64_t plaintext_precision_bits = default_plaintext_precision);
 
 /**
- * @brief decrypt TRLWE slots as RR
+ * @brief decrypt TRLWE slots as a vec<RR>
  */
-NTL::vec_RR decrypt_slots(const TRLWEVector &ciphertext, const TLweKey &key, int64_t length);
+NTL::vec_RR decrypt_heaan_packed_trlwe(const TRLWEVector &ciphertext, const TLweKey &key, int64_t length);
+
+/**
+ * @brief decrypt TRLWE slots as a vec<RR>
+ */
+NTL::vec_RR decrypt_individual_trlwe(const TRLWEVector &ciphertext, const TLweKey &key, int64_t length);
 
 
 #endif //FHE_MAINALGO_H
