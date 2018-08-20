@@ -47,6 +47,20 @@ public:
  *  magic number:   int64 on 8 bytes
  *  value:        N* size(TLWE)
  */
+void serializeTRLweContent(std::ostream &out, const TRLwe &value);
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:        N* size(TLWE)
+ */
+void deserializeTRLweContent(std::istream &in, TRLwe &reps);
+
+
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:        N* size(TLWE)
+ */
 void serializeTRLwe(std::ostream &out, const TRLwe &value);
 
 /** serialize:
