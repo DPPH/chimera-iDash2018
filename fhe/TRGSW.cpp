@@ -618,6 +618,10 @@ std::shared_ptr<TRGSWParams> deserializeTRGSWParams(std::istream &in) {
 void serializeTRGSWContent(std::ostream &out, const TRGSW &value) {
     int64_t x = TRGSW_SERIAL_ID;
     ostream_write_binary(out, &x, sizeof(int64_t));
+    ostream_write_binary(out, &value.plaintext_exponent, sizeof(UINT64));
+    ostream_write_binary(out, &value.bits_a, sizeof(UINT64));
+    ostream_write_binary(out, &value.fft_nlimbs, sizeof(UINT64));
+    ostream_write_binary(out, &value.ell, sizeof(UINT64));
     for (int64_t j = 0; j < 2; j++) {
         for (int64_t i = 0; i < int64_t(value.ell); i++) {
             for (int64_t l = 0; l < 2; l++) {
@@ -627,30 +631,28 @@ void serializeTRGSWContent(std::ostream &out, const TRGSW &value) {
             }
         }
     }
-    ostream_write_binary(out, &value.plaintext_exponent, sizeof(UINT64));
-    ostream_write_binary(out, &value.bits_a, sizeof(UINT64));
-    ostream_write_binary(out, &value.fft_nlimbs, sizeof(UINT64));
-    ostream_write_binary(out, &value.ell, sizeof(UINT64));
 }
 
 void deserializeTRGSWContent(std::istream &in, TRGSW &reps) {
     int64_t magic;
     istream_read_binary(in, &magic, sizeof(int64_t));
     assert_dramatically(magic == TRGSW_SERIAL_ID);
+    istream_read_binary(in, &reps.plaintext_exponent, sizeof(UINT64));
+    istream_read_binary(in, &reps.bits_a, sizeof(UINT64));
+    istream_read_binary(in, &reps.fft_nlimbs, sizeof(UINT64));
+    istream_read_binary(in, &reps.ell, sizeof(UINT64));
 
     for (int64_t j = 0; j < 2; j++) {
         for (int64_t i = 0; i < int64_t(reps.ell); i++) {
             for (int64_t l = 0; l < 2; l++) {
+                assert(reps.a[j][i][l] == nullptr); //trying to deserialise an aleady set trgsw?
+                reps.a[j][i][l] = new_BigComplex_array(reps.params.N / 2, reps.fft_nlimbs);
                 for (int64_t k = 0; k < int64_t(reps.params.N / 2); k++) {
                     deserializeBigComplexContent(in, reps.a[j][i][l][k]);
                 }
             }
         }
     }
-    istream_read_binary(in, &reps.plaintext_exponent, sizeof(UINT64));
-    istream_read_binary(in, &reps.bits_a, sizeof(UINT64));
-    istream_read_binary(in, &reps.fft_nlimbs, sizeof(UINT64));
-    istream_read_binary(in, &reps.ell, sizeof(UINT64));
 }
 
 void serializeTRGSW(std::ostream &out, const TRGSW &value) {
