@@ -420,6 +420,7 @@ std::shared_ptr<pubKsKey32> deserializepubKsKey32(std::istream &in) {
     shared_ptr<TRLweParams> ks_params = deserializeTRLweParams(in);
     store_forever(ks_params);
 
+
     UINT64 l_dec;
     istream_read_binary(in, &l_dec, sizeof(UINT64));
 
