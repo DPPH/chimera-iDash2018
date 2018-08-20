@@ -211,6 +211,9 @@ void fixp_encrypt(TRLwe &reps, const NTL::vec_RR &plaintext, const TLweKey &key,
 
 NTL::vec_RR fixp_decrypt(const TRLwe &tlwe, const TLweKey &key);
 
+/** @brief decrypt the N/2 complex slots inside the ciphertext (N/2 real first, N/2 imag in the end) */
+NTL::vec_RR slot_decrypt(const TRLwe &tlwe, const TLweKey &key);
+
 void fixp_encrypt_number(TRLwe &reps, const NTL::RR &plaintext, const TLweKey &key, UINT64 plaintext_precision);
 
 NTL::RR fixp_decrypt_number(const TRLwe &tlwe, const TLweKey &key);

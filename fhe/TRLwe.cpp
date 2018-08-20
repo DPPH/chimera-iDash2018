@@ -2,6 +2,7 @@
 #include <vector>
 #include "TRLwe.h"
 #include "arithmetic.h"
+#include "BigFFT.h"
 
 using namespace std;
 
@@ -212,6 +213,36 @@ NTL::vec_RR fixp_decrypt(const TRLwe &tlwe, const TLweKey &key) {
     }
     return reps;
 }
+
+NTL::vec_RR slot_decrypt(const TRLwe &tlwe, const TLweKey &key) {
+    assert(tlwe.params.fixp_params.level_expo > 0); //"level exponent is not set";
+    int64_t N = tlwe.params.N;
+    int64_t n = 2 * N;
+    BigTorusPolynomial tmp(N, tlwe.params.fixp_params);
+    native_phase(tmp, tlwe, key, tlwe.params.fixp_params.torus_limbs * BITS_PER_LIMBS);
+
+    int64_t fft_nlimbs = tlwe.params.fixp_params.torus_limbs + 1;
+    BigReal *coefs = new_BigReal_array(N, fft_nlimbs);
+    BigComplex *slots = new_BigComplex_array(N / 2, fft_nlimbs);
+    for (int k = 0; k < N; k++) {
+        to_BigReal(coefs[k], tmp.getAT(k));
+    }
+    iFFT(slots, coefs, n, fftAutoPrecomp.omega(n, fft_nlimbs));
+
+    int64_t expo = tlwe.params.fixp_params.plaintext_expo + tlwe.params.fixp_params.level_expo;
+    NTL::vec_RR reps;
+    reps.SetLength(N);
+    for (int k = 0; k < N / 2; k++) {
+        NTL::RR::SetPrecision(fft_nlimbs * BITS_PER_LIMBS);
+        reps[k] = to_RR(slots[k].real) * NTL::power2_RR(expo);
+        reps[k + N / 2] = to_RR(slots[k].imag) * NTL::power2_RR(expo);
+    }
+
+    delete_BigReal_array(N, coefs);
+    delete_BigComplex_array(N / 2, slots);
+    return reps;
+}
+
 
 void fixp_encrypt_number(TRLwe &reps, const NTL::RR &plaintext, const TLweKey &key, UINT64 plaintext_precision) {
     NTL::vec_RR tmp(NTL::INIT_SIZE, 1);
@@ -498,7 +529,6 @@ std::shared_ptr<pubKsKey32> deserializepubKsKey32(std::istream &in) {
 
     return shared_ptr<pubKsKey32>(reps);
 }
-
 
 
 

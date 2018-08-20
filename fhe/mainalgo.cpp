@@ -12,16 +12,27 @@ encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
     const int64_t rows = plaintext.NumRows();
     const int64_t cols = ceil(plaintext.NumCols() / double(Ns2));
 
+    //find plaintext maximum
+    NTL::RR maxi;
+    maxi = -1;
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            if (abs(plaintext[r][c]) > maxi)
+                maxi = abs(plaintext[r][c]);
+        }
+    }
+    long rescale_bits = long(ceil(to_double(log(maxi)) / log(2.)));
+    cerr << "rescale_bits: " << rescale_bits << endl;
+
     const int64_t enc_limbs = limb_precision(plaintext_precision_bits + log2(N));
     BigComplex *cslots = new_BigComplex_array(Ns2, enc_limbs);
     BigReal *rcoefs = new_BigReal_array(N, enc_limbs);
     int64_t *icoefs = new int64_t[N];
     const BigComplex *powombar = fftAutoPrecomp.omegabar(n, enc_limbs);
 
-
     int64_t reps_limbs = limb_precision(alpha_bits);
-    int64_t reps_plaintext_exponent = plaintext_precision_bits; //TODO
-    int64_t reps_level_exponent = 0; //TODO
+    int64_t reps_plaintext_exponent = 0; //these two are unused
+    int64_t reps_level_exponent = 0;     //these two are unused
     shared_ptr<BigTorusParams> bt_params = make_shared<BigTorusParams>(reps_limbs, reps_plaintext_exponent,
                                                                        reps_level_exponent);
     store_forever(bt_params);
@@ -29,14 +40,16 @@ encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
     store_forever(trgsw_params);
     TRGSWMatrix *reps = new TRGSWMatrix(rows, cols, *trgsw_params);
 
+    NTL::mat_RR coefs_matrix;
+    coefs_matrix.SetDims(rows, cols * N);
     for (int64_t r = 0; r < rows; r++) {
         for (int64_t c = 0; c < cols; c++) {
             RR::SetPrecision(enc_limbs * BITS_PER_LIMBS);
             //set the slots at position (r,c)
             for (int64_t slotid = 0; slotid < Ns2; slotid++) {
                 int64_t pid = c * Ns2 + slotid;
-                if (pid < cols) {
-                    to_BigReal(cslots[slotid].real, plaintext[r][pid] / power2_RR(1)); //TODO?
+                if (pid < plaintext.NumCols()) {
+                    to_BigReal(cslots[slotid].real, plaintext[r][pid] / power2_RR(rescale_bits));
                     zero(cslots[slotid].imag);
                 } else {
                     zero(cslots[slotid].real);
@@ -45,13 +58,67 @@ encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
             }
             //fft
             FFT(rcoefs, cslots, n, powombar);
+            //store it to the RR coefs matrix
+            for (int64_t coefid = 0; coefid < N; coefid++) {
+                coefs_matrix[r][c * N + coefid] = to_RR(rcoefs[coefid]) * power2_RR(rescale_bits);
+            }
+        }
+    }
+
+    int64_t trgsw_plaintext_expo = 0;
+    int64_t trgsw_bits_a = 0;
+    int64_t trgsw_bits_shift = 0;
+    //auto-deduce plaintext exponent
+    {
+        //plaintext expo is the smallest exponent s.t. plaintext / 2^plaintext_expo is in [-1,1]
+        RR maxAbsPlaintext;
+        maxAbsPlaintext = 0;
+        RR maxPlaintextNorm2;
+        maxPlaintextNorm2 = 0;
+        RR sumPlaintextSq;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                sumPlaintextSq = 0;
+                for (int k = 0; k < N; k++) {
+                    sumPlaintextSq += pow(plaintext[i][j], to_RR(2));
+                    if (abs(plaintext[i][j]) > maxAbsPlaintext)
+                        maxAbsPlaintext = abs(plaintext[i][j]);
+                }
+                if (sumPlaintextSq > maxPlaintextNorm2) {
+                    maxPlaintextNorm2 = sumPlaintextSq;
+                }
+            }
+        }
+        if (maxPlaintextNorm2 == 0) {
+            trgsw_plaintext_expo = 0;
+            trgsw_bits_a = 0;
+        } else {
+            //we shift the trgsw by this amount
+            trgsw_bits_shift = plaintext_precision_bits - ceil(to_double(log(maxAbsPlaintext)) / log(2.));
+            //new norm (level increase)
+            trgsw_bits_a = ceil(to_double(log(sumPlaintextSq)) / 2. * log(2.)) + trgsw_bits_shift;
+            trgsw_plaintext_expo = -trgsw_bits_shift;
+        }
+        cerr << "in encrypt: deduced plaintext_expo set to " << trgsw_plaintext_expo << endl;
+        cerr << "in encrypt: deduced plaintext_bits_a set to " << trgsw_bits_a << endl;
+        cerr << "in encrypt: deduced bits_shift set to " << trgsw_bits_shift << endl;
+    }
+
+
+    for (int64_t r = 0; r < rows; r++) {
+        for (int64_t c = 0; c < cols; c++) {
+            RR::SetPrecision(enc_limbs * BITS_PER_LIMBS);
             //rescale and round
             for (int64_t coefid = 0; coefid < N; coefid++) {
                 icoefs[coefid] =
-                        to_long(RoundToZZ(to_RR(rcoefs[coefid]) * power2_RR(1 + plaintext_precision_bits))); //TODO
+                        to_long(RoundToZZ(coefs_matrix[r][c * N + coefid] * power2_RR(trgsw_bits_shift)));
+                cerr << icoefs[coefid] << " ";
             }
+            cerr << endl;
             //encrypt the coefs
             intPoly_encrypt(reps->data[r][c], icoefs, key, alpha_bits);
+            reps->data[r][c].bits_a = trgsw_bits_a;
+            reps->data[r][c].plaintext_exponent = trgsw_plaintext_expo;
         }
     }
     return std::shared_ptr<TRGSWMatrix>(reps);
@@ -103,18 +170,18 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
 
     //plaintext exponent of the result
     int64_t default_plaintext_exponent = v.data[0].params.fixp_params.plaintext_expo +
-            A.data[0][0].plaintext_exponent;
+                                         A.data[0][0].plaintext_exponent;
     int64_t default_level_exponent = v.data[0].params.fixp_params.level_expo -
-            A.data[0][0].bits_a;
-    int64_t actual_plaintext_exponent =  default_plaintext_exponent;
-    int64_t actual_level_exponent =      default_level_exponent;
+                                     A.data[0][0].bits_a;
+    int64_t actual_plaintext_exponent = default_plaintext_exponent;
+    int64_t actual_level_exponent = default_level_exponent;
     // If there is a plaintext exponent override, correct the level info
     if (override_plaintext_exponent != int64_t(NA)) {
         int64_t difference = override_plaintext_exponent - actual_plaintext_exponent;
         actual_plaintext_exponent += difference;
         actual_level_exponent -= difference;
     }
-    assert_dramatically(actual_level_exponent>0, "impossible to perform the requested multiplication, level too low");
+    assert_dramatically(actual_level_exponent > 0, "impossible to perform the requested multiplication, level too low");
     if (target_level_expo == int64_t(NA)) {
         target_level_expo = actual_level_exponent;
     } else {
@@ -143,7 +210,7 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
     int64_t accum_limbs = limb_precision(accum_alpha_bits + 5);
     shared_ptr<BigTorusParams> accum_bt_params = make_shared<BigTorusParams>(accum_limbs, accum_plaintext_expo,
                                                                              accum_level);
-    shared_ptr<TRLweParams> accum_trlwe_params = make_shared<TRLweParams>(N, accum_bt_params);
+    shared_ptr<TRLweParams> accum_trlwe_params = make_shared<TRLweParams>(N, *accum_bt_params);
     TRLwe accum(*accum_trlwe_params);
 
     int64_t trgsw_alpha_bits = accum_alpha_bits + A.data[0][0].bits_a + log2(N);
@@ -170,4 +237,31 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
     }
 
     return shared_ptr<TRLWEVector>(reps);
+}
+
+//return a vector with the real part of all slots
+NTL::vec_RR decrypt_heaan_packed_trlwe(const TRLWEVector &ciphertext, const TLweKey &key, int64_t length) {
+    int64_t Ns2 = ciphertext.data[0].params.N / 2;
+    assert(int64_t(ciphertext.length * Ns2) >= length);
+    assert(int64_t ((ciphertext.length-1) * Ns2) < length);
+    vec_RR reps;
+    reps.SetLength(length);
+    for (int64_t j = 0; j < ciphertext.length; j++) {
+        vec_RR plaintexts = slot_decrypt(ciphertext.data[j], key);
+        for (int64_t k = 0; k < Ns2; k++) {
+            int64_t idx = j * Ns2 + k;
+            if (idx < length) reps[idx] = plaintexts[k];
+        }
+    }
+    return reps;
+}
+
+NTL::vec_RR decrypt_individual_trlwe(const TRLWEVector &ciphertext, const TLweKey &key, int64_t length) {
+    assert(int64_t(ciphertext.length) == length);
+    vec_RR reps;
+    reps.SetLength(length);
+    for (int64_t j = 0; j < length; j++) {
+        reps[j] = fixp_decrypt_number(ciphertext.data[j], key);
+    }
+    return reps;
 }
