@@ -1,5 +1,7 @@
+#include <cassert>
 #include "mainalgo.h"
 #include "BigFFT.h"
+#include "TRLwe.h"
 
 NTL_CLIENT;
 
@@ -101,9 +103,9 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
 
     //plaintext exponent of the result
     int64_t default_plaintext_exponent = v.data[0].params.fixp_params.plaintext_expo +
-                                         A.data[0][0].plaintext_exponent;
+            A.data[0][0].plaintext_exponent;
     int64_t default_level_exponent = v.data[0].params.fixp_params.level_expo -
-                                     A.data[0][0].bits_a;
+            A.data[0][0].bits_a;
     int64_t actual_plaintext_exponent =  default_plaintext_exponent;
     int64_t actual_level_exponent =      default_level_exponent;
     // If there is a plaintext exponent override, correct the level info
@@ -132,19 +134,40 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
     int64_t shifted_input_limbs = limb_precision(shifted_input_alpha_bits + 5);
     BigTorusParams shifted_input_bt_params(shifted_input_limbs, shifted_input_plaintext_expo, shifted_input_level);
     TRLweParams shifted_input_trlwe_params(N, shifted_input_bt_params);
-    TRLwe shifted_input(shifted_input_trlwe_params);
+    TRLWEVector shifted_input(A.cols, shifted_input_trlwe_params);
 
-    //step 2: Do the external product
+    //step 2: Prepare the external product
     int64_t accum_level = target_level_expo;
     int64_t accum_plaintext_expo = actual_plaintext_exponent;
     int64_t accum_alpha_bits = target_level_expo + plaintext_precision_bits;
     int64_t accum_limbs = limb_precision(accum_alpha_bits + 5);
-    BigTorusParams accum_bt_params(accum_limbs, accum_plaintext_expo, accum_level);
-    TRLweParams accum_trlwe_params(N, accum_bt_params);
-    TRLwe accum(accum_trlwe_params);
+    shared_ptr<BigTorusParams> accum_bt_params = make_shared<BigTorusParams>(accum_limbs, accum_plaintext_expo,
+                                                                             accum_level);
+    shared_ptr<TRLweParams> accum_trlwe_params = make_shared<TRLweParams>(N, accum_bt_params);
+    TRLwe accum(*accum_trlwe_params);
 
     int64_t trgsw_alpha_bits = accum_alpha_bits + A.data[0][0].bits_a + log2(N);
+    int64_t ell = ceil(trgsw_alpha_bits / double(TRGSWParams::Bgbits));
+    assert(ell <= int64_t(A.data[0][0].ell));
 
+    store_forever(accum_bt_params);
+    store_forever(accum_trlwe_params);
+    TRLWEVector *reps = new TRLWEVector(A.cols, *accum_trlwe_params);
 
-    return shared_ptr<TRLWEVector>();
+    for (int j = 0; j < A.cols; j++) {
+        lshift(shifted_input.data[j], v.data[j], rsBits);
+    }
+
+    for (int j = 0; j < A.cols; j++) {
+        zero(reps->data[j]);
+    }
+
+    for (int i = 0; i < A.rows; i++) {
+        for (int j = 0; j < A.cols; j++) {
+            external_product(accum, A.data[i][j], shifted_input.data[i], accum_alpha_bits);
+            add(reps->data[j], reps->data[j], accum);
+        }
+    }
+
+    return shared_ptr<TRLWEVector>(reps);
 }

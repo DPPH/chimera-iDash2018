@@ -225,6 +225,8 @@ void neg(TRLwe &out, const TRLwe &in);
 
 void copy(TRLwe &out, const TRLwe &in);
 
+/** @brief left shift the all torus by exactly shift_bits */
+void lshift(TRLwe &out, const TRLwe &in, int64_t shift_bits);
 
 /** create an array of TRGSW */
 TRLwe *new_TRLwe_array(UINT64 size, const TRLweParams &params);

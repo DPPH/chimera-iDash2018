@@ -378,7 +378,6 @@ void neg(TRLwe &out, const TRLwe &in) {
     neg(out.a[1], in.a[1]);
 }
 
-/** @brief left shift the all torus by exactly shift_bits */
 void lshift(TRLwe &out, const TRLwe &in, int64_t shift_bits) {
     assert(in.params.N == out.params.N);
     lshift(out.a[0], in.a[0], shift_bits);
