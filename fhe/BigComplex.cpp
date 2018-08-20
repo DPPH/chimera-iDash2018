@@ -112,3 +112,36 @@ void addMulTo(BigComplexRef dest, const BigComplexRef &a, const BigComplexRef &b
     add(dest, dest, tmp);
 }
 
+void serializeBigcomplexContent(std::ostream &out, const BigComplexRef &value) {
+    int64_t x = BIG_COMPLEX_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    serializeBigRealContent(out, *value.real);
+    serializeBigRealContent(out, *value.imag);
+}
+
+void deserializeBigComplexContent(std::istream &in, BigComplexRef value) {
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == BIG_COMPLEX_ID);
+    deserializeBigRealContent(in, *value.real);
+    deserializeBigRealContent(in, *value.imag);
+}
+
+void serializeBigComplex(std::ostream &out, const BigComplex &value) {
+
+    ostream_write_binary(out, &value.real.nblimbs, sizeof(UINT64));
+    serializeBigcomplexContent(out, value);
+}
+
+std::shared_ptr<BigComplex> deserializeBigComplex(std::istream &in) {
+
+    UINT64 nblimbs;
+    istream_read_binary(in, &nblimbs, sizeof(UINT64));
+
+    BigComplex *reps = new BigComplex(nblimbs);
+
+    deserializeBigComplexContent(in, *reps);
+
+    return std::shared_ptr<BigComplex>(reps);
+}
+

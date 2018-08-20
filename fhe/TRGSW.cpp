@@ -598,3 +598,77 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     delete_BigReal_array(N, a2);
     delete_BigReal_array(N, b2);
 }
+
+void serializeTRGSWParams(std::ostream &out, const TRGSWParams &params) {
+    int64_t x = TRGSW_PARAMS_SERIAL_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    serializeTRLweParams(out, params);
+}
+
+
+std::shared_ptr<TRGSWParams> deserializeTRGSWParams(std::istream &in) {
+
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == TRGSW_PARAMS_SERIAL_ID);
+    shared_ptr<TRLweParams> tlwereps = deserializeTRLweParams(in);
+    store_forever(tlwereps);
+    TRGSWParams *reps = new TRGSWParams(tlwereps->N, tlwereps->fixp_params);
+    return shared_ptr<TRGSWParams>(reps);
+}
+
+
+void serializeTRGSWContent(std::ostream &out, const TRGSW &value) {
+    int64_t x = TRGSW_SERIAL_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    ostream_write_binary(out, &value.plaintext_exponent, sizeof(UINT64));
+    ostream_write_binary(out, &value.bits_a, sizeof(UINT64));
+    ostream_write_binary(out, &value.fft_nlimbs, sizeof(UINT64));
+    ostream_write_binary(out, &value.ell, sizeof(UINT64));
+    for (int64_t j = 0; j < 2; j++) {
+        for (int64_t i = 0; i < int64_t(value.ell); i++) {
+            for (int64_t l = 0; l < 2; l++) {
+                for (int64_t k = 0; k < int64_t(value.params.N / 2); k++) {
+                    serializeBigcomplexContent(out, value.a[j][i][l][k]);
+                }
+            }
+        }
+    }
+}
+
+void deserializeTRGSWContent(std::istream &in, TRGSW &reps) {
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == TRGSW_SERIAL_ID);
+    istream_read_binary(in, &reps.plaintext_exponent, sizeof(UINT64));
+    istream_read_binary(in, &reps.bits_a, sizeof(UINT64));
+    istream_read_binary(in, &reps.fft_nlimbs, sizeof(UINT64));
+    istream_read_binary(in, &reps.ell, sizeof(UINT64));
+
+    for (int64_t j = 0; j < 2; j++) {
+        for (int64_t i = 0; i < int64_t(reps.ell); i++) {
+            for (int64_t l = 0; l < 2; l++) {
+                assert(reps.a[j][i][l] == nullptr); //trying to deserialise an aleady set trgsw?
+                reps.a[j][i][l] = new_BigComplex_array(reps.params.N / 2, reps.fft_nlimbs);
+                for (int64_t k = 0; k < int64_t(reps.params.N / 2); k++) {
+                    deserializeBigComplexContent(in, reps.a[j][i][l][k]);
+                }
+            }
+        }
+    }
+}
+
+void serializeTRGSW(std::ostream &out, const TRGSW &value) {
+
+    serializeTRGSWParams(out, value.params);
+    serializeTRGSWContent(out, value);
+}
+
+std::shared_ptr<TRGSW> deserializeTRGSW(std::istream &in) {
+    shared_ptr<TRGSWParams> params = deserializeTRGSWParams(in);
+    store_forever(params);
+
+    TRGSW *reps = new TRGSW(*params);
+    deserializeTRGSWContent(in, *reps);
+    return shared_ptr<TRGSW>(reps);
+}

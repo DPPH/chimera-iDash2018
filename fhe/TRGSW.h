@@ -15,6 +15,17 @@ public:
     ~TRGSWParams() = default;
 };
 
+/** serialize:
+ *  param:   TRGSWParams
+ */
+void serializeTRGSWParams(std::ostream &out, const TRGSWParams &params);
+
+/** serialize:
+ *  param:   TRGSWParams
+ */
+std::shared_ptr<TRGSWParams> deserializeTRGSWParams(std::istream &in);
+
+
 class TRGSW {
 public:
     const TRGSWParams &params;
@@ -28,6 +39,40 @@ public:
 
     ~TRGSW();
 };
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  a:        tab[][][] of BigComplex
+ *  plaintext_exponent: UINT64
+ *  bits_a: UINT64
+ *  fft_nlimbs: UINT64
+ *  ell: UINT64
+ */
+void serializeTRGSWContent(std::ostream &out, const TRGSW &value);
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  a:        tab[][][] of BigComplex
+ *  plaintext_exponent: UINT64
+ *  bits_a: UINT64
+ *  fft_nlimbs: UINT64
+ *  ell: UINT64
+ */
+void deserializeTRGSWContent(std::istream &in, TRGSW &reps);
+
+
+/** serialize:
+ * params:
+ * value:
+ */
+void serializeTRGSW(std::ostream &out, const TRGSW &value);
+
+/** serialize:
+ * params:
+ * value:
+ */
+std::shared_ptr<TRGSW> deserializeTRGSW(std::istream &in);
+
 
 void intPoly_encrypt(TRGSW &reps, const int64_t *plaintext, const TLweKey &key, UINT64 alpha_bits);
 
