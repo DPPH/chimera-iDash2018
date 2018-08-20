@@ -618,10 +618,12 @@ std::shared_ptr<TRGSWParams> deserializeTRGSWParams(std::istream &in) {
 void serializeTRGSWContent(std::ostream &out, const TRGSW &value) {
     int64_t x = TRGSW_SERIAL_ID;
     ostream_write_binary(out, &x, sizeof(int64_t));
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < value.params.max_ell; j++) {
-            for (int k = 0; k < 2; k++) {
-                serializeBigcomplexContent(out, *value.a[i][j][k]);
+    for (int j = 0; j < 2; j++) {
+        for (int i = 0; i < value.ell; i++) {
+            for (int l = 0; l < 2; l++) {
+                for (int k = 0; k < value.params.N; k++) {
+                    serializeBigcomplexContent(out, value.a[j][i][l][k]);
+                }
             }
         }
     }
@@ -635,11 +637,13 @@ void deserializeTRGSWContent(std::istream &in, TRGSW &reps) {
     int64_t magic;
     istream_read_binary(in, &magic, sizeof(int64_t));
     assert_dramatically(magic == TRGSW_SERIAL_ID);
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < reps.params.max_ell; j++) {
-            for (int k = 0; k < 2; k++) {
-                deserializeBigcomplexContent(in, reps.a[i][j][k]);
 
+    for (int j = 0; j < 2; j++) {
+        for (int i = 0; i < reps.ell; i++) {
+            for (int l = 0; l < 2; l++) {
+                for (int k = 0; k < reps.params.N; k++) {
+                    deserializeBigcomplexContent(in, reps.a[j][i][l][k]);
+                }
             }
         }
     }
