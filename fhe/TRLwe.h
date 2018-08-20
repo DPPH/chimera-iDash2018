@@ -4,6 +4,10 @@
 
 #include "BigTorusPolynomial.h"
 #include "TLwe.h"
+#include <memory>
+#include "commons.h"
+#include <cstdint>
+
 
 class TRLweParams : public TLweParams {
 public:
@@ -11,6 +15,22 @@ public:
 
     ~TRLweParams() = default;
 };
+
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:        TRLweParams
+ */
+void serializeTRLweParams(std::ostream &out, const TRLweParams &value);
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  content:        TRLweParams
+ */
+std::shared_ptr<TRLweParams> deserializeTRLweParams(std::istream &in);
+
+
+
 
 class TRLwe {
 public:
@@ -21,6 +41,34 @@ public:
 
     ~TRLwe();
 };
+
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:        N* size(TLWE)
+ */
+void serializeTRLweContent(std::ostream &out, const TRLwe &value);
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:        N* size(TLWE)
+ */
+void deserializeTRLweContent(std::istream &in, TRLwe &reps);
+
+
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:        N* size(TLWE)
+ */
+void serializeTRLwe(std::ostream &out, const TRLwe &value);
+
+/** serialize:
+ *   magic number:   int64 on 8 bytes
+ *  content:        N* size(TLWE)
+ */
+std::shared_ptr<TRLwe> deserializeTRLwe(std::istream &in);
+
 
 /** @brief allocates a matrix of TRLWE */
 TRLwe **new_TRLweMatrix(UINT64 rows, UINT64 cols, const TRLweParams &params);
@@ -74,6 +122,31 @@ struct pubKsKey32 {
     ~pubKsKey32();
 };
 
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  BgBits:         UINT64
+ *  in_params:     TLweParams
+ *  out_params:    TRLweParams:
+ *  ks_params:     TRLweParams
+ *  l_dec:         UINT64
+ *  kskey:         tab of TRLwe
+ *  bitDecomp_in_offset: BigTorus
+ *  bitDecomp_out_offset: int64_t
+ */
+void serializepubKsKey32(std::ostream &out, const pubKsKey32 &key);
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  BgBits:         UINT64
+ *  in_params:     TLweParams
+ *  out_params:    TRLweParams:
+ *  ks_params:     TRLweParams
+ *  l_dec:         UINT64
+ *  kskey:         tab of TRLwe
+ *  bitDecomp_in_offset: BigTorus
+ *  bitDecomp_out_offset: int64_t
+ */
+std::shared_ptr<pubKsKey32> deserializepubKsKey32(std::istream &in);
 
 /**
  * @brief generation of PublicKeySwitch key

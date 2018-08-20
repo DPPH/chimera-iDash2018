@@ -1,5 +1,7 @@
 #include "BigTorusVector.h"
 
+using namespace std;
+
 BigTorusVector::BigTorusVector(UINT64 length, const BigTorusParams &params) :
         btp(params),
         length(length),
@@ -23,6 +25,7 @@ void zero(const BigTorusVector &v) {
     for (UINT64 i = 0; i < v.length; i++)
         zero(v.getAT(i));
 }
+
 
 
 void fixp_add(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVector &b, UINT64 out_precision_bits) {
@@ -113,3 +116,49 @@ BigTorusMatrix::BigTorusMatrix(UINT64 rows, UINT64 cols, const BigTorusParams &p
 BigTorusMatrix::~BigTorusMatrix() {
     delete[] (limbs_end - params.torus_limbs);
 }
+
+
+void serializeBigTorusVectorContent(std::ostream &out, const BigTorusVector &value) {
+    int64_t x = BIGTORUSVECTOR_SERIAL_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    for (int64_t i = 0; i < int64_t(value.length); i++) {
+        serializeBigTorusContent(out, value.getAT(i));
+    }
+}
+
+void deserializeBigTorusVectorContent(std::istream &in, BigTorusVector &reps) {
+    int64_t magic;
+
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == BIGTORUSVECTOR_SERIAL_ID);
+
+    for (int64_t i = 0; i < int64_t(reps.length); i++) {
+        deserializeBigTorusContent(in, reps.getAT(i));
+    }
+
+}
+
+
+void serializeBigTorusVector(std::ostream &out, const BigTorusVector &value) {
+    serializeBigTorusParams(out, value.btp);
+    ostream_write_binary(out, &value.length, sizeof(UINT64));
+    serializeBigTorusVectorContent(out, value);
+}
+
+std::shared_ptr<BigTorusVector> deserializeBigTorusVector(std::istream &in) {
+
+    shared_ptr<BigTorusParams> params = deserializeBigTorusParams(in);
+    store_forever(params);
+    UINT64 length;
+    istream_read_binary(in, &length, sizeof(UINT64));
+
+    BigTorusVector *reps = new BigTorusVector(length, *params);
+    deserializeBigTorusVectorContent(in, *reps);
+    return std::shared_ptr<BigTorusVector>(reps);
+}
+
+
+
+
+
+
