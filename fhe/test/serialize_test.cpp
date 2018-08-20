@@ -188,3 +188,50 @@ TEST(SERIALIZE_TEST, TRLwe) {
                   -int64_t(value.params.fixp_params.torus_limbs * BITS_PER_LIMBS));
     }
 }
+
+TEST(SERIALIZE_TEST, pubKsKey32) {
+
+    BigTorusParams bt_params_in(123, random(), random());
+    BigTorusParams bt_params_out(130, random(), random());
+
+
+    int64_t N_in = 10;
+    int64_t N_out = 8;
+    int64_t alpha_bits = 80;
+
+    TLweParams params_in(N_in, bt_params_in);
+    TRLweParams params_out(N_out, bt_params_out);
+
+
+    shared_ptr<TLweKey> key_in = tlwe_keygen(params_in);
+    shared_ptr<TLweKey> key_out = tlwe_keygen(params_out);
+
+
+    shared_ptr<pubKsKey32> ks_key = ks_keygen32(params_out, params_in, *key_in, *key_out, alpha_bits);
+
+
+    //serialize it into a string (instead of a file)
+    ostringstream oss;
+    serializepubKsKey32(oss, *ks_key);
+    string serial_result = oss.str();
+
+    //deserialize
+    istringstream iss(serial_result);
+    shared_ptr<pubKsKey32> res = deserializepubKsKey32(iss);
+
+    //verify that they are equal
+    for (int64_t i = 0; i < int64_t(ks_key->in_params.N); i++) {
+        for (int64_t j = 0; j < int64_t(ks_key->l_dec); j++) {
+            for (int k = 0; k < ks_key->out_params.N; ++i) {
+                ASSERT_LE(log2Diff(ks_key->kskey[i][j].a[0].getAT(k), res->kskey[i][j].a[0].getAT(k)),
+                          -int64_t(ks_key->ks_params.fixp_params.torus_limbs * BITS_PER_LIMBS));
+
+                ASSERT_LE(log2Diff(ks_key->kskey[i][j].a[1].getAT(k), res->kskey[i][j].a[1].getAT(k)),
+                          -int64_t(ks_key->ks_params.fixp_params.torus_limbs * BITS_PER_LIMBS));
+
+            }
+        }
+    }
+
+
+}
