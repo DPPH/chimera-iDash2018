@@ -176,6 +176,10 @@ void to_torus(BigTorusRef reps, const NTL::RR &a);
 
 double log2Diff(const BigTorusRef &a, const BigTorusRef &b);
 
+/** @brief left shift the all torus by exactly shift_bits */
+void lshift(BigTorusRef out, const BigTorusRef &in, int64_t shift_bits);
+
+
 NTL::RR to_RR(const BigTorusRef &a);
 
 // ***********************

@@ -3,6 +3,7 @@
 #include "TRLwe.h"
 #include "arithmetic.h"
 
+using namespace std;
 
 // see if this out_prec_limbs still make sense?
 void pubKS128(TRLwe &out, const TLwe &in, const pubKsKey128 &ks, const UINT64 out_prec_limbs) {
@@ -145,7 +146,7 @@ void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLwe
 
     BigTorusPolynomial &b = reps.a[1];
     // b = plaintext + sum s_i a_i
-    copy(b, plaintext, alpha_limbs);
+    ::copy(b, plaintext, alpha_limbs);
     random(reps.a[0], alpha_limbs);
     BigTorusPolynomial temp(N, bt_out_params);
     int64_t *K = new int64_t[N];
@@ -168,7 +169,7 @@ void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, 
     BigTorusParams bt_params(alpha_limbs);
 
     const BigTorusPolynomial &b = c.a[1];
-    copy(reps, b, alpha_limbs);
+    ::copy(reps, b, alpha_limbs);
 
     BigTorusPolynomial temp(N, bt_params);
     int64_t *K = new int64_t[N];
@@ -377,6 +378,13 @@ void neg(TRLwe &out, const TRLwe &in) {
     neg(out.a[1], in.a[1]);
 }
 
+/** @brief left shift the all torus by exactly shift_bits */
+void lshift(TRLwe &out, const TRLwe &in, int64_t shift_bits) {
+    assert(in.params.N == out.params.N);
+    lshift(out.a[0], in.a[0], shift_bits);
+    lshift(out.a[1], in.a[1], shift_bits);
+}
+
 TRLwe *new_TRLwe_array(UINT64 size, const TRLweParams &params) {
     TRLwe *reps = (TRLwe *) malloc(size * sizeof(TRLwe));
     for (UINT64 i = 0; i < size; i++) {
@@ -391,6 +399,105 @@ void delete_TRLwe_array(UINT64 size, TRLwe *array) {
     }
     free(array);
 }
+
+void serializeTRLweParams(std::ostream &out, const TRLweParams &value) {
+    int64_t x = TRLWE_PARAMS_SERIAL_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    TLweParams tLweParams(value.N, value.fixp_params);
+    serializeTLweParams(out, tLweParams);
+}
+
+std::shared_ptr<TRLweParams> deserializeTRLweParams(std::istream &in) {
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == TRLWE_PARAMS_SERIAL_ID);
+
+    shared_ptr<TLweParams> tLweParams = deserializeTLweParams(in);
+    store_forever(tLweParams);
+    TRLweParams *reps = new TRLweParams(tLweParams->N, tLweParams->fixp_params);
+    return std::shared_ptr<TRLweParams>(reps);
+}
+
+void serializeTRLweContent(std::ostream &out, const TRLwe &value) {
+    int64_t x = TRLWE_SERIAL_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    serializeBigTorusVectorContent(out, value.a[0]);
+    serializeBigTorusVectorContent(out, value.a[1]);
+}
+
+void deserializeTRLweContent(std::istream &in, TRLwe &reps) {
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == TRLWE_SERIAL_ID);
+    deserializeBigTorusVectorContent(in, reps.a[0]);
+    deserializeBigTorusVectorContent(in, reps.a[1]);
+}
+
+void serializeTRLwe(std::ostream &out, const TRLwe &value) {
+    serializeTRLweParams(out, value.params);
+    serializeTRLweContent(out, value);
+}
+
+std::shared_ptr<TRLwe> deserializeTRLwe(std::istream &in) {
+    shared_ptr<TRLweParams> params = deserializeTRLweParams(in);
+    store_forever(params);
+    TRLwe *reps = new TRLwe(*params);
+    deserializeTRLweContent(in, *reps);
+    return shared_ptr<TRLwe>(reps);
+}
+
+
+void serializepubKsKey32(std::ostream &out, const pubKsKey32 &key) {
+    int64_t x = PUBKSKEY32_SERIAL_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    //ostream_write_binary(out, &key.BgBits, sizeof(UINT64));
+    serializeTLweParams(out, key.in_params);
+    serializeTRLweParams(out, key.out_params);
+    serializeTRLweParams(out, key.ks_params);
+    ostream_write_binary(out, &key.l_dec, sizeof(UINT64));
+    for (int64_t i = 0; i < int64_t(key.in_params.N); i++) {
+        for (int64_t j = 0; j < int64_t(key.l_dec); j++) {
+            serializeTRLwe(out, key.kskey[i][j]);
+        }
+    }
+    serializeBigTorus(out, key.bitDecomp_in_offset);
+    ostream_write_binary(out, &key.bitDecomp_out_offset, sizeof(int64_t));
+
+}
+
+std::shared_ptr<pubKsKey32> deserializepubKsKey32(std::istream &in) {
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == PUBKSKEY32_SERIAL_ID);
+
+    // int64_t BgBits;
+    //istream_read_binary(in, &BgBits, sizeof(UINT64));
+
+    shared_ptr<TLweParams> in_params = deserializeTLweParams(in);
+    store_forever(in_params);
+
+    shared_ptr<TRLweParams> out_params = deserializeTRLweParams(in);
+    store_forever(out_params);
+
+    shared_ptr<TRLweParams> ks_params = deserializeTRLweParams(in);
+    store_forever(ks_params);
+
+
+    UINT64 l_dec;
+    istream_read_binary(in, &l_dec, sizeof(UINT64));
+
+    pubKsKey32 *reps = new pubKsKey32(*in_params, *out_params, std::move(*ks_params), l_dec);
+
+    for (int64_t i = 0; i < int64_t(in_params->N); i++) {
+        for (int64_t j = 0; j < int64_t(l_dec); j++) {
+            deserializeTRLweContent(in, reps->kskey[i][j]);
+        }
+    }
+    return shared_ptr<pubKsKey32>(reps);
+}
+
+
+
 
 pubKsKey128::pubKsKey128(
         const TLweParams &in_params,

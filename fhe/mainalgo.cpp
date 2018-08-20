@@ -101,7 +101,7 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
 
     //plaintext exponent of the result
     int64_t default_plaintext_exponent = v.data[0].params.fixp_params.plaintext_expo +
-                                         A.data[0][0].plaintext_expo;
+                                         A.data[0][0].plaintext_exponent;
     int64_t default_level_exponent = v.data[0].params.fixp_params.level_expo -
                                      A.data[0][0].bits_a;
     int64_t actual_plaintext_exponent =  default_plaintext_exponent;
@@ -123,5 +123,6 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
     }
     //RS to apply to the input ciphertext before calling the external product
     int64_t rsBits = actual_level_exponent - target_level_expo;
+
     return shared_ptr<TRLWEVector>();
 }
