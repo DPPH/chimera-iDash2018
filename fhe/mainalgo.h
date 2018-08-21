@@ -116,4 +116,22 @@ NTL::vec_RR decrypt_heaan_packed_trlwe(const TRLWEVector &ciphertext, const TLwe
 NTL::vec_RR decrypt_individual_trlwe(const TRLWEVector &ciphertext, const TLweKey &key, int64_t length);
 
 
+/**
+ * @brief multiply two TRLWE vectors
+ */
+std::shared_ptr<TRLWEVector>
+product_ind_TRLWE(const TRLWEVector &a, const TRLWEVector &b, const TRGSW &rk, int64_t target_level_expo = NA,
+                  int64_t override_plaintext_exponent = NA,
+                  int64_t plaintext_precision_bits = default_plaintext_precision);
+
+
+/**
+ * @brief substract two TRLWE vectors
+ */
+std::shared_ptr<TRLWEVector>
+substract_ind_TRLWE(const TRLWEVector &a, const TRLWEVector &b, int64_t target_level_expo = NA,
+                    int64_t override_plaintext_exponent = NA,
+                    int64_t plaintext_precision_bits = default_plaintext_precision);
+
+
 #endif //FHE_MAINALGO_H
