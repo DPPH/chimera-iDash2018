@@ -110,6 +110,45 @@ TEST(TRLWE_TEST, trlwe_encrypt_decrypt_native) {
     }
 }
 
+TEST(TRLWE_TEST, fixp_encrypt_decrypt) {
+    for (int64_t plaintext_expo : {-5, 10, 20}) {
+        for (int64_t level_expo : {20, 63, 128}) {
+            for (int64_t N : {32, 64, 256}) {
+                for (int64_t plaintext_precision : {10, 20, 40}) {
+                    int64_t min_nlimbs = limb_precision(level_expo + plaintext_precision);
+                    for (int64_t torus_limbs : {min_nlimbs, min_nlimbs + 1}) {
+                        BigTorusParams params(torus_limbs, plaintext_expo, level_expo);
+                        TRLweParams trlwe_params(N, params);
+                        shared_ptr<TLweKey> key = tlwe_keygen(trlwe_params);
+
+                        //fixP load and store to RR
+                        for (int trial = 0; trial < 1; trial++) {
+                            RR::SetPrecision(torus_limbs * BITS_PER_LIMBS);
+                            vec_RR test1(INIT_SIZE, N);
+                            for (int i = 0; i < N; i++) {
+                                test1[i] = (random_RR() - 0.5) * power2_RR(plaintext_expo + 1);
+                            }
+                            TRLwe c(trlwe_params);
+                            fixp_encrypt(c, test1, *key, plaintext_precision);
+
+                            vec_RR test2 = fixp_decrypt(c, *key);
+
+                            RR::SetOutputPrecision(long(640 * log(2) / log(10)));
+                            //cerr << test1 << endl;
+                            //cerr << test2 << endl;
+                            for (int i = 0; i < N; i++) {
+                                //cerr << log2Diff(test1[i], test2[i])  << " vs. " << plaintext_expo-plaintext_precision << endl;
+                                EXPECT_LE(log2Diff(test1[i], test2[i]), plaintext_expo - plaintext_precision + 1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 TEST(TRLWE_TEST, pubKSKeyGen) {
 
 }

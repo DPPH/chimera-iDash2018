@@ -1,4 +1,5 @@
 #include <gmp.h>
+#include <cassert>
 #include "TLwe.h"
 #include "arithmetic.h"
 
@@ -81,15 +82,20 @@ void native_phase(BigTorusRef reps, const TLwe &tlwe, const TLweKey &key, UINT64
     }
 }
 
-void slot_encrypt(TLwe &reps, const NTL::RR &plaintext, const TLweKey &key, UINT64 alpha_bits) {
+void slot_encrypt(TLwe &reps, const NTL::RR &plaintext, const TLweKey &key, UINT64 plaintext_precision) {
+    assert(reps.params.fixp_params.level_expo > 0); //"level exponent is not set";
+    int64_t alpha_bits = reps.params.fixp_params.level_expo + plaintext_precision;
+    assert(int64_t(reps.params.fixp_params.torus_limbs) >=
+           limb_precision(alpha_bits)); //"the bigtorus is not precise enough";
     BigTorus tmp(reps.params.fixp_params);
     to_fixP(tmp, plaintext);
     native_encrypt(reps, tmp, key, alpha_bits);
 }
 
-NTL::RR slot_decrypt(const TLwe &tlwe, const TLweKey &key, UINT64 alpha_bits) {
+NTL::RR slot_decrypt(const TLwe &tlwe, const TLweKey &key) {
+    assert(tlwe.params.fixp_params.level_expo > 0); //"level exponent is not set";
     BigTorus tmp(tlwe.params.fixp_params);
-    native_phase(tmp, tlwe, key, alpha_bits);
+    native_phase(tmp, tlwe, key);
     return fixp_to_RR(tmp);
 }
 
