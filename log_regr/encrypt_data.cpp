@@ -1,6 +1,6 @@
 #include "io.h"
 #include "common.h"
-#include "params.h"
+#include "lr_params.h"
 #include "keyset.h"
 
 #include "tfhe_core.h"
@@ -50,15 +50,14 @@ void build_test_poly_sigmoid_xt(TorusPolynomial<Torus>* test_poly, const vec_flo
 }
 
 /**
- * @brief Build, encrypt and write test-polynomial Xt . sigmoid at TRLWE L2
+ * @brief Build, encrypt and write test-polynomial Xt . sigmoid
  */
-void encrypt_sigmoid_xt(Ostream& out_stream, const Data& data, const LRParams& lr_params, const TfheSecretKeySet *keyset) {
-    const TLweKey<Torus> *key = keyset->trlwe_key_l2;
+void encrypt_write_sigmoid_xt(Ostream& out_stream, const Data& data, const LRParams& lr_params, const TLweKey<Torus> *key) {
     const TLweParams<Torus> *params = key->params;
     const int N = params->N;
     const double alpha = params->alpha_min;
 
-    #pragma omp parallel for ordered
+    #pragma omp parallel for ordered schedule(static,1)
     for (int i = 0; i < data.n; ++i) {
         TorusPolynomial<Torus> *test_poly = new_obj<TorusPolynomial<Torus>>(N);
         TLweSample<Torus> *test_poly_enc = new_obj<TLweSample<Torus>>(params);
@@ -69,6 +68,7 @@ void encrypt_sigmoid_xt(Ostream& out_stream, const Data& data, const LRParams& l
 
         #pragma omp ordered
         IOFunctions<Torus>::write_tLweSample(out_stream, test_poly_enc, params);
+
         del_obj(test_poly_enc);
 
         #ifndef NDEBUG
@@ -86,10 +86,9 @@ void encrypt_sigmoid_xt(Ostream& out_stream, const Data& data, const LRParams& l
 }
 
 /**
- * @brief Encrypt and write y vector as \sum_i y_i Z^(n-i) at TRLWE L1
+ * @brief Encrypt and write y vector as \sum_i y_i Z^(n-i)
  */
-void encrypt_y(Ostream& out_stream, const vec_float& y, const LRParams& lr_params, const TfheSecretKeySet *keyset) {
-    const TLweKey<Torus> *key = keyset->trlwe_key_l1;
+void encrypt_write_y(Ostream& out_stream, const vec_float& y, const LRParams& lr_params, const TLweKey<Torus> *key) {
     const TLweParams<Torus> *params = key->params;
     const int N = params->N;
     const double alpha = params->alpha_min;
@@ -121,10 +120,9 @@ void encrypt_y(Ostream& out_stream, const vec_float& y, const LRParams& lr_param
 }
 
 /**
- * @brief Encrypt X columns as \sum_i X_ij Z^i for j=0..k-1 at TRGSW L1
+ * @brief Encrypt X columns as \sum_i X_ij Z^i for j=0..k-1
  */
-void encrypt_X_cols(Ostream& out_stream, const Data& data, const LRParams& lr_params, const TfheSecretKeySet *keyset) {
-    const TGswKey<Torus> *key = keyset->trgsw_key_l1;
+void encrypt_write_X_cols(Ostream& out_stream, const Data& data, const LRParams& lr_params, const TGswKey<Torus> *key) {
     const TGswParams<Torus> *params = key->params;
     const int N = params->tlwe_params->N;
     const double alpha = params->tlwe_params->alpha_min;
@@ -133,7 +131,7 @@ void encrypt_X_cols(Ostream& out_stream, const Data& data, const LRParams& lr_pa
 
     const int prec_mult = 1<<lr_params.X_precbit;
 
-    #pragma omp parallel for ordered
+    #pragma omp parallel for ordered schedule(static,1)
     for (int j = 0; j < data.k; ++j) {
         IntPolynomial *msg = new_obj<IntPolynomial>(N);
         IntPolyFunctions::Clear(msg);
@@ -147,6 +145,7 @@ void encrypt_X_cols(Ostream& out_stream, const Data& data, const LRParams& lr_pa
 
         #pragma omp ordered
         IOFunctions<Torus>::write_tGswSample(out_stream, enc_X_col, params);
+
         del_obj(enc_X_col);
 
         #ifndef NDEBUG
@@ -174,26 +173,17 @@ int main(int argc, char const *argv[]) {
     const TfheParamSet *params = TfheParamSet::read(lr_params.params_filename);
     const TfheSecretKeySet *keyset = TfheSecretKeySet::read(lr_params.secret_keyset_filename, params);
 
-    {
-        ofstream out("sigmoid_xt.test_poly", ofstream::binary);
-        StdOstream out_stream = to_Ostream(out);
-        encrypt_sigmoid_xt(out_stream, data, lr_params, keyset);
-        out.close();
-    }
+    ofstream out(lr_params.filename_data, ofstream::binary);
+    StdOstream out_stream = to_Ostream(out);
 
-    {
-        ofstream out("y.ctxt", ofstream::binary);
-        StdOstream out_stream = to_Ostream(out);
-        encrypt_y(out_stream, data.y, lr_params, keyset);
-        out.close();
-    }
+    out_stream.fwrite(&data.n, sizeof(int32_t));
+    out_stream.fwrite(&data.m, sizeof(int32_t));
+    out_stream.fwrite(&data.k, sizeof(int32_t));
 
-    {
-        ofstream out("X_cols.ctxt", ofstream::binary);
-        StdOstream out_stream = to_Ostream(out);
-        encrypt_X_cols(out_stream, data, lr_params, keyset);
-        out.close();
-    }
+    encrypt_write_sigmoid_xt(out_stream, data, lr_params, keyset->trlwe_key_l2);
+    encrypt_write_y(out_stream, data.y, lr_params, keyset->trlwe_key_l2);
+    encrypt_write_X_cols(out_stream, data, lr_params, keyset->trgsw_key_l1);
+    encrypt_write_X_cols(out_stream, data, lr_params, keyset->trgsw_key_l2);
 
     return 0;
 }

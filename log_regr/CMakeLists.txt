@@ -23,43 +23,53 @@ if (OPENMP_FOUND)
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
-add_executable(
-    gen_keys
-
-    gen_keys.cpp
-    keyset.cpp
-
+add_executable(gen_keys gen_keys.cpp keyset.cpp
     $<TARGET_OBJECTS:tfhe-core>
     $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
-    )
+)
 
-add_executable(
-    encrypt_data
-
-    encrypt_data.cpp
-    keyset.cpp
-
+add_executable(encrypt_data encrypt_data.cpp keyset.cpp
     $<TARGET_OBJECTS:tfhe-core>
     $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
-    )
+)
 target_link_libraries(encrypt_data -lntl -lgmp -pthread)
 
-add_executable(
-    decrypt_data
-
-    decrypt_data.cpp
-    keyset.cpp
-
+add_executable(decrypt_data decrypt_data.cpp keyset.cpp
     $<TARGET_OBJECTS:tfhe-core>
     $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
-    )
+)
 target_link_libraries(decrypt_data -lntl -lgmp -pthread)
 
-add_executable(
-    log_regr
-
-    log_regr.cpp
-
+add_executable(log_regr log_regr.cpp keyset.cpp
     $<TARGET_OBJECTS:tfhe-core>
     $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
-    )
+)
+
+add_executable(decrypt_beta decrypt_beta.cpp keyset.cpp
+    $<TARGET_OBJECTS:tfhe-core>
+    $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
+)
+target_link_libraries(decrypt_beta -lntl -lgmp -pthread)
+
+add_executable(decrypt_X_beta decrypt_X_beta.cpp keyset.cpp
+    $<TARGET_OBJECTS:tfhe-core>
+    $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
+)
+target_link_libraries(decrypt_X_beta -lntl -lgmp -pthread)
+
+
+
+
+
+
+add_subdirectory(external/googletest)
+include_directories(external/googletest/googletest)
+
+add_executable(unittest test/log_regr_fncs_test.cpp keyset.cpp
+    $<TARGET_OBJECTS:tfhe-core>
+    $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
+)
+target_link_libraries(unittest gtest gtest_main -lntl -lgmp -pthread)
+
+enable_testing()
+add_test(unittest unittest)

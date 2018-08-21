@@ -1,4 +1,7 @@
 #include "lr_params.h"
+#include "keyset.h"
+#include "log_regr_fncs.h"
+#include "io_ctxt.h"
 
 #include "tfhe_core.h"
 #include "tfhe_gate.h"
@@ -6,98 +9,95 @@
 #include "tfhe_alloc.h"
 #include "cxxopts.hpp"
 
-/**
- * @brief Blind rotate \c acc by TLWE sample \c input coefficients
- */
-void blindrotate(
-    TLweSample<Torus>* acc,
-    const LweSample<Torus>* input,
-    const LweBootstrappingKeyFFT<Torus>* bk
+#define DEBUG
+
+void log_regr_iter(
+    LweSample<Torus> *beta_in_out, // k TLWE L2 encryptions of \beta
+    const TLweSample<Torus> *sigmoid_xt_tps, // TRLWE L2 samples encrypting test polynomials Xt . \sigma(u) for u=-A..A
+    const LweSample<Torus>* Xt_y_arr, // k TLWE L2 encryptions of vector Xt.y.\alpha elements
+    const TGswSample<Torus>* X_cols, // k TRGSW L1 samples of X columns \sum_{i=0}^{n-1} X_ij Z^i for j=0..k-1
+
+    const TfheCloudKeySet* keyset,
+    const TfheParamSet* params,
+    const LRParams& lr_params,
+    LweSample<Torus>* X_beta_out = nullptr
     )
 {
-    const TLweParams<Torus>* accum_params = bk->accum_params;
-    const int N=accum_params->N;
-    const int _2N = 2*N;
-    const int n = bk->in_out_params->n;
+    TLweSample<Torus>* X_beta_cp = new_obj_array<TLweSample<Torus>>(lr_params.k, params->trlwe_params_l1);
 
-    // Modulus switching
-    int* bara = new int[N];
-    int barb = TorusUtils<Torus>::modSwitchFromTorus(input->b,_2N);
-    for (int i=0; i<n; i++) {
-        bara[i]=TorusUtils<Torus>::modSwitchFromTorus(input->a[i],_2N);
-    }
+    compute_X_beta(X_beta_cp, beta_in_out, X_cols, params->trgsw_params_l1, lr_params);
 
-    TLweSample<Torus>* tmp = new_obj<TLweSample<Torus>>(accum_params);
-    tLweCopy(tmp, acc, accum_params);
+    VERBOSE_1_PRINT("==> accumulate columns of X.beta ... ");
+    for (int j = 1; j < lr_params.k; ++j)
+        TLweFunctions<Torus>::AddTo(X_beta_cp+0, X_beta_cp+j, params->trlwe_params_l1);
+    VERBOSE_1_PRINT("done\n");
 
-    // Accumulator rotate by -barb
-    TLweFunctions<Torus>::MulByXai(acc, _2N-barb, tmp, accum_params);
+    LweSample<Torus>* X_beta = nullptr;
+    if (X_beta_out != nullptr)
+        X_beta = X_beta_out;
+    else
+        X_beta = new_obj_array<LweSample<Torus>>(lr_params.n, params->tlwe_params_l0);
 
-    // Accumulator blind rotate by \sum bara_i * sk_i
-    tfhe_blindRotate_FFT(acc, bk->bkFFT, bara, n, bk->bk_params);
+    extract_X_beta(X_beta, X_beta_cp, params->trlwe_params_l1, keyset->ks_l1_l0, lr_params);
+    del_obj_array(lr_params.k, X_beta_cp);
 
-    delete[] bara;
+    if (X_beta_out != nullptr) return;
+
+    TLweSample<Torus> *acc = new_obj_array<TLweSample<Torus>>(lr_params.n, params->trlwe_params_l2);
+    compute_Xt_sigma(acc, sigmoid_xt_tps, params->trgsw_params_l2, X_beta, params->tlwe_params_l0, keyset->bk_fft, lr_params);
+
+    if (X_beta_out == nullptr)
+        del_obj_array(lr_params.n, X_beta);
+
+    accumulate_trlwe_acc(acc, params->trlwe_params_l2, lr_params);
+
+    extract_add_Xt_y(beta_in_out, acc, Xt_y_arr, params->trlwe_params_l2, lr_params);
+    del_obj_array(lr_params.n, acc);
 }
 
-
-void compute_Xt_sigma(
-    TLweSample<Torus> *result,
-    const LweSample<Torus>* inputs,
+void log_regr(
+    const TGswSample<Torus>* X_cols_l1,
+    const TGswSample<Torus>* X_cols_l2,
+    const TLweSample<Torus>* y,
     const TLweSample<Torus> *sigmoid_xt_tps,
-    const int tps_cnt,
-    const LweBootstrappingKeyFFT<Torus>* bk
+
+    const TfheCloudKeySet* keyset,
+    const TfheParamSet* params,
+    const LRParams& lr_params
     )
 {
-    const TLweParams<Torus> *accum_params = bk->accum_params;
+    /* pre-compute Xt.y */
+    VERBOSE_1_PRINT("Compute Xt.y at L2... ");
+    LweSample<Torus>* Xt_y_arr = new_obj_array<LweSample<Torus>>(lr_params.k, params->tlwe_params_l2);
+    compute_Xt_y(Xt_y_arr, X_cols_l2, y, params->trgsw_params_l2, lr_params);
+    VERBOSE_1_PRINT("done\n");
 
-    TLweSample<Torus>* acc = new_obj<TLweSample<Torus>>(accum_params);
-    for (int i = 0; i < tps_cnt; ++i) {
-        tLweCopy(acc, sigmoid_xt_tps+i, accum_params);
-        blindrotate(acc, inputs+i, bk);
+    VERBOSE_1_PRINT("Compute initial beta at L2... ");
+    LweSample<Torus>* beta = new_obj_array<LweSample<Torus>>(lr_params.k, params->tlwe_params_l2);
+    compute_initial_beta(beta, X_cols_l2, params->trgsw_params_l2, y, params->trlwe_params_l2, lr_params);
+    VERBOSE_1_PRINT("done\n");
 
-        tLweAddTo(result, acc, accum_params);
+    write_tlwe_samples(lr_params.filename_prefix_beta + to_string(0) + ".ctxt", beta, params->tlwe_params_l1, lr_params.k);
+
+    VERBOSE_1_PRINT("Logistic regression:\n");
+    for (int iter = 1; iter < lr_params.nb_iters; ++iter)
+    {
+        VERBOSE_1_PRINT("> iteration %d start\n", iter);
+        log_regr_iter(beta, sigmoid_xt_tps, Xt_y_arr, X_cols_l1, keyset, params, lr_params);
+        write_tlwe_samples(lr_params.filename_prefix_beta + to_string(iter) + ".ctxt", beta, params->tlwe_params_l1, lr_params.k);
     }
-    del_obj(acc);
+
+    VERBOSE_1_PRINT("> compute X.beta result\n");
+    LweSample<Torus>* X_beta = new_obj_array<LweSample<Torus>>(lr_params.n, params->tlwe_params_l0);
+    log_regr_iter(beta, sigmoid_xt_tps, Xt_y_arr, X_cols_l1, keyset, params, lr_params, X_beta);
+
+    VERBOSE_1_PRINT("> write X.beta\n");
+    write_tlwe_samples(lr_params.filename_X_beta, X_beta, params->tlwe_params_l0, lr_params.n);
+
+    del_obj_array(lr_params.n, X_beta);
+    del_obj_array(lr_params.k, Xt_y_arr);
+    del_obj_array(lr_params.k, beta);
 }
-
-// void compute_gradient(
-//     const TLweSample<Torus> *Xt_y,
-//     const LweBootstrappingKeyFFT<Torus>* bk
-//     )
-// {
-//     const TLweParams<Torus> *trlwe_params = bk->accum_params->tlwe_params;
-//     TLweSample<Torus>* result = new_obj<TLweSample<Torus>>(trlwe_params);
-//     tLweCopy(result, Xt_y, trlwe_params);
-
-
-
-//     compute_Xt_sigma()
-// }
-
-
-/**
- * @brief Extract coefficients i*delta for i=0..nb_coefs-1 from \c input TRLWE sample.
- */
-void extract_coefs(
-    LweSample<Torus> *outputs,
-    const TLweSample<Torus> *input,
-    const int nb_coefs,
-    const int delta
-    )
-{
-    // void TLweFunctions<TORUS>::ExtractLweSampleIndex(LweSample<TORUS>* result, const TLweSample<TORUS>* x,
-    //     const int index, const LweParams<TORUS>* params,  const TLweParams<TORUS>* rparams) {
-
-    // void lweKeySwitch(LweSample<TORUS>* result, const LweKeySwitchKey<TORUS>* ks, const LweSample<TORUS>* sample) {
-
-
-    for (int i = 0; i < nb_coefs; ++i) {
-        TLweFunctions<TORUS>::ExtractLweSampleIndex(outputs+i, input, i*delta, ., .);
-
-
-    }
-}
-
 
 LRParams parse_args(int argc, char** argv) {
     LRParams lr_params;
@@ -108,7 +108,6 @@ LRParams parse_args(int argc, char** argv) {
         ("n,indivs",          "number of individuals", cxxopts::value<uint>()->default_value("245"))
         ("k,feats",           "number of features", cxxopts::value<uint>()->default_value("3"))
         ("m,snps",            "number of SNPs", cxxopts::value<uint>()->default_value("10643"))
-        // ("b,batch",           "batch size", cxxopts::value<uint>()->default_value("2"))
         ("iters",             "number of iterations", cxxopts::value<uint>()->default_value("5"))
         ("seed",              "random generator seed", cxxopts::value<uint>()->default_value("42"))
         ;
@@ -176,5 +175,23 @@ LRParams parse_args(int argc, char** argv) {
 
 
 int main(int argc, char **argv) {
-  LRParams lr_params = parse_args(argc, argv);
+    LRParams lr_params = parse_args(argc, argv);
+
+    const TfheParamSet *params = TfheParamSet::read(lr_params.params_filename);
+    const TfheCloudKeySet *keyset = TfheCloudKeySet::read(lr_params.cloud_keyset_filename, params);
+
+    TGswSample<Torus>* X_cols_l1 = nullptr;
+    TGswSample<Torus>* X_cols_l2 = nullptr;
+    TLweSample<Torus>* y = nullptr;
+    TLweSample<Torus>* sigmoid_xt_tps = nullptr;
+
+    read_data(lr_params, sigmoid_xt_tps, y, X_cols_l1, X_cols_l2, params);
+
+    lr_params.n = 16;
+    lr_params.nb_iters = 2;
+    lr_params.update();
+
+    log_regr(X_cols_l1, X_cols_l2, y, sigmoid_xt_tps, keyset, params, lr_params);
+
+    return 0;
 }

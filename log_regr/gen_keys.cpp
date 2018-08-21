@@ -1,13 +1,8 @@
+#include "lr_params.h"
 #include "tfhe_core.h"
-#include "tfhe_garbage_collector.h"
-
-#include "params.h"
 #include "keyset.h"
 
 using namespace std;
-
-// constexpr inline double mulBySqrtTwoOverPi(double x) { return x*sqrt(2./M_PI); }
-
 
 TfheParamSet *new_parameters() {
     const int n_l0 = 500;
@@ -47,13 +42,9 @@ TfheSecretKeySet* new_random(const TfheParamSet *params) {
     TGswKey<Torus>* trgsw_key_l2 = new_TGswKey<Torus>(params->trgsw_params_l2);
     tGswKeyGen(trgsw_key_l2);
 
-    // LweBootstrappingKey<Torus>* bk = new_LweBootstrappingKey<Torus>(params->ks_t, params->ks_basebit, params->in_out_params, params->tgsw_params);
-    // tfhe_createLweBootstrappingKey(bk, lwe_key, tgsw_key);
-    // LweBootstrappingKeyFFT<Torus>* bkFFT = new_LweBootstrappingKeyFFT<Torus>(bk);
-
-
     return new TfheSecretKeySet(params, tlwe_key_l0, trgsw_key_l1, trgsw_key_l2);
 }
+
 
 int main(int argc, char const *argv[]) {
     uint32_t values[2];

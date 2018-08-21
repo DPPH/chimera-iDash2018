@@ -11,3 +11,6 @@
 	path = log_regr/external/tfhe_torus_generic
 	url = git@github.com:tfhe/tfhe.git
 	branch = torus_generic
+[submodule "googletest_lr"]
+	path = log_regr/external/googletest
+	url = https://github.com/google/googletest.git
