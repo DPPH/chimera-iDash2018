@@ -13,26 +13,51 @@ encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
     const int64_t cols = ceil(plaintext.NumCols() / double(Ns2));
 
     //find plaintext maximum
-    NTL::RR maxi;
-    maxi = -1;
+    NTL::RR maxiNorm2Sq;
+    maxiNorm2Sq = -1;
+    NTL::RR maxiNormInf;
+    maxiNormInf = -1;
     for (int r = 0; r < rows; r++) {
+        NTL::RR norm2sq;
         for (int c = 0; c < cols; c++) {
-            if (abs(plaintext[r][c]) > maxi)
-                maxi = abs(plaintext[r][c]);
+            norm2sq = 0;
+            for (int k = 0; k < Ns2; k++) {
+                if (c * Ns2 + k < plaintext.NumCols()) {
+                    RR slot = plaintext[r][c];
+                    norm2sq += slot * slot;
+                    if (abs(slot) > maxiNormInf) maxiNormInf = abs(slot);
+                }
+            }
+            if (norm2sq > maxiNorm2Sq) maxiNorm2Sq = norm2sq;
         }
     }
-    long rescale_bits = long(ceil(to_double(log(maxi)) / log(2.)));
-    cerr << "rescale_bits: " << rescale_bits << endl;
+    //this is the actual plaintext exponent
+    long real_plaintext_exponent_a = to_long(ceil(log(maxiNorm2Sq) / 2 / log(2.))); //todo override?
+    long real_plaintext_exponent_b = to_long(ceil(log(maxiNormInf) / log(2.)));     //todo override?
+    cout << "deduced plaintext exponents: " << real_plaintext_exponent_a << " or " << real_plaintext_exponent_b << endl;
+    long real_plaintext_exponent = std::min(real_plaintext_exponent_b, real_plaintext_exponent_a);
+    long trgsw_bits_a = plaintext_precision_bits;
+    //long trgsw_shift = real_plaintext_exponent - trgsw_bits_a;
+    //info: the trgsw will be shifted by -trgsw_shift upon encryption
+    //info: upon external product, * the level will decrease by tgrsw_bits_a
+    //                             * the plaintext expo increases by real_plaintext_exponent
 
-    const int64_t enc_limbs = limb_precision(plaintext_precision_bits + log2(N));
-    BigComplex *cslots = new_BigComplex_array(Ns2, enc_limbs);
-    BigReal *rcoefs = new_BigReal_array(N, enc_limbs);
+    //In the first section, we need to compute the FFT of the slots, shift by -trgsw_shift, and round to integers
+    // (in practice, we will actually
+    // * pre-shift by -plaintext_exponent
+    // * do the FFT in the [-1,1] domain
+    // * post shift by +plaintext_expo-trgsw_shift=trgsw_bits_a
+    const int64_t plain_limbs = limb_precision(plaintext_precision_bits + log2(N));
+    BigComplex *cslots = new_BigComplex_array(Ns2, plain_limbs);
+    BigReal *rcoefs = new_BigReal_array(N, plain_limbs);
     int64_t *icoefs = new int64_t[N];
-    const BigComplex *powombar = fftAutoPrecomp.omegabar(n, enc_limbs);
+    const BigComplex *powombar = fftAutoPrecomp.omegabar(n, plain_limbs);
 
+    //Then, for the TRGSW encryption itself:
+    //  * alpha is the requested error level
     int64_t reps_limbs = limb_precision(alpha_bits);
-    int64_t reps_plaintext_exponent = 0; //these two are unused
-    int64_t reps_level_exponent = 0;     //these two are unused
+    int64_t reps_plaintext_exponent = 0; //these two are unused (we leave 0: no shift, for test purposes)
+    int64_t reps_level_exponent = 0;     //these two are unused (we leave 0: no shift, for test purposes)
     shared_ptr<BigTorusParams> bt_params = make_shared<BigTorusParams>(reps_limbs, reps_plaintext_exponent,
                                                                        reps_level_exponent);
     store_forever(bt_params);
@@ -40,16 +65,15 @@ encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
     store_forever(trgsw_params);
     TRGSWMatrix *reps = new TRGSWMatrix(rows, cols, *trgsw_params);
 
-    NTL::mat_RR coefs_matrix;
-    coefs_matrix.SetDims(rows, cols * N);
     for (int64_t r = 0; r < rows; r++) {
         for (int64_t c = 0; c < cols; c++) {
-            RR::SetPrecision(enc_limbs * BITS_PER_LIMBS);
+            RR::SetPrecision(plain_limbs * BITS_PER_LIMBS);
             //set the slots at position (r,c)
             for (int64_t slotid = 0; slotid < Ns2; slotid++) {
                 int64_t pid = c * Ns2 + slotid;
+                //pre-scale the input by -real_plaintext_exponent
                 if (pid < plaintext.NumCols()) {
-                    to_BigReal(cslots[slotid].real, plaintext[r][pid] / power2_RR(rescale_bits));
+                    to_BigReal(cslots[slotid].real, plaintext[r][pid] / power2_RR(real_plaintext_exponent));
                     zero(cslots[slotid].imag);
                 } else {
                     zero(cslots[slotid].real);
@@ -58,69 +82,26 @@ encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
             }
             //fft
             FFT(rcoefs, cslots, n, powombar);
-            //store it to the RR coefs matrix
-            for (int64_t coefid = 0; coefid < N; coefid++) {
-                coefs_matrix[r][c * N + coefid] = to_RR(rcoefs[coefid]) * power2_RR(rescale_bits);
-            }
-        }
-    }
 
-    int64_t trgsw_plaintext_expo = 0;
-    int64_t trgsw_bits_a = 0;
-    int64_t trgsw_bits_shift = 0;
-    //auto-deduce plaintext exponent
-    {
-        //plaintext expo is the smallest exponent s.t. plaintext / 2^plaintext_expo is in [-1,1]
-        RR maxAbsPlaintext;
-        maxAbsPlaintext = 0;
-        RR maxPlaintextNorm2;
-        maxPlaintextNorm2 = 0;
-        RR sumPlaintextSq;
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                sumPlaintextSq = 0;
-                for (int k = 0; k < N; k++) {
-                    sumPlaintextSq += pow(plaintext[i][j], to_RR(2));
-                    if (abs(plaintext[i][j]) > maxAbsPlaintext)
-                        maxAbsPlaintext = abs(plaintext[i][j]);
-                }
-                if (sumPlaintextSq > maxPlaintextNorm2) {
-                    maxPlaintextNorm2 = sumPlaintextSq;
-                }
-            }
-        }
-        if (maxPlaintextNorm2 == 0) {
-            trgsw_plaintext_expo = 0;
-            trgsw_bits_a = 0;
-        } else {
-            //we shift the trgsw by this amount
-            trgsw_bits_shift = plaintext_precision_bits - ceil(to_double(log(maxAbsPlaintext)) / log(2.));
-            //new norm (level increase)
-            trgsw_bits_a = ceil(to_double(log(sumPlaintextSq)) / 2. * log(2.)) + trgsw_bits_shift;
-            trgsw_plaintext_expo = -trgsw_bits_shift;
-        }
-        cerr << "in encrypt: deduced plaintext_expo set to " << trgsw_plaintext_expo << endl;
-        cerr << "in encrypt: deduced plaintext_bits_a set to " << trgsw_bits_a << endl;
-        cerr << "in encrypt: deduced bits_shift set to " << trgsw_bits_shift << endl;
-    }
-
-
-    for (int64_t r = 0; r < rows; r++) {
-        for (int64_t c = 0; c < cols; c++) {
-            RR::SetPrecision(enc_limbs * BITS_PER_LIMBS);
+            RR::SetPrecision(plain_limbs * BITS_PER_LIMBS);
             //rescale and round
             for (int64_t coefid = 0; coefid < N; coefid++) {
                 icoefs[coefid] =
-                        to_long(RoundToZZ(coefs_matrix[r][c * N + coefid] * power2_RR(trgsw_bits_shift)));
-                cerr << icoefs[coefid] << " ";
+                        to_long(RoundToZZ(to_RR(rcoefs[coefid]) * power2_RR(trgsw_bits_a)));
+                //cerr << icoefs[coefid] << " ";
             }
-            cerr << endl;
+            //cerr << endl;
             //encrypt the coefs
             intPoly_encrypt(reps->data[r][c], icoefs, key, alpha_bits);
+            //finally, set the real plaintext exponent and bits_a
             reps->data[r][c].bits_a = trgsw_bits_a;
-            reps->data[r][c].plaintext_exponent = trgsw_plaintext_expo;
+            reps->data[r][c].plaintext_exponent = real_plaintext_exponent;
         }
     }
+    //free resources
+    delete_BigComplex_array(Ns2, cslots);
+    delete_BigReal_array(N, rcoefs);
+    delete[] icoefs;
     return std::shared_ptr<TRGSWMatrix>(reps);
 }
 
