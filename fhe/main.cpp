@@ -56,8 +56,8 @@ int main() {
     int ITERS = 7;    //num of logreg iters
     //double step = 4.; //learning rate (close to 4)
 
-    BigTorusMatrix X(n, k, &X_params);
-    BigTorusMatrix S(n, m, &S_params);
+    BigTorusMatrix X(n, k, X_params);
+    BigTorusMatrix S(n, m, S_params);
     BigTorusVector y(n, y_params);
     fill_matrix_S(S);
     fill_matrix_Xy(X, y);

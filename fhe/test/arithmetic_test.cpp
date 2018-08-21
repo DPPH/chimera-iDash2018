@@ -2,6 +2,9 @@
 #include <NTL/LLL.h>
 #include "../commons.h"
 #include "../arithmetic.h"
+#include "../BigReal.h"
+#include "../BigComplex.h"
+#include "../TRLwe.h"
 
 NTL_CLIENT;
 
@@ -27,7 +30,7 @@ TEST(BIGTORUS_ARITHMETIC, convRR) {
         //torus load and store to RR
         for (int trial = 0; trial < 100; trial++) {
             RR test1 = random_RR() - 0.5;
-            BigTorus testTorus(&params);
+            BigTorus testTorus(params);
             to_torus(testTorus, test1);
             RR test2 = fixp_to_RR(testTorus);
 
@@ -49,7 +52,7 @@ TEST(BIGTORUS_ARITHMETIC, convFixP) {
                 //fixP load and store to RR
                 for (int trial = 0; trial < 100; trial++) {
                     RR test1 = 1000 * (random_RR() - 0.5);
-                    BigTorus testFixp(&params);
+                    BigTorus testFixp(params);
                     to_fixP(testFixp, test1);
                     RR test2 = fixp_to_RR(testFixp);
 
@@ -72,9 +75,9 @@ TEST(BIGTORUS_ARITHMETIC, addFixP) {
     for (int trial = 0; trial < 100; trial++) {
         RR testa = 1000 * (random_RR() - 0.5);
         RR testb = 1000 * (random_RR() - 0.5);
-        BigTorus testFixpA(&params);
-        BigTorus testFixpB(&paramsb);
-        BigTorus testFixpC(&paramsc);
+        BigTorus testFixpA(params);
+        BigTorus testFixpB(paramsb);
+        BigTorus testFixpC(paramsc);
         to_fixP(testFixpA, testa);
         to_fixP(testFixpB, testb);
         fixp_add(testFixpC, testFixpA, testFixpB, 640);
@@ -101,7 +104,7 @@ TEST(BIGTORUS_ARITHMETIC, submul128) {
                     BigTorusParams in_params(in_nblimbs);
                     BigTorusParams out_params(out_nblimbs);
 
-                    BigTorus a(&in_params);
+                    BigTorus a(in_params);
                     RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
                     RR aa = (random_RR() - 0.5);
                     to_torus(a, aa);
@@ -111,7 +114,7 @@ TEST(BIGTORUS_ARITHMETIC, submul128) {
                     //cout << endl;
                     //cout << "aa: " << aa << endl;
 
-                    BigTorus out(&out_params);
+                    BigTorus out(out_params);
                     RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
                     RR oout = (random_RR() - 0.5);
                     to_torus(out, oout);
@@ -129,7 +132,7 @@ TEST(BIGTORUS_ARITHMETIC, submul128) {
 
                     //cout << "coef_zz: " << coef_zz << endl;
 
-                    subMul(out, coef, a, limb_prec);
+                    subMulS128(out, coef, a, limb_prec);
 
                     //test that out = oldout - a * coef modulo 1
                     RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
@@ -149,7 +152,65 @@ TEST(BIGTORUS_ARITHMETIC, submul128) {
     }
 }
 
-TEST(BIGTORUS_ARITHMETIC, mul64) {
+TEST(BIGTORUS_ARITHMETIC, submul64) {
+    for (int64_t limb_prec:  {1, 3, 5, 7}) {
+        for (int64_t out_nblimbs: {limb_prec, limb_prec + 1, limb_prec + 3}) {
+            for (int64_t in_nblimbs: {limb_prec + 1, limb_prec + 2, limb_prec + 3}) {
+                for (bool positive: {true, false}) {
+
+
+                    BigTorusParams in_params(in_nblimbs);
+                    BigTorusParams out_params(out_nblimbs);
+
+                    BigTorus a(in_params);
+                    RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
+                    RR aa = (random_RR() - 0.5);
+                    to_torus(a, aa);
+
+                    RR::SetOutputPrecision(100);
+
+                    //cout << endl;
+                    //cout << "aa: " << aa << endl;
+
+                    BigTorus out(out_params);
+                    RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
+                    RR oout = (random_RR() - 0.5);
+                    to_torus(out, oout);
+
+                    //cout << "oout: " << oout << endl;
+
+
+                    //test positive first
+                    ZZ coef_zz = RandomBits_ZZ(32);
+                    int64_t coef = to_long(coef_zz);
+                    if (!positive) {
+                        coef = -coef;
+                        coef_zz = -coef_zz;
+                    }
+
+                    //cout << "coef_zz: " << coef_zz << endl;
+
+                    subMulS64(out, coef, a, limb_prec);
+
+                    //test that out = oldout - a * coef modulo 1
+                    RR::SetPrecision(in_nblimbs * BITS_PER_LIMBS);
+                    RR target = centerMod1(oout - to_RR(coef_zz) * aa);
+                    RR actual = to_RR(out);
+
+                    //cout << "actual: " << actual << endl;
+                    //cout << "target: " << target << endl;
+
+                    RR distance = centerMod1(target - actual);
+                    //cout << "distance: " << distance << endl;
+
+                    ASSERT_LE(log2DiffMod1(target, actual), -limb_prec * BITS_PER_LIMBS + 1 + 32);
+                }
+            }
+        }
+    }
+}
+
+TEST(BIGTORUS_ARITHMETIC, mulS64) {
     for (int64_t limb_prec:  {1, 3, 5, 7}) {
         for (int64_t out_nblimbs: {limb_prec, limb_prec + 1, limb_prec + 3}) {
             int64_t in_nblimbs = out_nblimbs;
@@ -158,7 +219,7 @@ TEST(BIGTORUS_ARITHMETIC, mul64) {
                     BigTorusParams in_params(in_nblimbs);
                     BigTorusParams out_params(out_nblimbs);
 
-                    BigTorus a(&in_params);
+                    BigTorus a(in_params);
                     zero(a);
                     random(a, in_nblimbs);
                     RR::SetPrecision((in_nblimbs) * BITS_PER_LIMBS);
@@ -169,7 +230,7 @@ TEST(BIGTORUS_ARITHMETIC, mul64) {
                     //cout << endl;
                     //cout << "aa: " << aa << endl;
 
-                    BigTorus out(&out_params);
+                    BigTorus out(out_params);
                     //RR::SetPrecision((in_nblimbs+0) * BITS_PER_LIMBS);
                     //RR oout = (random_RR() - 0.5);
                     //to_torus(out, oout);
@@ -187,7 +248,7 @@ TEST(BIGTORUS_ARITHMETIC, mul64) {
 
                     //cout << "coef_zz: " << coef_zz << endl;
 
-                    mul64(out, coef, a, limb_prec);
+                    mulS64(out, coef, a, limb_prec);
 
                     //test that out = a * coef modulo 1
                     RR::SetPrecision((in_nblimbs + 1) * BITS_PER_LIMBS);
@@ -201,6 +262,177 @@ TEST(BIGTORUS_ARITHMETIC, mul64) {
                     //cout << "distance: " << distance << endl;
 
                     ASSERT_LE(log2DiffMod1(target, actual), -limb_prec * BITS_PER_LIMBS + bitsOfA);
+                }
+            }
+        }
+    }
+}
+
+TEST(BIGTORUS_ARITHMETIC, BigReal_to_BigTorus) {
+    for (const int64_t bits_a : {1, 17, 31}) {
+        for (const int64_t nblimbs : {1, 2, 5}) {
+            for (const int64_t rlimbs: {nblimbs, nblimbs + 1}) {
+                BigTorusParams params(nblimbs);
+
+                BigReal source(rlimbs);
+                BigTorus dest(params);
+
+                RR::SetPrecision(rlimbs * BITS_PER_LIMBS);
+                RR rsource = random_RR();
+                to_BigReal(source, rsource);
+                // expected: source * 2^a centermod 1
+                RR rbi = to_RR(source) * pow(to_RR(2), to_RR(long(bits_a)));
+                rbi -= to_RR(RoundToZZ(rbi));
+                // actual:
+                to_BigTorus(dest, source, bits_a, nblimbs);
+                RR outi = to_RR(dest);
+                //RR::SetOutputPrecision(nblimbs * BITS_PER_LIMBS / log2(10.));
+                //cout << rbi << endl;
+                //cout << outi << endl;
+                ASSERT_LE(log2Diff(rbi, outi), -nblimbs * BITS_PER_LIMBS);
+            }
+        }
+    }
+}
+
+TEST(BIGCOMPLEX_ARITHMETIC, mulTo) {
+    for (const int64_t nblimbs : {1, 2, 5}) {
+        RR::SetPrecision(nblimbs * BITS_PER_LIMBS + 10);
+        RR care = random_RR();
+        RR caim = random_RR();
+        RR cbre = random_RR();
+        RR cbim = random_RR();
+        BigComplex ca(nblimbs);
+        BigComplex cb(nblimbs);
+        to_BigReal(ca.real, care);
+        to_BigReal(cb.real, cbre);
+        to_BigReal(ca.imag, caim);
+        to_BigReal(cb.imag, cbim);
+        mulTo(cb, ca);
+        RR targetre = cbre * care - cbim * caim;
+        RR targetim = cbre * caim + cbim * care;
+        RR actualre = to_RR(cb.real);
+        RR actualim = to_RR(cb.imag);
+        ASSERT_LE(log2Diff(targetre, actualre), -nblimbs * BITS_PER_LIMBS + 1);
+        ASSERT_LE(log2Diff(targetim, actualim), -nblimbs * BITS_PER_LIMBS + 2);
+    }
+}
+
+TEST(BIGTORUS_ARITHMETIC, BigTorus_To_BigReal) {
+    for (const int64_t nblimbs : {1, 2, 5}) {
+        RR::SetPrecision(nblimbs * BITS_PER_LIMBS + 10);
+
+        BigTorusParams params(nblimbs);
+        BigTorus b(params);
+        random(b);
+        // expected:
+        RR bi = to_RR(b);
+        // actual:
+        BigReal rb(nblimbs);
+        to_BigReal(rb, b);
+        RR rbi = to_RR(rb);
+        ASSERT_LE(log2Diff(bi, rbi), -nblimbs * BITS_PER_LIMBS);
+    }
+}
+
+TEST(BIGTORUS_ARITHMETIC, int2_To_BigReal) {
+    for (const int64_t bits_a : {1, 17, 31}) {
+        for (const int64_t nblimbs : {1, 2, 5}) {
+            BigReal dest(nblimbs);
+
+            int64_t bit_mask = (1ul << bits_a) - 1;
+            int64_t bit_offset = (1ul << (bits_a - 1)) - 1;
+            int64_t source = (random() & bit_mask) - bit_offset;
+
+            RR::SetPrecision(nblimbs * BITS_PER_LIMBS + 10);
+            RR ai = to_RR(long(source)) / pow(to_RR(2), to_RR(long(bits_a)));
+            to_BigReal(dest, source, bits_a);
+            RR rai = to_RR(dest);
+            ASSERT_LE(log2Diff(ai, rai), -nblimbs * BITS_PER_LIMBS);
+        }
+    }
+}
+
+TEST(BIGTORUS_ARITHMETIC, bitdecomp32) {
+    for (const int64_t nblimbs : {1, 2, 5}) {
+        BigTorusParams params(nblimbs);
+        int ell = 2 * nblimbs;
+        BigTorus b(params);
+        BigTorus bof(params);
+        BigTorus hi(params);
+        BigTorus recomp_b(params);
+        BigTorus tmp(params);
+        random(b);
+
+        zero(recomp_b);
+        bitdecomp_signed_offset32_apply(bof, b);
+        for (int i = 0; i < ell; i++) {
+            int64_t coeff = bitdecomp_signed_coef32(bof, i + 1, nblimbs);
+            zero(hi);
+            hi.limbs_end[-(i + 2) / 2] = (i % 2 == 0) ? 0x100000000ul : 0x1ul;
+            mulS64(tmp, coeff, hi, nblimbs);
+            add(recomp_b, recomp_b, tmp);
+        }
+        ASSERT_LE(log2Diff(b, recomp_b), -nblimbs * BITS_PER_LIMBS);
+    }
+}
+/** compute  out= a* 2^left_shift mod 1  */
+TEST(BIGTORUS_ARITHMETIC, shift_toBigTorus) {
+
+    for (int64_t nblimbs : {1, 2, 3, 6}) {
+        for (int64_t left_shift : {10, 31, 53, 80, 210}) {
+
+            BigTorusParams params(nblimbs);
+            BigTorus out(params);
+
+
+            RR::SetPrecision(nblimbs * BITS_PER_LIMBS);
+            RR ra = random_RR();
+            BigReal a(nblimbs);
+            to_BigReal(a, ra);
+            shift_toBigTorus(out, a, left_shift);
+
+            ra = ra * power2_RR(left_shift);
+            ra = ra - to_RR(RoundToZZ(ra));
+
+            //RR::SetOutputPrecision(nblimbs * BITS_PER_LIMBS / log2(10));
+            //cout << nblimbs << " " << left_shift << " : " << ra << endl;
+            //cout << nblimbs << " " << left_shift << " : " << to_RR(out) << endl;
+
+            ASSERT_LE(log2Diff(to_RR(out), ra), -1000);
+        }
+    }
+}
+
+/** copy exactly msb bits of b in  BigReal a */
+TEST(BIGTORUS_ARITHMETIC, precise_conv_toBigReal) {
+    for (int64_t nblimbs_torus: {1, 2, 6}) {
+        for (int64_t nblimbs_real: {1, 2, 5}) {
+            for (int64_t lshift:  {0, 6, 13, 31, 110}) {
+                for (int64_t msbToKeep:  {10, 20, 50, 82, 123}) {
+                    if (msbToKeep > nblimbs_real * BITS_PER_LIMBS) continue;
+                    //int64_t prec = 30;
+
+                    RR::SetPrecision(max(nblimbs_torus, nblimbs_real) * BITS_PER_LIMBS);
+
+                    BigTorusParams params(nblimbs_torus);
+                    BigTorus atorus(params);
+
+                    BigReal breal(nblimbs_real);
+
+                    random(atorus);
+                    RR a = to_RR(atorus);
+                    RR ashift = a * power2_RR(lshift);
+                    ashift -= to_RR(RoundToZZ(ashift));
+
+                    precise_conv_toBigReal(breal, atorus, lshift, msbToKeep);
+
+                    RR b = to_RR(breal);
+                    RR b1 = b * power2_RR(msbToKeep);
+
+
+                    ASSERT_EQ(b1, to_RR(RoundToZZ(b1))); //b1 is integer
+                    EXPECT_LE(log2Diff(b, ashift), -msbToKeep);
                 }
             }
         }

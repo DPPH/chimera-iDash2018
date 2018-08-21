@@ -3,10 +3,14 @@
 
 
 #include "BigTorusVector.h"
+#include "BigReal.h"
+#include "BigComplex.h"
 
 class BigTorusPolynomial : public BigTorusVector {
 public:
     BigTorusPolynomial(UINT64 N, const BigTorusParams &params);
+
+    BigTorusPolynomial(UINT64 N, BigTorusParams &&params) = delete;
 
     ~BigTorusPolynomial();
 };
@@ -14,30 +18,41 @@ public:
 /** @brief generate a constant polynomial equal to in */
 void const_poly(BigTorusPolynomial &out, const BigTorusRef &in, UINT64 out_limb_prec);
 
-void naive_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPolynomial &b, UINT64 out_limb_prec) {
-    const UINT64 N = out.length;
-    if (out_limb_prec == NA) out_limb_prec = out.btp.torus_limbs;
-    //in this function, input precision is min(out_limb_prec + 1, in_limb_prec)
-    assert_dramatically(out_limb_prec <= out.btp.torus_limbs, "output precision requested too high");
-    assert_dramatically(out_limb_prec <= b.btp.torus_limbs, "input precision too small vrt. output prec");
-    const UINT64 in_limb_prec = std::min(b.btp.torus_limbs, out_limb_prec + 1);
+/** @brief addition */
+void add(BigTorusPolynomial &reps, const BigTorusPolynomial &a, const BigTorusPolynomial &b);
 
-    BigTorus ri(&b.btp);
-    BigTorus tmp(&b.btp);
-    for (UINT64 i = 0; i < N; i++) {
-        zero(ri);
-        for (UINT64 j = 0; j <= i; j++) {
-            //ri += poly1[j]*poly2[i-j];
-            mul64(tmp, a[j], b.getAT(i - j), in_limb_prec);
-            add(ri, ri, tmp, in_limb_prec);
-        }
-        for (UINT64 j = i + 1; j < N; j++) {
-            //ri -= poly1[j]*poly2[N+i-j];
-            mul64(tmp, a[j], b.getAT(N + i - j), in_limb_prec);
-            sub(ri, ri, tmp, in_limb_prec);
-        }
-        copy(out.getAT(i), ri, out_limb_prec);
-    }
-}
+/** @brief substraction */
+void sub(BigTorusPolynomial &reps, const BigTorusPolynomial &a, const BigTorusPolynomial &b);
+
+
+/** @brief out=-in*/
+void neg(BigTorusPolynomial &out, const BigTorusPolynomial &in);
+
+/** @brief out=in*/
+void copy(BigTorusPolynomial &out, const BigTorusPolynomial &in);
+
+/** @brief int-polynomial torus-polynomial external product  */
+void naive_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPolynomial &b, UINT64 out_limb_prec);
+
+
+/** @brief int-polynomial torus-polynomial external product using fft  */
+void fft_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPolynomial &b, const UINT64 bits_a,
+                          UINT64 out_limb_prec);
+
+/** @brief polynomial-polynomial torus-polynomial internal product using fft  */
+void fft_internal_product(BigTorusPolynomial &out, const BigTorusPolynomial &a, const BigTorusPolynomial &b,
+                          UINT64 out_limb_prec);
+
+/** @brief int-polynomial torus-polynomial external product using fft  (TODO: a voir comment definir a)*/
+void fft_semi_external_product(BigTorusPolynomial &out, const BigComplex *ca, const BigTorusPolynomial &b,
+                               const UINT64 bits_a, UINT64 out_limb_prec);
+
+
+/** copy msb bits of each coefficient of b*2^lshift in an array of BigReal */
+void precise_conv_toBigReal(BigReal *array, const BigTorusPolynomial &b, int64_t lshift, int64_t msbToKeep);
+
+
+/** compute  out= array* 2^left_shift mod 1  */
+void BigRealPoly_shift_toBigTorus(BigTorusPolynomial &out, BigReal *array, int64_t left_shift);
 
 #endif //FHE_BIGTORUSPOLYNOMIAL_H

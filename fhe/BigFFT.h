@@ -2,6 +2,7 @@
 #define FHE_BIGFFT_H
 
 #include "BigComplex.h"
+#include <map>
 
 
 /**
@@ -22,6 +23,27 @@ BigComplex *precomp_FFT(int n, UINT64 nblimbs);
 
 /** releases the precomputed an iFFT structure */
 void clear_precomp_FFT(BigComplex *powombar);
+
+/** @brief class that precomputes global fft parameters */
+class FFTAutoPrecomp {
+    static UINT64 precomp_id(uint32_t n, uint16_t nblimbs, uint16_t bar);
+
+    std::map<UINT64, BigComplex *> precomp_map;
+
+public:
+    /** get the omega precomputed fft table for n=2N and precision nblimbs */
+    BigComplex *omega(uint32_t n, uint16_t nblimbs);
+
+    /** get the omegabar precomputed fft table for n=2N and precision nblimbs */
+    BigComplex *omegabar(uint32_t n, uint16_t nblimbs);
+
+    FFTAutoPrecomp();
+
+    ~FFTAutoPrecomp();
+};
+
+extern FFTAutoPrecomp fftAutoPrecomp;
+
 
 /**
  * computes the iFFT of a real polynomial P(X) mod X^N+1
@@ -44,6 +66,6 @@ void iFFT(BigComplex *out, const BigReal *in, int n, const BigComplex *powomega)
  * @param n the logical dimension (= 2N)
  * @param powombar the precomputed FFT structure
  */
-void FFT(BigReal *out, BigComplex *in, int n, const BigComplex *powombar);
+void FFT(BigReal *out, const BigComplex *in, int n, const BigComplex *powombar);
 
 #endif //FHE_BIGFFT_H

@@ -12,7 +12,7 @@ set(GOOGLEBENCH_SOURCES
         bench.cpp
         bench_fft.cpp
         bench_fft128.cpp
-        )
+        bench_pubKs128.cpp bench_pubKs32.cpp)
 
 #the benchmark applications are compiled with google benchmark framework
 add_executable(bench ${GOOGLEBENCH_SOURCES})

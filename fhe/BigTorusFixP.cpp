@@ -1,5 +1,6 @@
 #include <gmp.h>
 #include <cassert>
+#include <vector>
 #include "BigTorus.h"
 
 fixp_add_params::fixp_add_params() :
@@ -46,6 +47,7 @@ void fixp_releaseAdd(fixp_add_params &out) {
     delete[] out.tmp_b;
 }
 
+/** left shift a by bit_shift, and write out_limbs limbs */
 void fixp_special_add_lshift(UINT64 *out, UINT64 *a, int64_t out_limbs, int64_t a_limbs, int64_t bit_shift) {
     int64_t sbits = bit_shift % BITS_PER_LIMBS;
     int64_t slimbs = bit_shift / BITS_PER_LIMBS;
@@ -141,17 +143,44 @@ void fixp_raw_sub(UINT64 *reps, UINT64 *a, UINT64 *b, const fixp_add_params &par
 
 void fixp_add(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, UINT64 out_precision_bits) {
     fixp_add_params addParams;
-    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_limbs * BITS_PER_LIMBS;
-    fixp_prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
-    fixp_raw_add(reps.limbs, a.limbs, b.limbs, addParams);
+    if (out_precision_bits == NA) out_precision_bits = reps.params.torus_limbs * BITS_PER_LIMBS;
+    fixp_prepareAdd(addParams, reps.params, a.params, b.params, out_precision_bits);
+    fixp_raw_add(
+            reps.limbs_end - addParams.ic_limbs,
+            a.limbs_end - addParams.ia_limbs,
+            b.limbs_end - addParams.ib_limbs,
+            addParams);
     fixp_releaseAdd(addParams);
 }
 
 void fixp_sub(BigTorusRef reps, const BigTorusRef &a, const BigTorusRef &b, UINT64 out_precision_bits) {
     fixp_add_params addParams;
-    if (out_precision_bits == NA) out_precision_bits = reps.params->torus_limbs * BITS_PER_LIMBS;
-    fixp_prepareAdd(addParams, *reps.params, *a.params, *b.params, out_precision_bits);
-    fixp_raw_sub(reps.limbs, a.limbs, b.limbs, addParams);
+    if (out_precision_bits == NA) out_precision_bits = reps.params.torus_limbs * BITS_PER_LIMBS;
+    fixp_prepareAdd(addParams, reps.params, a.params, b.params, out_precision_bits);
+    fixp_raw_sub(
+            reps.limbs_end - addParams.ic_limbs,
+            a.limbs_end - addParams.ia_limbs,
+            b.limbs_end - addParams.ib_limbs,
+            addParams);
     fixp_releaseAdd(addParams);
+}
+
+double log2Diff(const BigTorusRef &a, const BigTorusRef &b) {
+    int64_t alimbs = a.params.torus_limbs;
+    int64_t blimbs = b.params.torus_limbs;
+    int64_t n = std::min(alimbs, blimbs);
+
+    std::vector<UINT64> bufv(n);
+    UINT64 *buf = bufv.data();
+    mpn_sub_n(buf, a.limbs_end - n, b.limbs_end - n, n);
+    if (buf[n - 1] & 0x8000000000000000UL) {
+        mpn_neg(buf, buf, n);
+    }
+    //find the first non zero position
+    for (int64_t i = 0; i < n; i++) {
+        if (buf[n - 1 - i] == 0) continue;
+        return -64 * (i + 1) + log2(double(buf[n - 1 - i]));
+    }
+    return -64 * n;
 }
 

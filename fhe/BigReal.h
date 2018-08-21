@@ -7,6 +7,7 @@
 #include "commons.h"
 #include "BigTorus.h"
 
+
 /**
  * BigReal represent fixed precision real numbers between [-1,1] having a no-overflow guarantee.
  * (for all arithmetic operations they are involved in, their value stay between [-1,1])
@@ -26,6 +27,40 @@ public:
 
     void operator=(const BigReal &)= delete;
 };
+
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:   int
+ *
+ */
+void serializeBigRealContent(std::ostream &out, const BigReal &value);
+
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:   int
+ *
+ */
+void deserializeBigRealContent(std::istream &in, BigReal &value);
+
+
+/** serialize:
+ *  nblimbs: UINT64
+ *  value:   int
+ *
+ */
+void serializeBigReal(std::ostream &out, const BigReal &value);
+
+
+/** serialize:
+ *  nblimbs: UINT64
+ *  value:   int
+ *
+ */
+std::shared_ptr<BigReal> deserializeBigReal(std::istream &in);
+
+
 
 /** addition (warning, you must ensure that the result does not overflows) */
 void add(BigReal &dest, const BigReal &a, const BigReal &b);
@@ -48,8 +83,17 @@ void div2ui(BigReal &dest, const BigReal &a, UINT64 b);
 /** copy */
 void copy(BigReal &dest, const BigReal &a);
 
-/** conversion torus to bigreal */
+/** zero */
+void zero(BigReal &dest);
+
+/** conversion torus to bigreal (outputs v between -1/2 and 1/2) */
 void to_BigReal(BigReal &dest, const BigTorusRef &v);
+
+/** conversion torus to bigreal (outputs a/2^nbits) */
+void to_BigReal(BigReal &dest, const int64_t a, UINT64 a_nbits);
+
+/** conversion bigreal to torus (outputs a*2^lshiftbits mod 1 with given limb precision) */
+void to_BigTorus(BigTorusRef dest, const BigReal &a, UINT64 lshift_bits, UINT64 out_precision_limbs);
 
 /** conversion bigreal to RR */
 NTL::RR to_RR(const BigReal &v);
@@ -62,5 +106,18 @@ BigReal *new_BigReal_array(UINT64 n, UINT64 nblimbs);
 
 /** delete an array of BigReal */
 void delete_BigReal_array(UINT64 n, BigReal *array);
+
+
+/** copy exactly msb bits of b in  BigReal a*/
+void precise_conv_toBigReal(BigReal &reps, const BigTorusRef &b, int64_t lshift, int64_t msbToKeep);
+
+/** copy reps= a*b */
+void fft_BigRealPoly_product(BigReal *reps, BigReal *a, BigReal *b, int64_t N, int64_t fft_nlimbs);
+
+/** compute reps=+in */
+void BigRealPoly_addTo(BigReal *reps, BigReal *in, int64_t N, int64_t fft_nlimbs);
+
+/** compute  out= array* 2^left_shift mod 1  */
+void shift_toBigTorus(BigTorusRef out, const BigReal &a, int64_t left_shift);
 
 #endif //FHE_BIG_REAL_H

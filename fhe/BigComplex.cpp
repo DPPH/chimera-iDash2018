@@ -1,3 +1,4 @@
+#include <cassert>
 #include "BigComplex.h"
 
 BigComplex::BigComplex(UINT64 nblimbs) : real(nblimbs), imag(nblimbs) {}
@@ -91,5 +92,56 @@ void delete_BigComplex_array(UINT64 n, BigComplex *array) {
         (array + i)->~BigComplex();
     }
     free(array);
+}
+
+void zero(BigComplexRef dest) {
+    zero(*dest.real);
+    zero(*dest.imag);
+}
+
+void addMulTo(BigComplexRef dest, const BigComplexRef &a, const BigComplexRef &b) {
+    const UINT64 nblimbs = a.real->nblimbs;
+    assert(dest.real->nblimbs == nblimbs);
+    assert(dest.imag->nblimbs == nblimbs);
+    assert(a.real->nblimbs == nblimbs);
+    assert(a.imag->nblimbs == nblimbs);
+    assert(b.real->nblimbs == nblimbs);
+    assert(b.imag->nblimbs == nblimbs);
+    BigComplex tmp(nblimbs);
+    mul(tmp, a, b);
+    add(dest, dest, tmp);
+}
+
+void serializeBigcomplexContent(std::ostream &out, const BigComplexRef &value) {
+    int64_t x = BIG_COMPLEX_ID;
+    ostream_write_binary(out, &x, sizeof(int64_t));
+    serializeBigRealContent(out, *value.real);
+    serializeBigRealContent(out, *value.imag);
+}
+
+void deserializeBigComplexContent(std::istream &in, BigComplexRef value) {
+    int64_t magic;
+    istream_read_binary(in, &magic, sizeof(int64_t));
+    assert_dramatically(magic == BIG_COMPLEX_ID);
+    deserializeBigRealContent(in, *value.real);
+    deserializeBigRealContent(in, *value.imag);
+}
+
+void serializeBigComplex(std::ostream &out, const BigComplex &value) {
+
+    ostream_write_binary(out, &value.real.nblimbs, sizeof(UINT64));
+    serializeBigcomplexContent(out, value);
+}
+
+std::shared_ptr<BigComplex> deserializeBigComplex(std::istream &in) {
+
+    UINT64 nblimbs;
+    istream_read_binary(in, &nblimbs, sizeof(UINT64));
+
+    BigComplex *reps = new BigComplex(nblimbs);
+
+    deserializeBigComplexContent(in, *reps);
+
+    return std::shared_ptr<BigComplex>(reps);
 }
 

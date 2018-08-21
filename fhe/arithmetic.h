@@ -4,6 +4,8 @@
 #include "BigTorusVector.h"
 #include "BigTorus.h"
 
+double log2Diff(const NTL::RR &a, const NTL::RR &b);
+
 void to_fixP(BigTorusRef reps, const NTL::RR &a);
 
 NTL::RR fixp_to_RR(const BigTorusRef &a);

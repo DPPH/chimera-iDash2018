@@ -46,6 +46,36 @@ public:
     BigComplexRef(const BigComplex &z);
 };
 
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:   2*BigReal
+ *
+ */
+void serializeBigcomplexContent(std::ostream &out, const BigComplexRef &value);
+
+
+/** serialize:
+ *  magic number:   int64 on 8 bytes
+ *  value:   2*BigReal
+ *
+ */
+void deserializeBigComplexContent(std::istream &in, BigComplexRef value);
+
+
+/** serialize:
+ * value:   2*BigReal
+ */
+void serializeBigComplex(std::ostream &out, const BigComplex &value);
+
+
+/** serialize:
+ * value:   2*BigReal
+ *
+ */
+std::shared_ptr<BigComplex> deserializeBigComplex(std::istream &in);
+
+
 /** computes exp(2i.pi. k/n) */
 void accurate_power_unity(BigComplexRef dest, int k, int n);
 
@@ -63,6 +93,12 @@ void sub(BigComplexRef dest, BigComplexRef a, BigComplexRef b);
 
 /** copy dest = a */
 void copy(BigComplexRef dest, BigComplexRef a);
+
+/** dest = 0 */
+void zero(BigComplexRef dest);
+
+/** dest = dest + a * b */
+void addMulTo(BigComplexRef dest, const BigComplexRef &a, const BigComplexRef &b);
 
 /** create an array */
 BigComplex *new_BigComplex_array(UINT64 n, UINT64 nblimbs);
