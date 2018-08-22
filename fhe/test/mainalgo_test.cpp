@@ -122,5 +122,40 @@ TEST(MAINALGO, product_ind_TRLWE) {
 
 
 TEST(MAINALGO, substract_ind_TRLWE) {
+    int64_t N = 4096;
+    int length = 10;
 
+    int64_t L_a = 80; //level expo of a
+    int64_t L_b = 110; //level expo of b
+    int64_t tau_a = 50;
+    int64_t tau_b = -50;
+    int64_t rho = 18; //precision bits
+
+
+    vec_RR vec_a;
+    vec_a.SetLength(length);
+    vec_RR vec_b;
+    vec_b.SetLength(length);
+
+    for (int i = 0; i < length; i++) {
+        vec_a[i] = random_RR() * power2_RR(50);
+        vec_b[i] = random_RR() * power2_RR(-50);
+    }
+
+
+    BigTorusParams bt_params_key(0, 0, 0);
+    TRLweParams trlweParams_key(N, bt_params_key);
+    shared_ptr<TLweKey> key = tlwe_keygen(trlweParams_key);
+
+
+    shared_ptr<TRLWEVector> a = encrypt_individual_trlwe(vec_a, *key, N, L_a);
+    shared_ptr<TRLWEVector> b = encrypt_individual_trlwe(vec_b, *key, N, L_b);
+    shared_ptr<TRLWEVector> resp = substract_ind_TRLWE(*a, *b, NA);
+
+    vec_RR target_resp = decrypt_individual_trlwe(*resp, *key, length);
+
+    for (int i = 0; i < length; i++) {
+        EXPECT_LE(log2Diff(target_resp[i], vec_a[i] - vec_b[i]), tau_a + tau_b - rho);
+
+    }
 }
