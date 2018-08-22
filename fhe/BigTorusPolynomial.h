@@ -39,6 +39,9 @@ void naive_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusP
 void fft_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPolynomial &b, const UINT64 bits_a,
                           UINT64 out_limb_prec);
 
+/** @brief int-polynomial torus-polynomial external product using fft  */
+void fft_external_product(BigComplex *out, int64_t *a, BigComplex *in, const int64_t N, const UINT64 bits_a);
+
 /** @brief polynomial-polynomial torus-polynomial internal product using fft  */
 void fft_internal_product(BigTorusPolynomial &out, const BigTorusPolynomial &a, const BigTorusPolynomial &b,
                           UINT64 out_limb_prec);
@@ -47,6 +50,11 @@ void fft_internal_product(BigTorusPolynomial &out, const BigTorusPolynomial &a, 
 void fft_semi_external_product(BigTorusPolynomial &out, const BigComplex *ca, const BigTorusPolynomial &b,
                                const UINT64 bits_a, UINT64 out_limb_prec);
 
+/** @brief polynomial-polynomial torus-polynomial internal product using fft  */
+void iFFT(BigComplex *out, const BigTorusPolynomial &a, const UINT64 fft_limbs);
+
+/** @brief polynomial-polynomial torus-polynomial internal product using fft  */
+void iFFT(BigComplex *out, const BigTorusPolynomial &a);
 
 /** copy msb bits of each coefficient of b*2^lshift in an array of BigReal */
 void precise_conv_toBigReal(BigReal *array, const BigTorusPolynomial &b, int64_t lshift, int64_t msbToKeep);
