@@ -28,3 +28,13 @@ TEST(MAINALGO, encrypt_S) {
 
 
 }
+
+
+TEST(MAINALGO, product_ind_TRLWE) {
+
+}
+
+
+TEST(MAINALGO, substract_ind_TRLWE) {
+
+}
