@@ -152,6 +152,31 @@ void fft_external_product(BigTorusPolynomial &out, int64_t *a, const BigTorusPol
     delete_BigReal_array(N, ra);
 }
 
+
+void fft_external_product(BigComplex *out, int64_t *a, BigComplex *in, const int64_t N, const UINT64 bits_a) {
+
+    int64_t n = 2 * N;
+    int64_t nblimbs = in[0].real.nblimbs;
+
+    BigReal *ra = new_BigReal_array(N, nblimbs);
+    BigComplex *ca = new_BigComplex_array(N / 2, nblimbs);
+
+    for (int64_t i = 0; i < N; i++) {
+        to_BigReal(ra[i], a[i], bits_a);
+    }
+    BigComplex *powomega = fftAutoPrecomp.omega(n, nblimbs);
+
+    iFFT(ca, ra, n, powomega);
+    for (int64_t i = 0; i < N / 2; i++) {
+        mul(out[i], ca[i], in[i]);
+        mpz_mul_2exp(out[i].real.value, out[i].real.value, bits_a);
+        mpz_mul_2exp(out[i].imag.value, out[i].imag.value, bits_a);
+    }
+
+    delete_BigComplex_array(N / 2, ca);
+    delete_BigReal_array(N, ra);
+}
+
 void add(BigTorusPolynomial &reps, const BigTorusPolynomial &a, const BigTorusPolynomial &b) {
     const UINT64 N = reps.length;
     assert(a.length == N);
@@ -196,5 +221,16 @@ void BigRealPoly_shift_toBigTorus(BigTorusPolynomial &out, BigReal *array, int64
     for (uint64_t i = 0; i < out.length; i++) {
         shift_toBigTorus(out.getAT(i), array[i], left_shift);
     }
+}
+
+void iFFT(BigComplex *out, const BigTorusPolynomial &a) {
+    const int64_t N = a.length;
+    const int64_t fft_limbs = out[0].real.nblimbs;
+    BigReal *ar = new_BigReal_array(a.length, fft_limbs);
+    for (int i = 0; i < N; i++) {
+        to_BigReal(ar[i], a.getAT(i));
+    }
+    iFFT(out, ar, 2 * N, fftAutoPrecomp.omega(2 * N, fft_limbs));
+    delete_BigReal_array(N, ar);
 }
 
