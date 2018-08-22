@@ -238,5 +238,8 @@ TRLwe *new_TRLwe_array(UINT64 size, const TRLweParams &params);
 void delete_TRLwe_array(UINT64 size, TRLwe *array);
 
 
+void fixp_sub(TRLwe &reps, const TRLwe &a, const TRLwe &b, UINT64 out_precision_bits = NA);
+
+
 #endif //FHE_TRLWE_H
 

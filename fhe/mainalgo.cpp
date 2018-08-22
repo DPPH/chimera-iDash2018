@@ -251,14 +251,17 @@ std::shared_ptr<TRLWEVector>
 product_ind_TRLWE(const TRLWEVector &a, const TRLWEVector &b, const TRGSW &rk, int64_t target_level_expo,
                   int64_t override_plaintext_exponent, int64_t plaintext_precision_bits) {
 
+    int64_t N = a.data[0].params.N;
     int64_t length = a.length;
     assert(int64_t(b.length) == length);
+    assert(int64_t(b.data[0].params.N) == N);
+    assert(int64_t(rk.params.N) == length);
 
-
-    //tau=tau_a + tau_b
+    //tau = tau_a + tau_b
     int64_t tau_a = a.data[0].params.fixp_params.plaintext_expo;
     int64_t tau_b = b.data[0].params.fixp_params.plaintext_expo;
     int64_t tau = tau_a + tau_b;
+
 
 
     //L=min(L_a + L_b) - rho
@@ -266,27 +269,64 @@ product_ind_TRLWE(const TRLWEVector &a, const TRLWEVector &b, const TRGSW &rk, i
     int64_t L_b = b.data[0].params.fixp_params.level_expo;
     int64_t rho = plaintext_precision_bits;
     int64_t L = std::min(L_a, L_b) - rho;
-    int64_t alpha_bits = L + rho;
-    int64_t reps_limbs = limb_precision(alpha_bits);
 
 
-    BigTorusParams reps_bt_params(reps_limbs, tau, L);
-    TRLweParams reps_trlwe_params(length, reps_bt_params);
-    TRLWEVector *reps = new TRLWEVector(length, reps_trlwe_params);
+    if (override_plaintext_exponent != NA) {
+        tau = override_plaintext_exponent;
+        L = L + tau_a + tau_b - tau;
+    }
+
+    int64_t diff = 0;
+
+    if (target_level_expo != NA) {
+        assert(target_level_expo < L);
+        diff = L - target_level_expo;
+        L = target_level_expo;
+    }
+
+    int64_t shift_a = diff + L_a - std::min(L_a, L_b);
+    int64_t shift_b = diff + L_b - std::min(L_a, L_b);
+    int64_t newL_a_b = std::min(L_a, L_b) - diff;
+
+    int64_t new_limbs_a_b = limb_precision(newL_a_b + rho);
+
+
+    BigTorusParams bt_params_a(new_limbs_a_b, tau_a, newL_a_b);
+    BigTorusParams bt_params_b(new_limbs_a_b, tau_b, newL_a_b);
+    TRGSWParams params_a(N, bt_params_a);
+    TRLwe anew(params_a);
+    TRGSWParams params_b(N, bt_params_b);
+    TRLwe bnew(params_b);
+
+
+    int64_t reps_limbs = limb_precision(L + rho);
+
+    std::shared_ptr<BigTorusParams> reps_bt_params = make_shared<BigTorusParams>(reps_limbs, tau, L);
+    store_forever(reps_bt_params);
+
+    std::shared_ptr<TRLweParams> reps_trlwe_params = make_shared<TRLweParams>(N, *reps_bt_params);
+    store_forever(reps_trlwe_params);
+
+    TRLWEVector *reps = new TRLWEVector(length, *reps_trlwe_params);
 
     for (int64_t i = 0; i < length; i++) {
-        fixp_internal_product(reps->data[i], a.data[i], b.data[i], rk, rho);
+        lshift(anew, a.data[i], shift_a);
+        lshift(bnew, b.data[i], shift_b);
+        fixp_internal_product(reps->data[i], anew, bnew, rk, rho);
     }
 
     return shared_ptr<TRLWEVector>(reps);
 }
 
+
 std::shared_ptr<TRLWEVector> substract_ind_TRLWE(const TRLWEVector &a, const TRLWEVector &b, int64_t target_level_expo,
                                                  int64_t override_plaintext_exponent,
                                                  int64_t plaintext_precision_bits) {
 
+    int64_t N = a.data[0].params.N;
     int64_t length = a.length;
     assert(int64_t(b.length) == length);
+    assert(int64_t(b.data[0].params.N) == N);
 
     int64_t rho = plaintext_precision_bits;
 
@@ -300,16 +340,32 @@ std::shared_ptr<TRLWEVector> substract_ind_TRLWE(const TRLWEVector &a, const TRL
     int64_t L_b = b.data[0].params.fixp_params.level_expo;
     int64_t L = std::min(L_a + tau_a, L_b + tau_b) - tau;
 
-    int64_t alpha_bits = L + rho;
-    int64_t reps_limbs = limb_precision(alpha_bits);
+
+    if (override_plaintext_exponent != NA) {
+        tau = override_plaintext_exponent;
+        L = L + tau_a + tau_b - tau;
+    }
 
 
-    BigTorusParams reps_bt_params(reps_limbs, tau, L);
-    TRLweParams reps_trlwe_params(length, reps_bt_params);
-    TRLWEVector *reps = new TRLWEVector(length, reps_trlwe_params);
+    if (target_level_expo != NA) {
+        assert(target_level_expo < L);
+        L = target_level_expo;
+    }
+
+    int64_t reps_limbs = limb_precision(L + rho);
+
+    std::shared_ptr<BigTorusParams> reps_bt_params = make_shared<BigTorusParams>(reps_limbs, tau, L);
+    store_forever(reps_bt_params);
+
+    std::shared_ptr<TRLweParams> reps_trlwe_params = make_shared<TRLweParams>(N, *reps_bt_params);
+    store_forever(reps_trlwe_params);
+
+    TRLWEVector *reps = new TRLWEVector(length, *reps_trlwe_params);
 
     for (int64_t i = 0; i < length; i++) {
-        sub(reps->data[i], a.data[i], b.data[i]);
+
+        fixp_sub(reps->data[i], a.data[i], b.data[i], L + rho);
     }
+
     return shared_ptr<TRLWEVector>(reps);
 }
