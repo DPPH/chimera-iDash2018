@@ -131,6 +131,7 @@ encrypt_individual_trlwe(NTL::vec_RR plaintext, const TLweKey &key, int64_t N, i
     shared_ptr<BigTorusParams> enc_bt_params = make_shared<BigTorusParams>(enc_limbs, plaintext_expo, level_expo);
     store_forever(enc_bt_params);
     shared_ptr<TRLweParams> enc_trlwe_params(new TRLweParams(N, *enc_bt_params));
+    store_forever(enc_trlwe_params);
 
     //encrypt each element one by one
     TRLWEVector *reps = new TRLWEVector(nbelems, *enc_trlwe_params);
@@ -255,7 +256,7 @@ product_ind_TRLWE(const TRLWEVector &a, const TRLWEVector &b, const TRGSW &rk, i
     int64_t length = a.length;
     assert(int64_t(b.length) == length);
     assert(int64_t(b.data[0].params.N) == N);
-    assert(int64_t(rk.params.N) == length);
+    assert(int64_t(rk.params.N) == N);
 
     //tau = tau_a + tau_b
     int64_t tau_a = a.data[0].params.fixp_params.plaintext_expo;
@@ -271,14 +272,14 @@ product_ind_TRLWE(const TRLWEVector &a, const TRLWEVector &b, const TRGSW &rk, i
     int64_t L = std::min(L_a, L_b) - rho;
 
 
-    if (override_plaintext_exponent != NA) {
+    if (override_plaintext_exponent != int64_t(NA)) {
         tau = override_plaintext_exponent;
         L = L + tau_a + tau_b - tau;
     }
 
     int64_t diff = 0;
 
-    if (target_level_expo != NA) {
+    if (target_level_expo != int64_t(NA)) {
         assert(target_level_expo < L);
         diff = L - target_level_expo;
         L = target_level_expo;
@@ -341,13 +342,13 @@ std::shared_ptr<TRLWEVector> substract_ind_TRLWE(const TRLWEVector &a, const TRL
     int64_t L = std::min(L_a + tau_a, L_b + tau_b) - tau;
 
 
-    if (override_plaintext_exponent != NA) {
+    if (override_plaintext_exponent != int64_t(NA)) {
         tau = override_plaintext_exponent;
         L = L + tau_a + tau_b - tau;
     }
 
 
-    if (target_level_expo != NA) {
+    if (target_level_expo != int64_t(NA)) {
         assert(target_level_expo < L);
         L = target_level_expo;
     }

@@ -193,7 +193,7 @@ void fixp_encrypt(TRLwe &reps, const NTL::vec_RR &plaintext, const TLweKey &key,
     int64_t N = reps.params.N;
     BigTorusPolynomial tmp(N, reps.params.fixp_params);
     for (int64_t i = 0; i < N; i++) {
-        if (i <= plaintext.length())
+        if (i < plaintext.length())
             to_fixP(tmp.getAT(i), plaintext[i]);
         else
             zero(tmp.getAT(i));

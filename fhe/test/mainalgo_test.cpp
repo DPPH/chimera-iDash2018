@@ -57,12 +57,15 @@ TEST(MAINALGO, encrypt_S) {
 
 
 TEST(MAINALGO, product_ind_TRLWE) {
-    int64_t N = 128;
+    int64_t N = 4096;
     int length = 10;
 
-    int64_t L_a = 80; //level expo of a
-    int64_t L_b = 110; //level expo of b
-    int64_t rho = 20; //precision bits
+    int64_t L_a = 62; //level expo of a
+    int64_t L_b = 62; //level expo of b
+    int64_t tau_a = 50;
+    int64_t tau_b = -50;
+    int64_t rho = 16; //precision bits
+    //int64_t L = min(L_a, L_b)-rho-5;
 
 
     vec_RR vec_a;
@@ -71,8 +74,8 @@ TEST(MAINALGO, product_ind_TRLWE) {
     vec_b.SetLength(length);
 
     for (int i = 0; i < length; i++) {
-        vec_a[i] = random_RR();
-        vec_b[i] = random_RR();
+        vec_a[i] = random_RR()*power2_RR(50);
+        vec_b[i] = random_RR()*power2_RR(-50);
     }
 
 
@@ -81,11 +84,24 @@ TEST(MAINALGO, product_ind_TRLWE) {
     shared_ptr<TLweKey> key = tlwe_keygen(trlweParams_key);
 
 
-    shared_ptr<TRLWEVector> a = encrypt_individual_trlwe(vec_a, *key, N, L_a);
-    shared_ptr<TRLWEVector> b = encrypt_individual_trlwe(vec_b, *key, N, L_b);
+    shared_ptr<TRLWEVector> a = encrypt_individual_trlwe(vec_a, *key, N, L_a, NA, rho);
+
+    //encrypt a test
+    vec_RR decrypt_a = decrypt_individual_trlwe(*a, *key, length);
+    for (int64_t i=0; i<length; i++) {
+        EXPECT_LE(log2Diff(decrypt_a[i], vec_a[i]), tau_a-rho);
+    }
+
+    shared_ptr<TRLWEVector> b = encrypt_individual_trlwe(vec_b, *key, N, L_b, NA, rho);
+    //encrypt b test
+    vec_RR decrypt_b = decrypt_individual_trlwe(*b, *key, length);
+    for (int64_t i=0; i<length; i++) {
+        EXPECT_LE(log2Diff(decrypt_b[i], vec_b[i]), tau_b-rho);
+    }
 
 
-    int64_t alpha_rk = 128;
+
+    int64_t alpha_rk = 110;
     int64_t nblimbs_rk = limb_precision(alpha_rk);
     BigTorusParams bt_params_rk(nblimbs_rk);
     TRGSWParams trgswParams_rk(N, bt_params_rk);
@@ -93,13 +109,12 @@ TEST(MAINALGO, product_ind_TRLWE) {
     intPoly_encrypt(rk, key->key, *key, alpha_rk);
 
 
-    shared_ptr<TRLWEVector> resp = product_ind_TRLWE(*a, *b, rk, 70);
+    shared_ptr<TRLWEVector> resp = product_ind_TRLWE(*a, *b, rk, NA, NA, rho);
 
     vec_RR target_resp = decrypt_individual_trlwe(*resp, *key, length);
 
     for (int i = 0; i < length; i++) {
-        EXPECT_LE(log2Diff(target_resp[i], vec_a[i] * vec_b[i]), -rho);
-
+        EXPECT_LE(log2Diff(target_resp[i], vec_a[i] * vec_b[i]), tau_a+tau_b-rho);
     }
 
 
