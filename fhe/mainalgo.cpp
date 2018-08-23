@@ -341,8 +341,8 @@ std::shared_ptr<TRLWEVector> substract_ind_TRLWE(const TRLWEVector &a, const TRL
     int64_t L_a = a.data[0].params.fixp_params.level_expo; //70  17
     int64_t L_b = b.data[0].params.fixp_params.level_expo; //70 13
 
-    if ((L_a + tau_a) - (L_b + tau_b) > rho) { return copy(a); }  //17
-    else if ((L_b + tau_b) - (L_a + tau_a) > rho) { return neg(b); }
+    if (tau_a - tau_b > rho) { return copy(a); }  //17
+    else if (tau_b - tau_a > rho) { return neg(b); }
 
 
     int64_t L = std::min(L_a + tau_a, L_b + tau_b) - tau;  //83 -84 = -1

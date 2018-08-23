@@ -165,8 +165,8 @@ TEST(MAINALGO, compute_w) {
     int64_t N = 4096;
     int length = 10;
 
-    int64_t L_p = 80; //level expo of p
-    int64_t tau_p = 50;
+    int64_t L_p = 90; //level expo of p
+    int64_t tau_p = 0;//-50;
 
     int64_t rho = 16; //precision bits
 
@@ -174,8 +174,8 @@ TEST(MAINALGO, compute_w) {
     vec_p.SetLength(length);
 
     for (int i = 0; i < length; i++) {
-        vec_p[i] = random_RR() * power2_RR(50);
-
+        //vec_p[i] = random_RR() * power2_RR(50);
+        vec_p[i] = random_RR() * power2_RR(0);
     }
 
     BigTorusParams bt_params_key(0, 0, 0);
