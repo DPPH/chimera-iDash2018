@@ -74,8 +74,8 @@ TEST(MAINALGO, product_ind_TRLWE) {
     vec_b.SetLength(length);
 
     for (int i = 0; i < length; i++) {
-        vec_a[i] = random_RR()*power2_RR(50);
-        vec_b[i] = random_RR()*power2_RR(-50);
+        vec_a[i] = random_RR() * power2_RR(tau_a);
+        vec_b[i] = random_RR() * power2_RR(tau_b);
     }
 
 
@@ -89,14 +89,14 @@ TEST(MAINALGO, product_ind_TRLWE) {
     //encrypt a test
     vec_RR decrypt_a = decrypt_individual_trlwe(*a, *key, length);
     for (int64_t i=0; i<length; i++) {
-        EXPECT_LE(log2Diff(decrypt_a[i], vec_a[i]), tau_a-rho);
+        EXPECT_LE(log2Diff(decrypt_a[i], vec_a[i]), tau_a - rho + 1);
     }
 
     shared_ptr<TRLWEVector> b = encrypt_individual_trlwe(vec_b, *key, N, L_b, NA, rho);
     //encrypt b test
     vec_RR decrypt_b = decrypt_individual_trlwe(*b, *key, length);
     for (int64_t i=0; i<length; i++) {
-        EXPECT_LE(log2Diff(decrypt_b[i], vec_b[i]), tau_b-rho);
+        EXPECT_LE(log2Diff(decrypt_b[i], vec_b[i]), tau_b - rho + 1);
     }
 
 
@@ -114,7 +114,7 @@ TEST(MAINALGO, product_ind_TRLWE) {
     vec_RR target_resp = decrypt_individual_trlwe(*resp, *key, length);
 
     for (int i = 0; i < length; i++) {
-        EXPECT_LE(log2Diff(target_resp[i], vec_a[i] * vec_b[i]), tau_a+tau_b-rho);
+        EXPECT_LE(log2Diff(target_resp[i], vec_a[i] * vec_b[i]), tau_a + tau_b - rho + 5);
     }
 
 
@@ -138,8 +138,8 @@ TEST(MAINALGO, substract_ind_TRLWE) {
     vec_b.SetLength(length);
 
     for (int i = 0; i < length; i++) {
-        vec_a[i] = random_RR() * power2_RR(50);
-        vec_b[i] = random_RR() * power2_RR(-50);
+        vec_a[i] = random_RR() * power2_RR(tau_a);
+        vec_b[i] = random_RR() * power2_RR(tau_b);
     }
 
 
@@ -155,7 +155,7 @@ TEST(MAINALGO, substract_ind_TRLWE) {
     vec_RR target_resp = decrypt_individual_trlwe(*resp, *key, length);
 
     for (int i = 0; i < length; i++) {
-        EXPECT_LE(log2Diff(target_resp[i], vec_a[i] - vec_b[i]), std::max(tau_a, tau_b) - rho);
+        EXPECT_LE(log2Diff(target_resp[i], vec_a[i] - vec_b[i]), std::max(tau_a, tau_b) - rho + 1);
 
     }
 }
@@ -165,7 +165,7 @@ TEST(MAINALGO, compute_w) {
     int64_t N = 4096;
     int length = 10;
 
-    int64_t L_p = 90; //level expo of p
+    int64_t L_p = 74; //level expo of p
     int64_t tau_p = 0;//-50;
 
     int64_t rho = 16; //precision bits
@@ -175,7 +175,7 @@ TEST(MAINALGO, compute_w) {
 
     for (int i = 0; i < length; i++) {
         //vec_p[i] = random_RR() * power2_RR(50);
-        vec_p[i] = random_RR() * power2_RR(0);
+        vec_p[i] = random_RR() * power2_RR(tau_p);
     }
 
     BigTorusParams bt_params_key(0, 0, 0);
@@ -189,7 +189,7 @@ TEST(MAINALGO, compute_w) {
     vec_RR decrypt_p = decrypt_individual_trlwe(*p, *key, length);
 
     for (int64_t i = 0; i < length; i++) {
-        EXPECT_LE(log2Diff(decrypt_p[i], vec_p[i]), tau_p - rho);
+        EXPECT_LE(log2Diff(decrypt_p[i], vec_p[i]), tau_p - rho + 1);
     }
 
 
@@ -206,7 +206,7 @@ TEST(MAINALGO, compute_w) {
     vec_RR target_resp = decrypt_individual_trlwe(*resp, *key, length);
 
     for (int i = 0; i < length; i++) {
-        EXPECT_LE(log2Diff(target_resp[i], vec_p[i] - (vec_p[i] * vec_p[i])), 2 * tau_p - rho);
+        EXPECT_LE(log2Diff(target_resp[i], vec_p[i] - (vec_p[i] * vec_p[i])), 2 * tau_p - rho + 4);
     }
 
 
