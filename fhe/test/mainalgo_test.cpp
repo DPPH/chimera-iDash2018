@@ -159,3 +159,55 @@ TEST(MAINALGO, substract_ind_TRLWE) {
 
     }
 }
+
+
+TEST(MAINALGO, compute_w) {
+    int64_t N = 4096;
+    int length = 10;
+
+    int64_t L_p = 80; //level expo of p
+    int64_t tau_p = 50;
+
+    int64_t rho = 16; //precision bits
+
+    vec_RR vec_p;
+    vec_p.SetLength(length);
+
+    for (int i = 0; i < length; i++) {
+        vec_p[i] = random_RR() * power2_RR(50);
+
+    }
+
+    BigTorusParams bt_params_key(0, 0, 0);
+    TRLweParams trlweParams_key(N, bt_params_key);
+    shared_ptr<TLweKey> key = tlwe_keygen(trlweParams_key);
+
+
+    shared_ptr<TRLWEVector> p = encrypt_individual_trlwe(vec_p, *key, N, L_p, NA, rho);
+
+    //encrypt a test
+    vec_RR decrypt_p = decrypt_individual_trlwe(*p, *key, length);
+
+    for (int64_t i = 0; i < length; i++) {
+        EXPECT_LE(log2Diff(decrypt_p[i], vec_p[i]), tau_p - rho);
+    }
+
+
+    int64_t alpha_rk = 110;
+    int64_t nblimbs_rk = limb_precision(alpha_rk);
+    BigTorusParams bt_params_rk(nblimbs_rk);
+    TRGSWParams trgswParams_rk(N, bt_params_rk);
+    TRGSW rk(trgswParams_rk);
+    intPoly_encrypt(rk, key->key, *key, alpha_rk);
+
+
+    shared_ptr<TRLWEVector> resp = compute_w(*p, rk, NA, NA, rho);
+
+    vec_RR target_resp = decrypt_individual_trlwe(*resp, *key, length);
+
+    for (int i = 0; i < length; i++) {
+        EXPECT_LE(log2Diff(target_resp[i], vec_p[i] - (vec_p[i] * vec_p[i])), 2 * tau_p - rho);
+    }
+
+
+}
