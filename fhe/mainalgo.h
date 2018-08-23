@@ -134,4 +134,14 @@ substract_ind_TRLWE(const TRLWEVector &a, const TRLWEVector &b, int64_t target_l
                     int64_t plaintext_precision_bits = default_plaintext_precision);
 
 
+/**
+ * @brief copy a to the output
+ */
+std::shared_ptr<TRLWEVector> copy(const TRLWEVector &a);
+
+/**
+ * @brief copy -a to the output
+ */
+std::shared_ptr<TRLWEVector> neg(const TRLWEVector &a);
+
 #endif //FHE_MAINALGO_H

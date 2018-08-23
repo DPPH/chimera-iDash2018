@@ -125,8 +125,8 @@ TEST(MAINALGO, substract_ind_TRLWE) {
     int64_t N = 4096;
     int length = 10;
 
-    int64_t L_a = 80; //level expo of a
-    int64_t L_b = 110; //level expo of b
+    int64_t L_a = 70; //level expo of a
+    int64_t L_b = 70; //level expo of b
     int64_t tau_a = 50;
     int64_t tau_b = -50;
     int64_t rho = 18; //precision bits
@@ -155,7 +155,7 @@ TEST(MAINALGO, substract_ind_TRLWE) {
     vec_RR target_resp = decrypt_individual_trlwe(*resp, *key, length);
 
     for (int i = 0; i < length; i++) {
-        EXPECT_LE(log2Diff(target_resp[i], vec_a[i] - vec_b[i]), tau_a + tau_b - rho);
+        EXPECT_LE(log2Diff(target_resp[i], vec_a[i] - vec_b[i]), std::max(tau_a, tau_b) - rho);
 
     }
 }
