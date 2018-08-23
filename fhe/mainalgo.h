@@ -144,4 +144,12 @@ std::shared_ptr<TRLWEVector> copy(const TRLWEVector &a);
  */
 std::shared_ptr<TRLWEVector> neg(const TRLWEVector &a);
 
+
+/**
+ * @brief Compute w= p(1-p)
+ */
+std::shared_ptr<TRLWEVector> compute_w(const TRLWEVector &p, const TRGSW &rk, int64_t target_level_expo = NA,
+                                       int64_t override_plaintext_exponent = NA,
+                                       int64_t plaintext_precision_bits = default_plaintext_precision);
+
 #endif //FHE_MAINALGO_H

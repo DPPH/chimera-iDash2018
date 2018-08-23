@@ -423,3 +423,15 @@ std::shared_ptr<TRLWEVector> neg(const TRLWEVector &a) {
     return shared_ptr<TRLWEVector>(reps);
 
 }
+
+std::shared_ptr<TRLWEVector>
+compute_w(const TRLWEVector &p, const TRGSW &rk, int64_t target_level_expo, int64_t override_plaintext_exponent,
+          int64_t plaintext_precision_bits) {
+
+    std::shared_ptr<TRLWEVector> pp = product_ind_TRLWE(p, p, rk, target_level_expo, override_plaintext_exponent,
+                                                        plaintext_precision_bits);
+    std::shared_ptr<TRLWEVector> resp = substract_ind_TRLWE(p, *pp, target_level_expo, override_plaintext_exponent,
+                                                            plaintext_precision_bits);
+    return shared_ptr<TRLWEVector>(resp);
+}
+
