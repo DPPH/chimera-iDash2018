@@ -159,10 +159,13 @@ void external_product(TRLwe &reps, const TRGSW &a, const TRLwe &b, int64_t out_a
     assert(reps.params.N == N);
     const UINT64 n = N * 2;
     const UINT64 Ns2 = N / 2;
-    const UINT64 ell = a.ell;
+    //the decomposition will be done w.r.t. the targeted output bits
+    const int64_t in_alpha_bits = out_alpha_bits + a.bits_a + log2(N)/2;
+    const UINT64 ell = ceil(in_alpha_bits/double(a.params.Bgbits));
+    assert_dramatically(ell <= a.ell, "the provided TGRSW is not precise enough for the requested output level");
     const UINT64 in_nblimbs = b.params.fixp_params.torus_limbs;
     const UINT64 out_nblimbs = limb_precision(out_alpha_bits);
-    const UINT64 fft_nlimbs = a.fft_nlimbs;
+    const UINT64 fft_nlimbs = a.fft_nlimbs;  //the precision of the fft is always fft_n_limbs
     const BigComplex *powomega = fftAutoPrecomp.omega(n, fft_nlimbs);
     const BigComplex *powombar = fftAutoPrecomp.omegabar(n, fft_nlimbs);
 
@@ -529,10 +532,11 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     int64_t intermediate_plaintext_expo = reps.params.fixp_params.plaintext_expo;
     int64_t intermediate_level_noise = reps.params.fixp_params.level_expo + precision_bits + 1;
     int64_t intermediate_trgsw_noise = input_level_noise + 32 + log(N);
-    int64_t target_ell = (intermediate_level_noise + 5 + 31) / 32;
+    int64_t decomp_length = intermediate_level_noise + log2(N);
+    int64_t target_ell = (decomp_length + 31) / 32;
     assert_dramatically(target_ell <= int64_t(rk.ell), "relinearization key is not precise enough");
     assert_dramatically(limb_precision(intermediate_trgsw_noise) <= int64_t(rk.fft_nlimbs));
-    int64_t intermediate_trlwe_limbs = limb_precision(intermediate_level_noise);
+    int64_t intermediate_trlwe_limbs = limb_precision(decomp_length);
 
     BigTorusParams bt_intermediateParams(
             intermediate_trlwe_limbs,

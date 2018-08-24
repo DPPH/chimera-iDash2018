@@ -207,6 +207,17 @@ void native_encrypt(TRLwe &reps, const BigTorusPolynomial &plaintext, const TLwe
 
 void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, UINT64 alpha_bits);
 
+void fixp_encrypt(TRLwe &reps, const NTL::vec_RR &plaintext, const TLweKey &key, UINT64 plaintext_precision);
+
+NTL::vec_RR fixp_decrypt(const TRLwe &tlwe, const TLweKey &key);
+
+/** @brief decrypt the N/2 complex slots inside the ciphertext (N/2 real first, N/2 imag in the end) */
+NTL::vec_RR slot_decrypt(const TRLwe &tlwe, const TLweKey &key);
+
+void fixp_encrypt_number(TRLwe &reps, const NTL::RR &plaintext, const TLweKey &key, UINT64 plaintext_precision);
+
+NTL::RR fixp_decrypt_number(const TRLwe &tlwe, const TLweKey &key);
+
 void zero(TRLwe &out);
 
 void add(TRLwe &reps, const TRLwe &a, const TRLwe &b);
@@ -216,6 +227,19 @@ void sub(TRLwe &reps, const TRLwe &a, const TRLwe &b);
 void neg(TRLwe &out, const TRLwe &in);
 
 void copy(TRLwe &out, const TRLwe &in);
+
+/** @brief left shift the all torus by exactly shift_bits */
+void lshift(TRLwe &out, const TRLwe &in, int64_t shift_bits);
+
+/** create an array of TRGSW */
+TRLwe *new_TRLwe_array(UINT64 size, const TRLweParams &params);
+
+/** delete an array of TRGSW */
+void delete_TRLwe_array(UINT64 size, TRLwe *array);
+
+
+void fixp_sub(TRLwe &reps, const TRLwe &a, const TRLwe &b, UINT64 out_precision_bits = NA);
+
 
 #endif //FHE_TRLWE_H
 

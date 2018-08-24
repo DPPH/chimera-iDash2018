@@ -166,7 +166,6 @@ void subMulS64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 out_lim
 }
 
 
-
 void mulS64(BigTorusRef out, int64_t a, const BigTorusRef &in, UINT64 limb_prec) {
     if (limb_prec == NA) {
         limb_prec = out.params.torus_limbs;
@@ -251,6 +250,51 @@ void deserializeBigTorusContent(std::istream &in, BigTorusRef reps) {
     istream_read_binary(in, &magic, sizeof(int64_t));
     assert_dramatically(magic == BIGTORUS_SERIAL_ID);
     istream_read_binary(in, reps.limbs_end - reps.params.torus_limbs, reps.params.torus_limbs * sizeof(UINT64));
+}
+
+void lshift(BigTorusRef out, const BigTorusRef &in, int64_t shift_bits) {
+    int64_t shift_limbs = shift_bits / BITS_PER_LIMBS;
+    if (shift_limbs > int64_t(in.params.torus_limbs)) {
+        zero(out);
+        return;
+    }
+    if (shift_bits % BITS_PER_LIMBS == 0) {
+        //copy the limbs from in to out decreasingly
+        for (int64_t i = 1; i <= int64_t(out.params.torus_limbs); i++) {
+            int64_t j = i + shift_limbs;
+            if (j <= int(in.params.torus_limbs)) {
+                out.limbs_end[-i] = in.limbs_end[-j];
+            } else {
+                out.limbs_end[-i] = 0;
+            }
+        }
+        //shift the remaining via mpn
+        int64_t shift_mod = shift_bits % BITS_PER_LIMBS;
+        if (shift_mod != 0) {
+            mpn_lshift(
+                    out.limbs_end - out.params.torus_limbs,
+                    out.limbs_end - out.params.torus_limbs, out.params.torus_limbs, shift_mod);
+        }
+        return;
+    } else {
+        UINT64 *tmp = new UINT64[out.params.torus_limbs + 1];
+        UINT64 *tmp_end = tmp + out.params.torus_limbs + 1;
+        //copy the limbs from in to out decreasingly
+        for (int64_t i = 1; i <= int64_t(out.params.torus_limbs + 1); i++) {
+            int64_t j = i + shift_limbs;
+            if (j <= int(in.params.torus_limbs)) {
+                tmp_end[-i] = in.limbs_end[-j];
+            } else {
+                tmp_end[-i] = 0;
+            }
+        }
+        //shift the remaining via mpn
+        int64_t shift_mod = shift_bits % BITS_PER_LIMBS;
+        mpn_lshift(tmp, tmp, out.params.torus_limbs + 1, shift_mod);
+        mpn_copyi(out.limbs_end - out.params.torus_limbs, tmp + 1, out.params.torus_limbs);
+        delete[] tmp;
+        return;
+    }
 }
 
 

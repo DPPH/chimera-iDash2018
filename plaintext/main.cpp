@@ -372,6 +372,10 @@ int main() {
     //denominator
     vec_float sStar2 = scaledColSqNorms(S, w) - colSqNorms(A);
     cout << "sStar2: " << sStar2 << endl;
+    ofstream correl("correlation.txt");
+    for (int j=0; j<m; j++)
+        correl << zStar[j] << " " << sStar2[j] << endl;
+    correl.close();
     draw_histogram("sStar2", sStar2);
     vec_float ri;
     ri.SetLength(m);
