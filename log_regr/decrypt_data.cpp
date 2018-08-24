@@ -38,10 +38,10 @@ int main(int argc, char const *argv[]) {
         for (int i = 0; i < 1; ++i) {
             TorusPolyFunctions<Torus>::Clear(test_poly);
             TLweFunctions<Torus>::Phase(test_poly, sigmoid_xt_tps+i, key);
-            printf("sigmoid_xt[%d]:\n", i);
+            printf("sigmoid_xt_%d=\n[", i);
             for (int j = 0; j < N; ++j)
-                printf("%lf ", TorusUtils<Torus>::to_double(test_poly->coefsT[j]));
-            printf("\n");
+                printf("%lf, ", TorusUtils<Torus>::to_double(test_poly->coefsT[j]));
+            printf("]\n");
         }
     }
 

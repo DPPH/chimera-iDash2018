@@ -47,27 +47,6 @@ const TfheParamSet* TfheParamSet::read(const char* filename) {
     return params;
 }
 
-void TfheCloudKeySet::create_bk(const LweKey<Torus>* tlwe_key, const TGswKey<Torus>* bk_key) {
-    const int n = tlwe_key->params->n;
-    const int* lwe_key_coefs = tlwe_key->key;
-    const TGswParams<Torus>* bk_params = bk_key->params;
-
-    double alpha = bk_params->tlwe_params->alpha_min;
-
-    #ifndef NDEBUG
-        printf("Creating bk from l0 to l2:");
-        printf("%8d input size", n);
-        printf("%8d output size\n", bk_params->tlwe_params->N);
-    #endif
-
-    bk = new_obj_array<TGswSample<Torus>>(n, bk_params);
-
-    #pragma omp parallel for
-    for (int i=0; i<n; ++i) {
-        TGswFunctions<Torus>::SymEncryptInt(bk+i, lwe_key_coefs[i], alpha, bk_key);
-    }
-}
-
 void TfheCloudKeySet::create_bk_fft() {
     assert(params != nullptr);
     assert(bk != nullptr);
@@ -82,37 +61,11 @@ void TfheCloudKeySet::create_bk_fft() {
         printf("Creating bk_fft from l0 to l2\n");
     #endif
 
-    #pragma omp parallel for
+    // #pragma omp parallel for // tGswToFFTConvert is not thread safe?!?
     for (int i=0; i<n; ++i) {
-        tGswToFFTConvert(bk_fft+i, bk+i, bk_params);
+        TGswFunctions<Torus>::ToFFTConvert(bk_fft+i, bk+i, bk_params);
     }
 }
-
-void TfheCloudKeySet::create_ks_l1_l0(const LweKey<Torus>* out_key, const TLweKey<Torus>* inp_key) {
-    const LweParams<Torus>* extract_params = &(inp_key->params->extracted_lweparams);
-    const int N = extract_params->n;
-    const int ks_l1_l0_t = 24;
-    const int ks_l1_l0_basebit = 64;
-
-    #ifndef NDEBUG
-        const LweParams<Torus>* out_params = out_key->params;
-        printf("Creating ks from l1 to l0:");
-        printf("%8d input size", N);
-        printf("%8d output size\n", out_params->n);
-    #endif
-
-    LweKey<Torus>* extracted_key = new_LweKey<Torus>(extract_params);
-    TLweFunctions<Torus>::ExtractKey(extracted_key, inp_key);
-    ks_l1_l0 = new_obj<LweKeySwitchKey<Torus>>(N, ks_l1_l0_t, ks_l1_l0_basebit, extract_params);
-
-    LweFunctions<Torus>::CreateKeySwitchKey(ks_l1_l0, extracted_key, out_key);
-    delete_LweKey(extracted_key);
-}
-
-void TfheCloudKeySet::create_ks_l2_l1(const TLweKey<Torus>* out_key, const TLweKey<Torus>* inp_key) {
-
-}
-
 
 
 void TfheSecretKeySet::write(Ostream& out, const TfheSecretKeySet* secret_keyset) {
@@ -186,7 +139,7 @@ const TfheCloudKeySet* TfheCloudKeySet::read(Istream& inp, const TfheParamSet* p
 
     LweKeySwitchKey<Torus>* ks_l1_l0 = IOFunctions<Torus>::read_new_lweKeySwitchKey(inp, params->tlwe_params_l0);
 
-    return new TfheCloudKeySet(params, bk, ks_l1_l0);
+    return new TfheCloudKeySet(params, bk, ks_l1_l0, nullptr);
 }
 
 const TfheCloudKeySet* TfheCloudKeySet::read(const char* filename, const TfheParamSet* params) {

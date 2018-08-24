@@ -11,7 +11,17 @@ struct LRParams
     int k;          // number X cols
     int m;          // number SNPs
 
-    int X_precbit = 8;
+    const int X_range = 1<<8; // 8 bits for X matrix
+    float X_scale;
+    float y_scale;
+    float sigmoid_scale;
+    float X_beta_scale;
+    float X_y_scale;
+    float beta_scale;
+
+    // const int y_precbit = 19;
+    // const double y_scale = pow(2., -y_precbit);
+    // const int y_range = 1<<y_precbit;
 
     //
     int nb_iters;
@@ -19,10 +29,10 @@ struct LRParams
     int seed;
     int verbose_level;
 
-    int sigm_levels = 16;
-    double sigm_in_min = -2.0;
-    double sigm_in_max = 2.0;
-    double scale = 1.0 / 2;
+    const int sigm_levels = 16;
+    const double sigm_in_min = -4.0;
+    const double sigm_in_max = 4.0;
+    // const double sigm_multiplier = pow(2., -6);
 
     const char* const params_filename = "params.bin";
     const char* const secret_keyset_filename = "secret_keyset.bin";
@@ -33,9 +43,6 @@ struct LRParams
     const char* const filename_X_beta = "X_beta.ctxt";
     const char* const filename_prefix_beta = "beta_iter_";
 
-    /* distance between k consecutive coefficients encoded in test polynomials */
-    int d;
-
     /* LR step */
     const int alpha = 4;
 
@@ -43,7 +50,10 @@ struct LRParams
      * @brief Update computed options
      */
     void update(int N = 8192) {
-        d = (int)((float)N  / k / sigm_levels);
+        y_scale = float(alpha) / 16 / X_scale / X_scale;
+        X_beta_scale = 1. / 16;
+        sigmoid_scale = X_y_scale = y_scale * X_scale;
+        beta_scale = 1. / 16 / X_scale;
     }
 
     void print() {
@@ -59,6 +69,14 @@ struct LRParams
         printf("    %d threads\n", nb_threads);
         printf("    %d seed\n", seed);
         printf("    %d verbose level\n", verbose_level);
+
+        printf("  config:\n");
+        printf("    alpha =         %12d\n", alpha);
+        printf("    X_scale =       %12.6f\n", X_scale);
+        printf("    y_scale =       %12.8f\n", y_scale);
+        printf("    X_beta_scale =  %12.8f\n", X_beta_scale);
+        printf("    X_y_scale =     %12.8f\n", X_y_scale);
+        printf("    beta_scale =    %12.8f\n", beta_scale);
     }
 };
 

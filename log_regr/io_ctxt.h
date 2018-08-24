@@ -9,8 +9,6 @@
 
 using namespace std;
 
-
-
 // void write_trgsw_samples(const string& filename, const TGswSample<Torus>* samples, const TGswParams<Torus>* params, const int32_t n) {
     // ofstream out(filename, ofstream::binary);
     // StdOstream out_stream = to_Ostream(out);
@@ -61,6 +59,11 @@ void read_data_header(
     inp_stream.fread(&lr_params.n, sizeof(int32_t));
     inp_stream.fread(&lr_params.m, sizeof(int32_t));
     inp_stream.fread(&lr_params.k, sizeof(int32_t));
+
+    char buf[18];
+    inp_stream.fread(buf, 18);
+    sscanf(buf, "%f", &(lr_params.X_scale));
+    // printf("X scale %s %f\n", buf, lr_params.X_scale);
 }
 
 void read_data_header(
@@ -109,6 +112,62 @@ void read_data(
     StdIstream inp_stream = to_Istream(inp);
     read_data(inp_stream, lr_params, sigmoid_xt_tps, y, X_cols_l1, X_cols_l2, params);
     inp.close();
+}
+
+
+void print_trgsw_sample(const TGswSample<Torus>* sample, const TGswKey<Torus>* key, const int nb_coefs, const int Msize) {
+    const TGswParams<Torus>* params = key->params;
+    IntPolynomial* result = new_obj<IntPolynomial>(params->tlwe_params->N);
+    TGswFunctions<Torus>::SymDecrypt(result, sample, key, Msize);
+
+    for (int i = 0; i < nb_coefs; ++i) {
+        if (result->coefs[i] <= Msize/2)
+            printf("%3d ", result->coefs[i]);
+        else
+            printf("%3d ", result->coefs[i]-Msize);
+    }
+    del_obj(result);
+}
+
+void print_trlwe_sample(const TLweSample<Torus>* sample, const TLweKey<Torus>* key, const int nb_coefs, const float scale=1.0) {
+    TorusPolynomial<Torus>* result = nullptr;
+
+    if (key != nullptr) {
+        const TLweParams<Torus>* params = key->params;
+        result = new_obj<TorusPolynomial<Torus>>(params->N);
+        TLweFunctions<Torus>::Phase(result, sample, key);
+    } else {
+        result = sample->b;
+    }
+
+    for (int i = 0; i < nb_coefs; ++i) {
+        printf("%.7lf ", TorusUtils<Torus>::to_double(result->coefsT[i]) * scale);
+    }
+
+    if (key != nullptr)
+        del_obj(result);
+}
+
+void print_trlwe_sample_coef(const TLweSample<Torus>* sample, const TLweKey<Torus>* key, const int idx, const float scale=1.0) {
+    TorusPolynomial<Torus>* result = nullptr;
+
+    if (key != nullptr) {
+        const TLweParams<Torus>* params = key->params;
+        result = new_obj<TorusPolynomial<Torus>>(params->N);
+        TLweFunctions<Torus>::Phase(result, sample, key);
+    } else {
+        result = sample->b;
+    }
+
+    printf("%.12lf ", TorusUtils<Torus>::to_double(result->coefsT[idx]) * scale);
+
+    if (key != nullptr)
+        del_obj(result);
+}
+
+void print_tlwe_sample(const LweSample<Torus>* sample, const LweKey<Torus>* key, const double scale = 1.0) {
+    Torus result = LweFunctions<Torus>::Phase(sample, key);
+    printf("%.7lf ", TorusUtils<Torus>::to_double(result) * scale);
 }
 
 #endif

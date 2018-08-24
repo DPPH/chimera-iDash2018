@@ -10,17 +10,16 @@
 int main(int argc, char const *argv[]) {
     LRParams lr_params;
     read_data_header(lr_params);
+    lr_params.update();
 
     const TfheParamSet *params = TfheParamSet::read(lr_params.params_filename);
-    const TfheSecretKeySet *keyset = TfheSecretKeySet::read(lr_params.secret_keyset_filename, params);
+    const TfheSecretKeySet *secret_keyset = TfheSecretKeySet::read(lr_params.secret_keyset_filename, params);
 
-    LweSample<Torus>* beta = read_tlwe_samples(argv[1], params->tlwe_params_l1, lr_params.k);
+    LweSample<Torus>* beta = read_tlwe_samples(argv[1], params->tlwe_params_l2, lr_params.k);
+    double scale = 1/lr_params.beta_scale;
+    // printf("beta: ");
     for (int j = 0; j < lr_params.k; ++j) {
-        Torus b = LweFunctions<Torus>::Phase(beta+j, keyset->tlwe_key_l1);
-        printf("beta_%02d: %ld %lf\n", j, b, TorusUtils<Torus>::to_double(b));
-
-        // static TORUS Phase(const LweSample<TORUS>* sample, const LweKey<TORUS>* key);
-        // static TORUS SymDecrypt(const LweSample<TORUS>* sample, const LweKey<TORUS>* key, const int Msize);
-
+        print_tlwe_sample(beta+j, secret_keyset->tlwe_key_l2, scale);
     }
+    printf("\n");
 }

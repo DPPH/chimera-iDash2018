@@ -30,7 +30,6 @@ struct TfheParamSet {
     static const TfheParamSet* read(Istream& inp);
     static const TfheParamSet* read(const char* filename);
 
-
     const LweParams<Torus>* const tlwe_params_l0 = nullptr;
 
     const TGswParams<Torus>* const trgsw_params_l1 = nullptr;
@@ -40,17 +39,6 @@ struct TfheParamSet {
     const TGswParams<Torus>* const trgsw_params_l2 = nullptr;
     const TLweParams<Torus>* const trlwe_params_l2 = nullptr;    // reference to trgsw_params_l2->tlwe_params
     const LweParams<Torus>* const tlwe_params_l2 = nullptr;      // extracted LWE params from TLWE L2
-
-    // double alpha_l0 = pow(2., -12);
-    // double alpha_l1 = pow(2., -48);
-    // double alpha_l2 = pow(2., -48);
-
-    // double alpha_test_poly;
-    // double alpha_y;
-    // double alpha_X_cols;
-
-    // double alpha_bk;
-
 };
 
 
@@ -106,36 +94,21 @@ public:
 };
 
 class TfheCloudKeySet {
-    void create_bk(const LweKey<Torus>* tlwe_key, const TGswKey<Torus>* bk_key);
-    void create_ks_l1_l0(const LweKey<Torus>* out_key, const TLweKey<Torus>* inp_key);
-    void create_ks_l2_l1(const TLweKey<Torus>* out_key, const TLweKey<Torus>* inp_key);
-
+private:
     void create_bk_fft();
 
-
 public:
-    TfheCloudKeySet(const TfheSecretKeySet* secret_keyset)
-    :
-        params(secret_keyset->params)
-    {
-        create_bk(secret_keyset->tlwe_key_l0, secret_keyset->trgsw_key_l2);
-        create_bk_fft();
-
-        create_ks_l1_l0(secret_keyset->tlwe_key_l0, secret_keyset->trlwe_key_l1);
-        create_ks_l2_l1(secret_keyset->trlwe_key_l1, secret_keyset->trlwe_key_l2);
-    }
-
     TfheCloudKeySet(
         const TfheParamSet* params,
-        TGswSample<Torus>* bk, //TRGSW encryption of sk_l0
-        LweKeySwitchKey<Torus>* ks_l1_l0
-        // const TLweKeySwitchKey<Torus>* ks_l2_l1,
+        const TGswSample<Torus>* bk, //TRGSW encryption of TLWE L0 SK
+        const LweKeySwitchKey<Torus>* ks_l1_l0, //KS of TLWE L1 SK to TLWE L0 SK
+        const void* ks_l2_l1 //KS of TLWE L2 SK to TRLWE L1 SK
         )
     :
         params(params),
         bk(bk),
-        ks_l1_l0(ks_l1_l0)
-        // ks_l2_l1(ks_l2_l1)
+        ks_l1_l0(ks_l1_l0),
+        ks_l2_l1(ks_l2_l1)
     {
         create_bk_fft();
     }
@@ -148,11 +121,12 @@ public:
     static const TfheCloudKeySet* read(const char* filename, const TfheParamSet* params);
 
 
-    const TfheParamSet* params;
-    TGswSample<Torus>* bk = nullptr;
+    const TfheParamSet* const params = nullptr;
+    const TGswSample<Torus>* const bk = nullptr;
+    const LweKeySwitchKey<Torus>* const ks_l1_l0 = nullptr;
+    const void* const ks_l2_l1 = nullptr;
+
     TGswSampleFFT<Torus>* bk_fft = nullptr;
-    LweKeySwitchKey<Torus>* ks_l1_l0 = nullptr;
-    // const TLweKeySwitchKey<Torus>* ks_l2_l1 = nullptr;
 };
 
 #endif
