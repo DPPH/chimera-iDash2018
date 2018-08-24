@@ -111,5 +111,10 @@ void sub(BigTorusVector &out, const BigTorusVector &a, const BigTorusVector &b, 
 
 void add(BigTorusVector &out, const BigTorusVector &a, const BigTorusVector &b, UINT64 out_limbs_prec);
 
+/** @brief left shift the all torus by exactly shift_bits */
+void lshift(BigTorusVector &out, const BigTorusVector &in, int64_t shift_bits);
+
+
+
 #endif //FHE_BIGTORUSVECTOR_H
 

@@ -1,3 +1,4 @@
+#include <cassert>
 #include "BigTorusVector.h"
 
 using namespace std;
@@ -25,7 +26,6 @@ void zero(const BigTorusVector &v) {
     for (UINT64 i = 0; i < v.length; i++)
         zero(v.getAT(i));
 }
-
 
 
 void fixp_add(BigTorusVector &reps, const BigTorusVector &a, const BigTorusVector &b, UINT64 out_precision_bits) {
@@ -155,6 +155,13 @@ std::shared_ptr<BigTorusVector> deserializeBigTorusVector(std::istream &in) {
     BigTorusVector *reps = new BigTorusVector(length, *params);
     deserializeBigTorusVectorContent(in, *reps);
     return std::shared_ptr<BigTorusVector>(reps);
+}
+
+void lshift(BigTorusVector &out, const BigTorusVector &in, int64_t shift_bits) {
+    assert(in.length == out.length);
+    for (uint64_t i = 0; i < in.length; i++) {
+        lshift(out.getAT(i), in.getAT(i), shift_bits);
+    }
 }
 
 

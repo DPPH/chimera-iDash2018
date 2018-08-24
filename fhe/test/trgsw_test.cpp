@@ -165,12 +165,12 @@ TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
 
 TEST(TRGSW_TEST, trlwe_internal_product) {
 
-    int64_t N = 4096;
-    //int64_t N = 128;
+    //int64_t N = 4096;
+    int64_t N = 128;
 
-    int64_t L_a = 100; //level expo of a
-    int64_t L_b = 110; //level expo of b
-    int64_t rho = 20; //precision bits
+    int64_t L_a = 110; //90; //level expo of a
+    int64_t L_b = 80; //90; //level expo of b
+    int64_t rho = 18; //precision bits
     int64_t Ns2 = N / 2;
     int64_t n = N * 2;
     int64_t nblimbs_a = limb_precision(L_a + rho + 5);

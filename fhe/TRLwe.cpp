@@ -1,6 +1,8 @@
 #include <cassert>
 #include <vector>
 #include "TRLwe.h"
+#include "arithmetic.h"
+#include "BigFFT.h"
 
 using namespace std;
 
@@ -183,6 +185,76 @@ void native_phase(BigTorusPolynomial &reps, const TRLwe &c, const TLweKey &key, 
     delete[] K;
 }
 
+void fixp_encrypt(TRLwe &reps, const NTL::vec_RR &plaintext, const TLweKey &key, UINT64 plaintext_precision) {
+    assert(reps.params.fixp_params.level_expo > 0); //"level exponent is not set";
+    int64_t alpha_bits = reps.params.fixp_params.level_expo + plaintext_precision;
+    assert(int64_t(reps.params.fixp_params.torus_limbs) >=
+           limb_precision(alpha_bits)); //"the bigtorus is not precise enough";
+    int64_t N = reps.params.N;
+    BigTorusPolynomial tmp(N, reps.params.fixp_params);
+    for (int64_t i = 0; i < N; i++) {
+        if (i < plaintext.length())
+            to_fixP(tmp.getAT(i), plaintext[i]);
+        else
+            zero(tmp.getAT(i));
+    }
+    native_encrypt(reps, tmp, key, alpha_bits);
+}
+
+NTL::vec_RR fixp_decrypt(const TRLwe &tlwe, const TLweKey &key) {
+    assert(tlwe.params.fixp_params.level_expo > 0); //"level exponent is not set";
+    int64_t N = tlwe.params.N;
+    BigTorusPolynomial tmp(N, tlwe.params.fixp_params);
+    native_phase(tmp, tlwe, key, tlwe.params.fixp_params.torus_limbs * BITS_PER_LIMBS);
+    NTL::vec_RR reps;
+    reps.SetLength(N);
+    for (int64_t i = 0; i < N; i++) {
+        reps[i] = fixp_to_RR(tmp.getAT(i));
+    }
+    return reps;
+}
+
+NTL::vec_RR slot_decrypt(const TRLwe &tlwe, const TLweKey &key) {
+    assert(tlwe.params.fixp_params.level_expo > 0); //"level exponent is not set";
+    int64_t N = tlwe.params.N;
+    int64_t n = 2 * N;
+    BigTorusPolynomial tmp(N, tlwe.params.fixp_params);
+    native_phase(tmp, tlwe, key, tlwe.params.fixp_params.torus_limbs * BITS_PER_LIMBS);
+
+    int64_t fft_nlimbs = tlwe.params.fixp_params.torus_limbs + 1;
+    BigReal *coefs = new_BigReal_array(N, fft_nlimbs);
+    BigComplex *slots = new_BigComplex_array(N / 2, fft_nlimbs);
+    for (int k = 0; k < N; k++) {
+        to_BigReal(coefs[k], tmp.getAT(k));
+    }
+    iFFT(slots, coefs, n, fftAutoPrecomp.omega(n, fft_nlimbs));
+
+    int64_t expo = tlwe.params.fixp_params.plaintext_expo + tlwe.params.fixp_params.level_expo;
+    NTL::vec_RR reps;
+    reps.SetLength(N);
+    for (int k = 0; k < N / 2; k++) {
+        NTL::RR::SetPrecision(fft_nlimbs * BITS_PER_LIMBS);
+        reps[k] = to_RR(slots[k].real) * NTL::power2_RR(expo);
+        reps[k + N / 2] = to_RR(slots[k].imag) * NTL::power2_RR(expo);
+    }
+
+    delete_BigReal_array(N, coefs);
+    delete_BigComplex_array(N / 2, slots);
+    return reps;
+}
+
+
+void fixp_encrypt_number(TRLwe &reps, const NTL::RR &plaintext, const TLweKey &key, UINT64 plaintext_precision) {
+    NTL::vec_RR tmp(NTL::INIT_SIZE, 1);
+    tmp[0] = plaintext;
+    fixp_encrypt(reps, tmp, key, plaintext_precision);
+}
+
+NTL::RR fixp_decrypt_number(const TRLwe &tlwe, const TLweKey &key) {
+    return fixp_decrypt(tlwe, key)[0];
+}
+
+
 void zero(TRLwe &out) {
     zero(out.a[0]);
     zero(out.a[1]);
@@ -337,6 +409,27 @@ void neg(TRLwe &out, const TRLwe &in) {
     neg(out.a[1], in.a[1]);
 }
 
+void lshift(TRLwe &out, const TRLwe &in, int64_t shift_bits) {
+    assert(in.params.N == out.params.N);
+    lshift(out.a[0], in.a[0], shift_bits);
+    lshift(out.a[1], in.a[1], shift_bits);
+}
+
+TRLwe *new_TRLwe_array(UINT64 size, const TRLweParams &params) {
+    TRLwe *reps = (TRLwe *) malloc(size * sizeof(TRLwe));
+    for (UINT64 i = 0; i < size; i++) {
+        new(reps + i) TRLwe(params);
+    }
+    return reps;
+}
+
+void delete_TRLwe_array(UINT64 size, TRLwe *array) {
+    for (UINT64 i = 0; i < size; i++) {
+        (array + i)->~TRLwe();
+    }
+    free(array);
+}
+
 void serializeTRLweParams(std::ostream &out, const TRLweParams &value) {
     int64_t x = TRLWE_PARAMS_SERIAL_ID;
     ostream_write_binary(out, &x, sizeof(int64_t));
@@ -437,7 +530,11 @@ std::shared_ptr<pubKsKey32> deserializepubKsKey32(std::istream &in) {
     return shared_ptr<pubKsKey32>(reps);
 }
 
+void fixp_sub(TRLwe &reps, const TRLwe &a, const TRLwe &b, UINT64 out_precision_bits) {
+    fixp_sub(reps.a[0], a.a[0], b.a[0], out_precision_bits);
+    fixp_sub(reps.a[1], a.a[1], b.a[1], out_precision_bits);
 
+}
 
 
 pubKsKey128::pubKsKey128(
