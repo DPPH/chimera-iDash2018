@@ -10,15 +10,11 @@ public:
     void SetUp() {
         if (params != nullptr) return;
 
-        // fill_data(data);
-
-        // lr_params.n = data.n;
-        // lr_params.k = data.k;
-        // lr_params.m = data.m;
-
         params = TfheParamSet::read(lr_params.params_filename);
         secret_keyset = TfheSecretKeySet::read(lr_params.secret_keyset_filename, params);
         cloud_keyset = TfheCloudKeySet::read(lr_params.cloud_keyset_filename, params);
+
+        read_data(lr_params, sigmoid_xt_tps, y, X_cols_l1, X_cols_l2, params);
     }
 
     void TearDown() {
@@ -30,4 +26,9 @@ protected:
     const TfheParamSet* params = nullptr;
     const TfheSecretKeySet *secret_keyset = nullptr;
     const TfheCloudKeySet *cloud_keyset = nullptr;
+
+    TGswSample<Torus>* X_cols_l1 = nullptr;
+    TGswSample<Torus>* X_cols_l2 = nullptr;
+    TLweSample<Torus>* y = nullptr;
+    TLweSample<Torus>* sigmoid_xt_tps = nullptr;
 };

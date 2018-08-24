@@ -401,22 +401,3 @@ void extract_sub_Xt_y(
     VERBOSE_2_PRINT("\n");
 }
 
-
-void print_X_col(const TGswSample<Torus>* X_col, const TGswKey<Torus>* key, const LRParams& lr_params, int nb_coefs = -1) {
-    if (nb_coefs == -1)
-        nb_coefs = lr_params.n;
-    int Msize = lr_params.X_range;
-
-    const TGswParams<Torus>* params = key->params;
-    IntPolynomial* result = new_obj<IntPolynomial>(params->tlwe_params->N);
-    TGswFunctions<Torus>::SymDecrypt(result, X_col, key, Msize);
-
-    for (int i = 0; i < nb_coefs; ++i) {
-        int t = result->coefs[i];
-        if (result->coefs[i] > Msize/2)
-            t -= Msize;
-        printf("%.7f ", t / lr_params.X_scale);
-
-    }
-    del_obj(result);
-}

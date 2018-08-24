@@ -11,15 +11,12 @@
 
 
 int main(int argc, char const *argv[]) {
-    Data data;
-    fill_data(data);
-
     LRParams lr_params;
 
     RandomGen::set_seed(42);
 
     const TfheParamSet *params = TfheParamSet::read(lr_params.params_filename);
-    const TfheSecretKeySet *keyset = TfheSecretKeySet::read(lr_params.secret_keyset_filename, params);
+    const TfheSecretKeySet *secret_keyset = TfheSecretKeySet::read(lr_params.secret_keyset_filename, params);
 
     TGswSample<Torus>* X_cols_l1 = nullptr;
     TGswSample<Torus>* X_cols_l2 = nullptr;
@@ -28,56 +25,32 @@ int main(int argc, char const *argv[]) {
 
     read_data(lr_params, sigmoid_xt_tps, y, X_cols_l1, X_cols_l2, params);
 
-    {
-        const TLweKey<Torus> *key = keyset->trlwe_key_l2;
-        const TLweParams<Torus> *params = key->params;
-        const int N = params->N;
+    printf("Input data:\n");
 
-        TorusPolynomial<Torus> *test_poly = new_obj<TorusPolynomial<Torus>>(N);
-
-        for (int i = 0; i < 1; ++i) {
-            TorusPolyFunctions<Torus>::Clear(test_poly);
-            TLweFunctions<Torus>::Phase(test_poly, sigmoid_xt_tps+i, key);
-            printf("sigmoid_xt_%d=\n[", i);
-            for (int j = 0; j < N; ++j)
-                printf("%lf, ", TorusUtils<Torus>::to_double(test_poly->coefsT[j]));
-            printf("]\n");
-        }
-    }
-
-    {
-        const TLweKey<Torus> *key = keyset->trlwe_key_l2;
-        const TLweParams<Torus> *params = key->params;
-        const int N = params->N;
-
-        TorusPolynomial<Torus> *msg = new_obj<TorusPolynomial<Torus>>(N);
-        TorusPolyFunctions<Torus>::Clear(msg);
-
-        TLweFunctions<Torus>::Phase(msg, y, key);
-
-        printf("y:\n");
-        for (int j = 0; j < data.n; ++j)
-            printf("%lf ", TorusUtils<Torus>::to_double(msg->coefsT[j]));
+    printf("X_cols_l1:\n");
+    for (int j = 0; j < lr_params.k; ++j) {
+        printf("col %1d:\n", j);
+        print_X_col(X_cols_l1+j, secret_keyset->trgsw_key_l1, lr_params);
+        // print_trgsw_sample(X_cols_l1+j, secret_keyset->trgsw_key_l1, lr_params.n, 1./lr_params.X_range);
         printf("\n");
     }
 
-    {
-        const TGswKey<Torus> *key = keyset->trgsw_key_l2;
-        const TGswParams<Torus> *params = key->params;
-        const int N = params->tlwe_params->N;
+    // printf("X_cols_l2:\n");
+    // for (int j = 0; j < lr_params.k; ++j) {
+    //     printf("col %1d:\n", j);
+        // print_X_col(X_cols_l2+j, secret_keyset->trgsw_key_l2, lr_params);
+    //     printf("\n");
+    // }
 
-        IntPolynomial *msg = new_obj<IntPolynomial>(N);
+    printf("y[::-1]:\n");
+    print_trlwe_sample(y, secret_keyset->trlwe_key_l2, lr_params.n, 1/lr_params.y_scale);
+    printf("\n");
 
-        for (int j = 0; j < data.k; ++j) {
-            TGswFunctions<Torus>::SymDecrypt(msg, X_cols_l1, key, 1<<lr_params.X_precbit);
-
-            #ifndef NDEBUG
-                printf("Xt[%d] (rescaled to int):\n", j);
-                for (int i = 0; i < data.n; ++i)
-                    printf("%d ", msg->coefs[i]);
-                printf("\n");
-            #endif
-        }
+    printf("sigmoid_xt_tps:\n");
+    for (int i = 0; i < 0; ++i) {
+        printf("tp %3d:\n", i);
+        print_trlwe_sample(sigmoid_xt_tps+i, secret_keyset->trlwe_key_l2, params->trlwe_params_l2->N, 1/lr_params.y_scale);
+        printf("\n");
     }
 
 }

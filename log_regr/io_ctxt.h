@@ -64,6 +64,8 @@ void read_data_header(
     inp_stream.fread(buf, 18);
     sscanf(buf, "%f", &(lr_params.X_scale));
     // printf("X scale %s %f\n", buf, lr_params.X_scale);
+
+    lr_params.update();
 }
 
 void read_data_header(
@@ -168,6 +170,26 @@ void print_trlwe_sample_coef(const TLweSample<Torus>* sample, const TLweKey<Toru
 void print_tlwe_sample(const LweSample<Torus>* sample, const LweKey<Torus>* key, const double scale = 1.0) {
     Torus result = LweFunctions<Torus>::Phase(sample, key);
     printf("%.7lf ", TorusUtils<Torus>::to_double(result) * scale);
+}
+
+
+void print_X_col(const TGswSample<Torus>* X_col, const TGswKey<Torus>* key, const LRParams& lr_params, int nb_coefs = -1) {
+    if (nb_coefs == -1)
+        nb_coefs = lr_params.n;
+    int Msize = lr_params.X_range;
+
+    const TGswParams<Torus>* params = key->params;
+    IntPolynomial* result = new_obj<IntPolynomial>(params->tlwe_params->N);
+    TGswFunctions<Torus>::SymDecrypt(result, X_col, key, Msize);
+
+    for (int i = 0; i < nb_coefs; ++i) {
+        int t = result->coefs[i];
+        if (result->coefs[i] > Msize/2)
+            t -= Msize;
+        printf("%.7f ", t / lr_params.X_scale);
+
+    }
+    del_obj(result);
 }
 
 #endif

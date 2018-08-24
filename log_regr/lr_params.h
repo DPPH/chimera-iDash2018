@@ -29,7 +29,7 @@ struct LRParams
     int seed;
     int verbose_level;
 
-    const int sigm_levels = 16;
+    // const int sigm_levels = 16;
     const double sigm_in_min = -4.0;
     const double sigm_in_max = 4.0;
     // const double sigm_multiplier = pow(2., -6);
@@ -49,7 +49,7 @@ struct LRParams
     /**
      * @brief Update computed options
      */
-    void update(int N = 8192) {
+    void update() {
         y_scale = float(alpha) / 16 / X_scale / X_scale;
         X_beta_scale = 1. / 16;
         sigmoid_scale = X_y_scale = y_scale * X_scale;

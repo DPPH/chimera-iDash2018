@@ -10,7 +10,6 @@
 int main(int argc, char const *argv[]) {
     LRParams lr_params;
     read_data_header(lr_params);
-    lr_params.update();
 
     const TfheParamSet *params = TfheParamSet::read(lr_params.params_filename);
     const TfheSecretKeySet *secret_keyset = TfheSecretKeySet::read(lr_params.secret_keyset_filename, params);
