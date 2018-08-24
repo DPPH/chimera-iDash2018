@@ -378,6 +378,65 @@ std::shared_ptr<TRLWEVector> substract_ind_TRLWE(const TRLWEVector &a, const TRL
     return shared_ptr<TRLWEVector>(reps);
 }
 
+
+std::shared_ptr<TRLWEVector> add_ind_TRLWE(const TRLWEVector &a, const TRLWEVector &b, int64_t target_level_expo,
+                                           int64_t override_plaintext_exponent,
+                                           int64_t plaintext_precision_bits) {
+
+    int64_t N = a.data[0].params.N;
+    int64_t length = a.length;
+    assert(int64_t(b.length) == length);
+    assert(int64_t(b.data[0].params.N) == N);
+    assert(int64_t(b.data[0].params.N) == N);
+
+    int64_t rho = plaintext_precision_bits;
+
+    //tau=max(tau_a, tau_b) + 1
+    int64_t tau_a = a.data[0].params.fixp_params.plaintext_expo; //50   tau_a=83   L_a= 17
+    int64_t tau_b = b.data[0].params.fixp_params.plaintext_expo; //-50  tau_b=70   L_b= 13
+    int64_t tau = std::max(tau_a, tau_b) + 1; //51  tau= 84
+
+    //L=min(L_a + tau_a, L_b+ tau_b) - tau
+    int64_t L_a = a.data[0].params.fixp_params.level_expo; //70  17
+    int64_t L_b = b.data[0].params.fixp_params.level_expo; //70 13
+
+    if (tau_a - tau_b > rho) { return copy(a); }  //17
+    else if (tau_b - tau_a > rho) { return neg(b); }
+
+
+    int64_t L = std::min(L_a + tau_a, L_b + tau_b) - tau;  //83 -84 = -1
+    assert(L >= 0);
+
+    if (override_plaintext_exponent != int64_t(NA)) {
+        tau = override_plaintext_exponent;
+        L = L + tau_a + tau_b - tau;
+    }
+
+
+    if (target_level_expo != int64_t(NA)) {
+        assert(target_level_expo < L);
+        L = target_level_expo;
+    }
+
+    int64_t reps_limbs = limb_precision(L + rho);
+
+    std::shared_ptr<BigTorusParams> reps_bt_params = make_shared<BigTorusParams>(reps_limbs, tau, L);
+    store_forever(reps_bt_params);
+
+    std::shared_ptr<TRLweParams> reps_trlwe_params = make_shared<TRLweParams>(N, *reps_bt_params);
+    store_forever(reps_trlwe_params);
+
+    TRLWEVector *reps = new TRLWEVector(length, *reps_trlwe_params);
+
+    assert(int64_t(b.length) == length);
+    for (int64_t i = 0; i < length; i++) {
+
+        fixp_add(reps->data[i], a.data[i], b.data[i], L + rho);
+    }
+
+    return shared_ptr<TRLWEVector>(reps);
+}
+
 std::shared_ptr<TRLWEVector> copy(const TRLWEVector &a) {
     int64_t reps_limbs = a.data[0].params.fixp_params.torus_limbs;
     int64_t tau = a.data[0].params.fixp_params.plaintext_expo;
@@ -433,5 +492,41 @@ compute_w(const TRLWEVector &p, const TRGSW &rk, int64_t target_level_expo, int6
     std::shared_ptr<TRLWEVector> resp = substract_ind_TRLWE(p, *pp, target_level_expo, override_plaintext_exponent,
                                                             plaintext_precision_bits);
     return shared_ptr<TRLWEVector>(resp);
+}
+
+std::shared_ptr<TRLweMatrix>
+compute_A(const TRGSWMatrix &X, const TRGSWMatrix &S, const TRLWEVector &W, const TRGSW &rk, int64_t target_level_expo,
+          int64_t override_plaintext_exponent, int64_t plaintext_precision_bits) {
+
+    int64_t n = W.length;
+    assert(X.rows == n);
+    assert(S.rows == n);
+
+    int64_t L = 50; //TODO
+    int64_t tau = 20; //TODO
+    int64_t alpha_bits = tau + L;
+    int64_t reps_limbs = limb_precision(alpha_bits);
+    int64_t N = W.data[0].params.N;
+
+    std::shared_ptr<BigTorusParams> reps_bt_params = make_shared<BigTorusParams>(reps_limbs, tau, L);
+    store_forever(reps_bt_params);
+
+    std::shared_ptr<TRLweParams> reps_trlwe_params = make_shared<TRLweParams>(N, *reps_bt_params);
+    store_forever(reps_trlwe_params);
+
+
+    TRLweMatrix *reps = new TRLweMatrix(X.cols, S.cols, *reps_trlwe_params);
+    TRLwe temp(*reps_trlwe_params);
+
+    for (int i = 0; i < X.cols; i++) {
+        for (int j = 0; j < S.cols; j++) {
+            for (int k = 0; k < n; k++) {
+                external_product(temp, S.data[k][j], W.data[k], alpha_bits);
+                external_product(reps->data[i][j], X.data[k][i], temp, alpha_bits);
+            }
+        }
+    }
+
+    return shared_ptr<TRLweMatrix>(reps);
 }
 

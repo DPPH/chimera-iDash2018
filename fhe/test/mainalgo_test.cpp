@@ -211,3 +211,7 @@ TEST(MAINALGO, compute_w) {
 
 
 }
+
+TEST(MAINALGO, compute_A) {
+
+}
