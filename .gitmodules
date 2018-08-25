@@ -9,7 +9,7 @@
 	url = https://github.com/jarro2783/cxxopts.git
 [submodule "tfhe_torus_generic"]
 	path = log_regr/external/tfhe_torus_generic
-	url = git@github.com:tfhe/tfhe.git
+	url = https://github.com/tfhe/tfhe.git
 	branch = torus_generic
 [submodule "googletest_lr"]
 	path = log_regr/external/googletest
