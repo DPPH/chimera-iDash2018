@@ -76,7 +76,7 @@ std::shared_ptr<TRGSW> deserializeTRGSW(std::istream &in);
 
 void intPoly_encrypt(TRGSW &reps, const int64_t *plaintext, const TLweKey &key, UINT64 alpha_bits);
 
-void binary_encrypt(TRGSW &reps, const UINT64 plaintext, const TLweKey &key, UINT64 alpha_bits);
+void binary_encrypt(TRGSW &reps, const int64_t plaintext, const TLweKey &key, UINT64 alpha_bits);
 
 void external_product(TRLwe &reps, const TRGSW &a, const TRLwe &b, int64_t out_alpha_bits);
 

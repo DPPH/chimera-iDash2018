@@ -81,6 +81,14 @@ encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
           int64_t plaintext_precision_bits = default_plaintext_precision);
 
 /**
+ * encrypt X as ind heaan TRGSW
+ *
+ */
+std::shared_ptr<TRGSWMatrix>
+encrypt_X(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bits,
+          int64_t plaintext_precision_bits = default_plaintext_precision);
+
+/**
  * encrypt y and/or p as individual TRLWE slots
  */
 std::shared_ptr<TRLWEVector>
@@ -168,7 +176,7 @@ std::shared_ptr<TRLWEVector> compute_w(const TRLWEVector &p, const TRGSW &rk, in
  *
  */
 std::shared_ptr<TRLweMatrix>
-compute_A(const TRGSWMatrix &X, const TRGSWMatrix &S, const TRLWEVector &W, const TRGSW &rk,
+compute_A(const TRGSWMatrix &X, const TRGSWMatrix &S, const TRLWEVector &W,
           int64_t target_level_expo = NA,
           int64_t override_plaintext_exponent = NA,
           int64_t plaintext_precision_bits = default_plaintext_precision);
