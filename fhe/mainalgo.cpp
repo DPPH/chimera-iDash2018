@@ -143,7 +143,7 @@ encrypt_X(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
         for (int64_t c = 0; c < cols; c++) {
             RR::SetPrecision(plain_limbs * BITS_PER_LIMBS);
             int64_t message = to_long(RoundToZZ(plaintext[r][c] * power2_RR(trgsw_bits_a - real_plaintext_exponent)));
-            binary_encrypt(reps->data[r][c], message, key, alpha_bits);
+            int_encrypt(reps->data[r][c], message, key, alpha_bits);
             //finally, set the real plaintext exponent and bits_a
             reps->data[r][c].bits_a = trgsw_bits_a;
             reps->data[r][c].plaintext_exponent = real_plaintext_exponent;

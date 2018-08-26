@@ -28,7 +28,8 @@ void clear_precomp_FFT(BigComplex *powombar);
 class FFTAutoPrecomp {
     static UINT64 precomp_id(uint32_t n, uint16_t nblimbs, uint16_t bar);
 
-    std::map<UINT64, BigComplex *> precomp_map;
+    std::map<UINT64, BigComplex *> om_precomp_map;
+    std::map<UINT64, BigComplex *> ombar_precomp_map;
 
 public:
     /** get the omega precomputed fft table for n=2N and precision nblimbs */

@@ -136,33 +136,44 @@ UINT64 FFTAutoPrecomp::precomp_id(uint32_t n, uint16_t nblimbs, uint16_t bar) {
 
 BigComplex *FFTAutoPrecomp::omega(uint32_t n, uint16_t nblimbs) {
     const UINT64 id = precomp_id(n, nblimbs, 0);
-    auto it = precomp_map.find(id);
-    if (it != precomp_map.end())
-        return it->second;
-    BigComplex *reps = precomp_iFFT(n, nblimbs);
-    precomp_map.emplace(id, reps);
+    BigComplex *reps = nullptr;
+#pragma omp critical
+    {
+        auto it = om_precomp_map.find(id);
+        if (it != om_precomp_map.end()) {
+            reps = it->second;
+        } else {
+            reps = precomp_iFFT(n, nblimbs);
+            om_precomp_map.emplace(id, reps);
+        }
+    }
     return reps;
 }
 
 BigComplex *FFTAutoPrecomp::omegabar(uint32_t n, uint16_t nblimbs) {
     const UINT64 id = precomp_id(n, nblimbs, 1);
-    auto it = precomp_map.find(id);
-    if (it != precomp_map.end())
-        return it->second;
-    BigComplex *reps = precomp_FFT(n, nblimbs);
-    precomp_map.emplace(id, reps);
+    BigComplex *reps = nullptr;
+#pragma omp critical
+    {
+        auto it = ombar_precomp_map.find(id);
+        if (it != ombar_precomp_map.end()) {
+            reps = it->second;
+        } else {
+            reps = precomp_FFT(n, nblimbs);
+            ombar_precomp_map.emplace(id, reps);
+        }
+    }
     return reps;
 }
 
 FFTAutoPrecomp::FFTAutoPrecomp() {}
 
 FFTAutoPrecomp::~FFTAutoPrecomp() {
-    for (auto it: precomp_map) {
-        if (it.first % 2 == 0) {
-            clear_precomp_iFFT(it.second);
-        } else {
-            clear_precomp_FFT(it.second);
-        }
+    for (auto it: om_precomp_map) {
+        clear_precomp_iFFT(it.second);
+    }
+    for (auto it: ombar_precomp_map) {
+        clear_precomp_FFT(it.second);
     }
 }
 

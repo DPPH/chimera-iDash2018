@@ -133,7 +133,7 @@ TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
     for (int i = 0; i < n_in; i++) {
         s[i] = rand() % 2;
         a[i] = rand() % (2 * N);
-        binary_encrypt(c[i], s[i], *key, alpha_bits);
+        int_encrypt(c[i], s[i], *key, alpha_bits);
         power += s[i] * a[i];
     }
     cout << "end encrypt: " << clock() / double(CLOCKS_PER_SEC) << endl;

@@ -221,16 +221,16 @@ extern shared_ptr<TLweKey> debug_key;
 TEST(MAINALGO, compute_A) {
     int64_t k = 3;
     int64_t n = 23;
-    int64_t l = 2;
+    int64_t l = 5;
     int64_t N = 4096;
 
     int64_t tau_X = -5;
     int64_t tau_W = -1;
     int64_t tau_S = 1;
 
-    int64_t L_X = 34;
-    int64_t L_W = 52;
-    int64_t L_S = 52;
+    int64_t L_X = 36;
+    int64_t L_W = 54;
+    int64_t L_S = 54;
     int64_t rho = 18;
 
     mat_RR plaintext_X;
@@ -259,9 +259,9 @@ TEST(MAINALGO, compute_A) {
     shared_ptr<TLweKey> key = tlwe_keygen(trlweParams_key);
     debug_key = key;
 
-    shared_ptr<TRGSWMatrix> X = encrypt_X(plaintext_X, *key, N, L_X + 32 + 15, rho);
+    shared_ptr<TRGSWMatrix> X = encrypt_X(plaintext_X, *key, N, L_X + 32 + 5, rho);
 
-    shared_ptr<TRGSWMatrix> S = encrypt_S(plaintext_S, *key, N, L_S + 32 + 15, rho);
+    shared_ptr<TRGSWMatrix> S = encrypt_S(plaintext_S, *key, N, L_S + 32 + 5, rho);
 
     shared_ptr<TRLWEVector> W = encrypt_individual_trlwe(plaintext_W, *key, N, L_W, tau_W, rho);
 
@@ -291,7 +291,7 @@ TEST(MAINALGO, compute_A) {
         for (int j = 0; j < l * N / 2; j++) {
             cout << resp_target[i][j] << endl;
             cout << resp[j] << endl;
-            EXPECT_LE(log2Diff(resp_target[i][j], resp[j]), tau_S + tau_W + tau_X - rho);
+            EXPECT_LE(log2Diff(resp_target[i][j], resp[j]), tau_S + tau_W + tau_X - rho + 5);
         }
     }
 }
