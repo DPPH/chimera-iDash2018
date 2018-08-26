@@ -40,7 +40,7 @@ add_executable(encrypt_data encrypt_data.cpp ${COMMON_SRC}
 )
 target_link_libraries(encrypt_data -lntl -lgmp -pthread)
 
-add_executable(decrypt_data decrypt_data.cpp keyset.cpp
+add_executable(decrypt_data decrypt_data.cpp ${COMMON_SRC}
     $<TARGET_OBJECTS:tfhe-core>
     $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
 )
@@ -51,13 +51,13 @@ add_executable(log_regr log_regr.cpp ${COMMON_SRC}
     $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
 )
 
-add_executable(decrypt_beta decrypt_beta.cpp keyset.cpp
+add_executable(decrypt_beta decrypt_beta.cpp ${COMMON_SRC}
     $<TARGET_OBJECTS:tfhe-core>
     $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
 )
 target_link_libraries(decrypt_beta -lntl -lgmp -pthread)
 
-add_executable(decrypt_X_beta decrypt_X_beta.cpp keyset.cpp
+add_executable(decrypt_X_beta decrypt_X_beta.cpp ${COMMON_SRC}
     $<TARGET_OBJECTS:tfhe-core>
     $<TARGET_OBJECTS:tfhe-fft-spqlios-avx>
 )

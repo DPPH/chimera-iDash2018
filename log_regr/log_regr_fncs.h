@@ -94,7 +94,7 @@
 /**
  * @brief Blind rotate \c acc by TLWE sample \c input coefficients
  */
-void blindrotate_good(
+void blindrotate(
     TLweSample<Torus>* acc,
     const TLweParams<Torus>* acc_params,
     const LweSample<Torus>* inp,
@@ -128,14 +128,14 @@ void blindrotate_good(
     delete[] bara;
 }
 
-#define blindrotate blindrotate_good
 // #define blindrotate blindrotate_fake
+#define blindrotate blindrotate
 
 // #define TLweKeySwitch TLweKeySwitch_fake
 #define TLweKeySwitch TLweFunctionsExtra<Torus>::KeySwitch
 
-#define LweKeySwitch LweFunctions<Torus>::KeySwitch
 // #define LweKeySwitch LweKeySwitch_fake
+#define LweKeySwitch LweFunctions<Torus>::KeySwitch
 
 /**
  * @brief Compute Xt.y.\alpha from TRGSW samples of X columns and TRLWE sample of y (coefficient packed)
@@ -219,10 +219,23 @@ void compute_X_beta(
 {
     /* switch beta from TLWE to TRLWE and multiply each beta by X columns */
     VERBOSE_1_PRINT("==> compute individual columns of X.beta\n");
-    // #pragma omp parallel for ordered schedule(static,1)
+    #pragma omp parallel for ordered schedule(static,1)
     for (int j = 0; j < lr_params.k; ++j) {
         /* switch from L2 TLWE sample to L1 TRLWE sample  */
         TLweKeySwitch(X_beta_cp+j, ks_l2_l1, beta_in+j);
+
+        // #ifdef DEBUG
+        //     printf("######### DEBUG MSG BEG #########\n");
+        //     printf("beta_in_%d TLWE: ", j);
+        //     print_tlwe_sample(beta_in+j, secret_keyset->tlwe_key_l2, 1./lr_params.beta_scale);
+        //     printf("\n");
+
+        //     printf("beta_in_%d TRLWE: ");
+        //     print_trlwe_sample(X_beta_cp+j, secret_keyset->trlwe_key_l1, 3, 1./lr_params.beta_scale);
+        //     printf("\n");
+        //     printf("######### DEBUG MSG END #########\n");
+        // #endif
+
 
         TGswFunctions<Torus>::ExternMulToTLwe(X_beta_cp+j, X_cols+j, trgsw_params);
 
@@ -265,9 +278,6 @@ void extract_X_beta(
     /* extract individual TLWE L0 encryptions of \sum_{j=0..k-1} X_ij.\beta_j from X_beta_cp TRLWE L1 sample */
     VERBOSE_1_PRINT("==> extract individual samples from X.beta\n");
     #pragma omp parallel for ordered schedule(static,1)
-    // #ifdef DEBUG
-    //     printf("extracted,keyswitched X_beta\n");
-    // #endif
     for (int i = 0; i < lr_params.n; ++i) {
         LweSample<Torus>* tmp = new_obj<LweSample<Torus>>(tlwe_params);
         TLweFunctions<Torus>::ExtractLweSampleIndex(tmp, X_beta_cp, i, tlwe_params, trlwe_params);

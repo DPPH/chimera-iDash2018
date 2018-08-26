@@ -133,7 +133,7 @@ TEST_F(LogRegrFuncTest, ks_l2_l1) {
 
     LweSample<Torus>* inp_sample2 = new_obj<LweSample<Torus>>(tlwe_params_l2);
     double msg = 0.1911391;
-    LweFunctions<Torus>::SymEncrypt(inp_sample2, TorusUtils<Torus>::from_double(msg), pow(2.0,-40), tlwe_key_l2);
+    LweFunctions<Torus>::SymEncrypt(inp_sample2, TorusUtils<Torus>::from_double(msg), pow(2.0,-20), tlwe_key_l2);
 
     LweSample<Torus>* inp_sample = inp_sample2;
 

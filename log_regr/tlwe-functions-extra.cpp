@@ -99,7 +99,7 @@ void TLweFunctionsExtra<TORUS>::KeySwitch(
     const int basebit=ks->basebit;
     const int t=ks->t;
 
-    TorusPolyFunctions<TORUS>::Clear(result->b);
+    TLweFunctions<TORUS>::Clear(result, params);
     result->b->coefsT[0] = sample->b;
 
     TLweFunctionsExtra<TORUS>::KeySwitchTranslate_fromArray(

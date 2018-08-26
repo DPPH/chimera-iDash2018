@@ -6,7 +6,7 @@
 
 using namespace std;
 
-const int n_l0 = 550;
+const int n_l0 = 666; // not on purpose, Nicola's formula was noise_alpha * 37 (here we have for 2^-18 noise std)
 const int n_l1 = 2048;
 const int n_l2 = 8192;
 const int k = 1;
