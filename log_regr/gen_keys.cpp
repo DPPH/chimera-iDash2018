@@ -1,6 +1,8 @@
 #include "lr_params.h"
 #include "tfhe_core.h"
 #include "keyset.h"
+#include "tlwe-functions-extra.h"
+#include "io_ctxt.h"
 
 using namespace std;
 
@@ -22,6 +24,8 @@ const int l2_Bgbit = 6;
 const int ks_l1_l0_t = 3;
 const int ks_l1_l0_basebit = 5;
 
+const int ks_l2_l1_t = 5;
+const int ks_l2_l1_basebit = 8;
 
 TfheParamSet *new_parameters() {
     LweParams<Torus>* tlwe_params_l0 = new_obj<LweParams<Torus>>(n_l0, stddev_l0, -1);
@@ -55,11 +59,9 @@ TGswSample<Torus>* create_bk(const LweKey<Torus>* tlwe_key, const TGswKey<Torus>
 
     double alpha = bk_params->tlwe_params->alpha_min;
 
-    #ifndef NDEBUG
-        printf("Creating bk from l0 to l2:");
-        printf("%8d input size", n);
-        printf("%8d output size\n", bk_params->tlwe_params->N);
-    #endif
+    printf("Creating bk from l0 to l2:");
+    printf("%8d input size", n);
+    printf("%8d output size\n", bk_params->tlwe_params->N);
 
     TGswSample<Torus>* bk = new_obj_array<TGswSample<Torus>>(n, bk_params);
 
@@ -76,12 +78,9 @@ LweKeySwitchKey<Torus>* create_ks_l1_l0(const LweKey<Torus>* out_key, const LweK
     const LweParams<Torus>* out_params = out_key->params;
     const int N = extract_params->n;
 
-    #ifndef NDEBUG
-        printf("Creating ks from l1 to l0:");
-        printf("%8d input size", N);
-        printf("%8d output size\n", out_params->n);
-        printf("%e ks samples noise\n", out_key->params->alpha_min);
-    #endif
+    printf("Creating ks from l1 to l0:");
+    printf("%8d input size", N);
+    printf("%8d output size\n", out_params->n);
 
     LweKeySwitchKey<Torus>* ks_l1_l0 = new_obj<LweKeySwitchKey<Torus>>(N, ks_l1_l0_t, ks_l1_l0_basebit, out_params);
     LweFunctions<Torus>::CreateKeySwitchKey(ks_l1_l0, inp_key_extr, out_key);
@@ -89,16 +88,26 @@ LweKeySwitchKey<Torus>* create_ks_l1_l0(const LweKey<Torus>* out_key, const LweK
     return ks_l1_l0;
 }
 
-void* create_ks_l2_l1(const TLweKey<Torus>* out_key, const TLweKey<Torus>* inp_key) {
-    return  nullptr;
+TLweKeySwitchKey<Torus>* create_ks_l2_l1(const TLweKey<Torus>* out_key, const LweKey<Torus>* inp_key_extr) {
+    const LweParams<Torus>* extract_params = inp_key_extr->params;
+    const TLweParams<Torus>* out_params = out_key->params;
+    const int N = extract_params->n;
+
+    printf("Creating ks from l2 to l1:");
+    printf("%8d input size", N);
+    printf("%8dx%8d output size\n", out_params->N, out_params->k);
+
+    TLweKeySwitchKey<Torus>* ks_l2_l1 = new_obj<TLweKeySwitchKey<Torus>>(N, ks_l2_l1_t, ks_l2_l1_basebit, out_params);
+    TLweFunctionsExtra<Torus>::CreateKeySwitchKey(ks_l2_l1, inp_key_extr, out_key);
+
+    return ks_l2_l1;
 }
 
 
-TfheCloudKeySet* new_cloud_keyset(const TfheSecretKeySet* secret_keyset) {
+TfheCloudKeySet* new_cloud_keyset(const TfheSecretKeySet* secret_keyset, const LRParams& lr_params) {
     TGswSample<Torus>* bk = create_bk(secret_keyset->tlwe_key_l0, secret_keyset->trgsw_key_l2);
     LweKeySwitchKey<Torus>* ks_l1_l0 = create_ks_l1_l0(secret_keyset->tlwe_key_l0, secret_keyset->tlwe_key_l1);
-    void* ks_l2_l1 = create_ks_l2_l1(secret_keyset->trlwe_key_l1, secret_keyset->trlwe_key_l2);;
-
+    TLweKeySwitchKey<Torus>* ks_l2_l1 = create_ks_l2_l1(secret_keyset->trlwe_key_l1, secret_keyset->tlwe_key_l2);;
     return new TfheCloudKeySet(secret_keyset->params, bk, ks_l1_l0, ks_l2_l1);
 }
 
@@ -120,6 +129,6 @@ int main(int argc, char const *argv[]) {
     TfheSecretKeySet::write(lr_params.secret_keyset_filename, secret_keyset);
 
     // generate the cloud keyset
-    const TfheCloudKeySet *cloud_keyset = new_cloud_keyset(secret_keyset);
+    const TfheCloudKeySet *cloud_keyset = new_cloud_keyset(secret_keyset, lr_params);
     TfheCloudKeySet::write(lr_params.cloud_keyset_filename, cloud_keyset);
 }

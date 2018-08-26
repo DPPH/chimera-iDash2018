@@ -3,6 +3,7 @@
 
 #include "tfhe_core.h"
 #include "tfhe_io.h"
+#include "keyset.h"
 
 #include <iostream>
 #include <fstream>
@@ -42,6 +43,11 @@ TGswSample<Torus>* read_trgsw_samples(StdIstream& inp_stream, const TGswParams<T
     for (int j = 0; j < n; ++j)
         IOFunctions<Torus>::read_tGswSample(inp_stream, samples+j, params);
     return samples;
+}
+
+void write_trlwe_samples(Ostream& out_stream, const TLweSample<Torus>* samples, const TLweParams<Torus>* params, const int32_t n) {
+    for (int i = 0; i < n; ++i)
+        IOFunctions<Torus>::write_tLweSample(out_stream, samples+i, params);
 }
 
 TLweSample<Torus>* read_trlwe_samples(StdIstream& inp_stream, const TLweParams<Torus> *params, const int32_t n) {

@@ -23,7 +23,7 @@ void log_regr_iter(
     )
 {
     TLweSample<Torus>* X_beta_cp = new_obj_array<TLweSample<Torus>>(lr_params.k, params->trlwe_params_l1);
-    compute_X_beta(X_beta_cp, beta_in_out, X_cols, params->trgsw_params_l1, lr_params);
+    compute_X_beta(X_beta_cp, beta_in_out, X_cols, keyset->ks_l2_l1, params->trgsw_params_l1, lr_params);
 
     // #ifdef DEBUG
     // {

@@ -6,6 +6,7 @@
 #include "tfhe_gate.h"
 #include "tfhe_functions.h"
 #include "tfhe_alloc.h"
+#include "tlwe-functions-extra.h"
 
 #define DEBUG
 
@@ -130,7 +131,8 @@ void blindrotate_good(
 #define blindrotate blindrotate_good
 // #define blindrotate blindrotate_fake
 
-#define TLweKeySwitch TLweKeySwitch_fake
+// #define TLweKeySwitch TLweKeySwitch_fake
+#define TLweKeySwitch TLweFunctionsExtra<Torus>::KeySwitch
 
 #define LweKeySwitch LweFunctions<Torus>::KeySwitch
 // #define LweKeySwitch LweKeySwitch_fake
@@ -210,6 +212,7 @@ void compute_X_beta(
     TLweSample<Torus>* X_beta_cp,
     const LweSample<Torus> *beta_in,
     const TGswSample<Torus>* X_cols,
+    const TLweKeySwitchKey<Torus>* ks_l2_l1,
     const TGswParams<Torus>* trgsw_params,
     const LRParams& lr_params
     )
@@ -219,7 +222,6 @@ void compute_X_beta(
     // #pragma omp parallel for ordered schedule(static,1)
     for (int j = 0; j < lr_params.k; ++j) {
         /* switch from L2 TLWE sample to L1 TRLWE sample  */
-        const void* ks_l2_l1 = nullptr;
         TLweKeySwitch(X_beta_cp+j, ks_l2_l1, beta_in+j);
 
         TGswFunctions<Torus>::ExternMulToTLwe(X_beta_cp+j, X_cols+j, trgsw_params);

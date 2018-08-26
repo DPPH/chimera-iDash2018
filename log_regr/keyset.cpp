@@ -117,6 +117,7 @@ void TfheCloudKeySet::write(Ostream& out, const TfheCloudKeySet* keyset) {
         IOFunctions<Torus>::write_tGswSample(out, bk+i, bk_params);
 
     IOFunctions<Torus>::write_lweKeySwitchKey(out, keyset->ks_l1_l0, false);
+    keyset->ks_l2_l1->write(out);
 }
 
 void TfheCloudKeySet::write(const char* filename, const TfheCloudKeySet* secret_keyset) {
@@ -138,8 +139,9 @@ const TfheCloudKeySet* TfheCloudKeySet::read(Istream& inp, const TfheParamSet* p
         IOFunctions<Torus>::read_tGswSample(inp, bk+i, bk_params);
 
     LweKeySwitchKey<Torus>* ks_l1_l0 = IOFunctions<Torus>::read_new_lweKeySwitchKey(inp, params->tlwe_params_l0);
+    TLweKeySwitchKey<Torus>* ks_l2_l1 = TLweKeySwitchKey<Torus>::read_new(inp, params->trlwe_params_l1);
 
-    return new TfheCloudKeySet(params, bk, ks_l1_l0, nullptr);
+    return new TfheCloudKeySet(params, bk, ks_l1_l0, ks_l2_l1);
 }
 
 const TfheCloudKeySet* TfheCloudKeySet::read(const char* filename, const TfheParamSet* params) {

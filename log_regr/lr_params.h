@@ -37,6 +37,7 @@ struct LRParams
     const char* const params_filename = "params.bin";
     const char* const secret_keyset_filename = "secret_keyset.bin";
     const char* const cloud_keyset_filename = "cloud_keyset.bin";
+    const char* const ks_l2_l1_filename = "ks_l2_l1.bin";
 
     const char* const filename_data = "data.ctxt";
 

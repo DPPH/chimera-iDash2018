@@ -1,6 +1,8 @@
 #include <include/gtest/gtest.h>
 
 #include "../log_regr_fncs.h"
+#include "../tlwekeyswitch.h"
+#include "../tlwe-functions-extra.h"
 #include "test_common.h"
 #include <NTL/ZZX.h>
 #include <NTL/vector.h>
@@ -88,32 +90,62 @@ class LogRegrFuncTest: public TestCommon {
 // }
 
 
-TEST_F(LogRegrFuncTest, ks_l1_l0) {
-    const LweKey<Torus>* tlwe_key_l0 = secret_keyset->tlwe_key_l0;
-    const LweKey<Torus>* tlwe_key_l1 = secret_keyset->tlwe_key_l1;
+// TEST_F(LogRegrFuncTest, ks_l1_l0) {
+//     const LweKey<Torus>* tlwe_key_l0 = secret_keyset->tlwe_key_l0;
+//     const LweKey<Torus>* tlwe_key_l1 = secret_keyset->tlwe_key_l1;
 
-    const LweParams<Torus>* tlwe_params_l0 = tlwe_key_l0->params;
-    const LweParams<Torus>* tlwe_params_l1 = tlwe_key_l1->params;
+//     const LweParams<Torus>* tlwe_params_l0 = tlwe_key_l0->params;
+//     const LweParams<Torus>* tlwe_params_l1 = tlwe_key_l1->params;
+
+//     RandomGen::set_seed(41);
+
+//     // LweSample<Torus>* inp_sample1 = read_tlwe_samples("ks_inp.ctxt", tlwe_params_l1, 1);
+
+//     LweSample<Torus>* inp_sample2 = new_obj<LweSample<Torus>>(tlwe_params_l1);
+//     double msg = 0.5911391 * lr_params.X_beta_scale;
+//     LweFunctions<Torus>::SymEncrypt(inp_sample2, TorusUtils<Torus>::from_double(msg), pow(2.0,-16), tlwe_key_l1);
+
+//     LweSample<Torus>* inp_sample = inp_sample2;
+
+//     printf("inp tlwe sample: ");
+//     print_tlwe_sample(inp_sample, tlwe_key_l1, 1./lr_params.X_beta_scale);
+//     printf("\n");
+
+//     LweSample<Torus>* out_sample = new_obj<LweSample<Torus>>(tlwe_params_l0);
+//     LweFunctions<Torus>::KeySwitch(out_sample, cloud_keyset->ks_l1_l0, inp_sample);
+
+//     printf("out tlwe sample: ");
+//     print_tlwe_sample(out_sample, tlwe_key_l0, 1./lr_params.X_beta_scale);
+//     printf("\n");
+
+// }
+
+TEST_F(LogRegrFuncTest, ks_l2_l1) {
+    const TLweKey<Torus>* trlwe_key_l1 = secret_keyset->trlwe_key_l1;
+    const LweKey<Torus>* tlwe_key_l2 = secret_keyset->tlwe_key_l2;
+
+    const TLweParams<Torus>* trlwe_params_l1 = trlwe_key_l1->params;
+    const LweParams<Torus>* tlwe_params_l2 = tlwe_key_l2->params;
 
     RandomGen::set_seed(41);
 
     // LweSample<Torus>* inp_sample1 = read_tlwe_samples("ks_inp.ctxt", tlwe_params_l1, 1);
 
-    LweSample<Torus>* inp_sample2 = new_obj<LweSample<Torus>>(tlwe_params_l1);
-    double msg = 0.5911391 * lr_params.X_beta_scale;
-    LweFunctions<Torus>::SymEncrypt(inp_sample2, TorusUtils<Torus>::from_double(msg), pow(2.0,-16), tlwe_key_l1);
+    LweSample<Torus>* inp_sample2 = new_obj<LweSample<Torus>>(tlwe_params_l2);
+    double msg = 0.1911391;
+    LweFunctions<Torus>::SymEncrypt(inp_sample2, TorusUtils<Torus>::from_double(msg), pow(2.0,-40), tlwe_key_l2);
 
     LweSample<Torus>* inp_sample = inp_sample2;
 
     printf("inp tlwe sample: ");
-    print_tlwe_sample(inp_sample, tlwe_key_l1, 1./lr_params.X_beta_scale);
+    print_tlwe_sample(inp_sample, tlwe_key_l2, 1.);
     printf("\n");
 
-    LweSample<Torus>* out_sample = new_obj<LweSample<Torus>>(tlwe_params_l0);
-    LweFunctions<Torus>::KeySwitch(out_sample, cloud_keyset->ks_l1_l0, inp_sample);
+    TLweSample<Torus>* out_sample = new_obj<TLweSample<Torus>>(trlwe_params_l1);
+    TLweFunctionsExtra<Torus>::KeySwitch(out_sample, cloud_keyset->ks_l2_l1, inp_sample);
 
     printf("out tlwe sample: ");
-    print_tlwe_sample(out_sample, tlwe_key_l0, 1./lr_params.X_beta_scale);
+    print_trlwe_sample(out_sample, trlwe_key_l1, 10, 1.);
     printf("\n");
 
 }

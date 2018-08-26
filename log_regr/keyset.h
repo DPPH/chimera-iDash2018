@@ -3,7 +3,8 @@
 
 #include "tfhe_core.h"
 #include "tfhe_io.h"
-#include "tgsw.h"
+// #include "tgsw.h"
+#include "tlwekeyswitch.h"
 
 #include <cassert>
 
@@ -102,7 +103,7 @@ public:
         const TfheParamSet* params,
         const TGswSample<Torus>* bk, //TRGSW encryption of TLWE L0 SK
         const LweKeySwitchKey<Torus>* ks_l1_l0, //KS of TLWE L1 SK to TLWE L0 SK
-        const void* ks_l2_l1 //KS of TLWE L2 SK to TRLWE L1 SK
+        const TLweKeySwitchKey<Torus>* ks_l2_l1 //KS of TLWE L2 SK to TRLWE L1 SK
         )
     :
         params(params),
@@ -124,7 +125,7 @@ public:
     const TfheParamSet* const params = nullptr;
     const TGswSample<Torus>* const bk = nullptr;
     const LweKeySwitchKey<Torus>* const ks_l1_l0 = nullptr;
-    const void* const ks_l2_l1 = nullptr;
+    const TLweKeySwitchKey<Torus>* const ks_l2_l1 = nullptr;
 
     TGswSampleFFT<Torus>* bk_fft = nullptr;
 };
