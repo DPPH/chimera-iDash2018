@@ -61,7 +61,7 @@ void TfheCloudKeySet::create_bk_fft() {
         printf("Creating bk_fft from l0 to l2\n");
     #endif
 
-    // #pragma omp parallel for // tGswToFFTConvert is not thread safe?!?
+    #pragma omp parallel for
     for (int i=0; i<n; ++i) {
         TGswFunctions<Torus>::ToFFTConvert(bk_fft+i, bk+i, bk_params);
     }

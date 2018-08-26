@@ -183,18 +183,15 @@ LRParams parse_args(int argc, char** argv) {
     cxxopts::Options options("LR", "Logistic regression learning on encrypted genomic data");
 
     options.add_options("input data")
-        ("n,indivs",          "number of individuals", cxxopts::value<uint>()->default_value("245"))
-        ("k,feats",           "number of features", cxxopts::value<uint>()->default_value("3"))
-        ("m,snps",            "number of SNPs", cxxopts::value<uint>()->default_value("10643"))
+        // ("inp_file",          "encrypted data input file", cxxopts::value<string>()->default_value(lr_params.filename_data))
+        // ("cloud_keyset",      "cloud keyset file", cxxopts::value<string>()->default_value(lr_params.filename_cloud_keyset))
+        // ("he_params",         "HE parameters files", cxxopts::value<string>()->default_value(lr_params.filename_params))
+        // ("out_path_prefix",   "output path prefix", cxxopts::value<string>()->default_value(""))
         ("iters",             "number of iterations", cxxopts::value<uint>()->default_value("5"))
         ("seed",              "random generator seed", cxxopts::value<uint>()->default_value("42"))
         ;
 
     options.add_options("general")
-        // ("path_train",        "encrypted train data input path", cxxopts::value<string>()->default_value("/dev/shm/enc_data"))
-        // ("file_train",        "train input data .csv file (perform learning on clear data)", cxxopts::value<string>())
-        // ("file_valid",        "validation input data .csv file (secret key file 'secret.key' must be present)", cxxopts::value<string>())
-        // ("path_beta_out",     "beta output path", cxxopts::value<string>()->default_value(""))
         ("threads",           "number of execution threads", cxxopts::value<uint>()->default_value("4"))
         ("v",                 "verbose level ('v' count gives verbosity level)")
         ("h,help",            "print this message")
@@ -207,39 +204,6 @@ LRParams parse_args(int argc, char** argv) {
         exit(-1);
     }
 
-  // if (result.count("file_train") > 0 and result["file_train"].as<string>().length()) {
-  //   PARAMS.file_train = result["file_train"].as<string>();
-  //   PARAMS.learn_on_clear = true;
-  // }
-  // else if (result.count("path_train") > 0 and result["path_train"].as<string>().length()) {
-  //   PARAMS.path_train = result["path_train"].as<string>();
-  //   PARAMS.learn_on_clear = false;
-  // } else {
-  //   fprintf(stderr, "Please specify input path!!!\n");
-  //   fprintf(stderr, "%s\n", result.help(result.groups()).c_str());
-  //   exit(-1);
-  // }
-
-  // if (result.count("file_valid") > 0 and result["file_valid"].as<string>().length()) {
-  //   PARAMS.file_valid = result["file_valid"].as<string>();
-  //   PARAMS.valid = true;
-  // }
-
-
-  // if (not PARAMS.learn_on_clear) {
-  //   if (result.count("path_beta_out") > 0 and result["path_beta_out"].as<string>().length()) {
-  //     PARAMS.path_beta_out = result["path_beta_out"].as<string>();
-  //   } else {
-  //     fprintf(stderr, "Please specify output theta path!!!\n");
-  //     fprintf(stderr, "%s\n", result.help(result.groups()).c_str());
-  //     exit(-1);
-  //   }
-  // }
-
-    lr_params.n = result["indivs"].as<uint>();
-    lr_params.k = result["feats"].as<uint>()+1;
-    lr_params.m = result["snps"].as<uint>();
-
     lr_params.nb_iters = result["iters"].as<uint>();
     lr_params.seed = result["seed"].as<uint>();
     lr_params.nb_threads = result["threads"].as<uint>();
@@ -251,11 +215,11 @@ LRParams parse_args(int argc, char** argv) {
 int main(int argc, char **argv) {
     LRParams lr_params = parse_args(argc, argv);
 
-    const TfheParamSet *params = TfheParamSet::read(lr_params.params_filename);
-    const TfheCloudKeySet *keyset = TfheCloudKeySet::read(lr_params.cloud_keyset_filename, params);
+    const TfheParamSet *params = TfheParamSet::read(lr_params.filename_params);
+    const TfheCloudKeySet *keyset = TfheCloudKeySet::read(lr_params.filename_cloud_keyset, params);
 
     #ifdef DEBUG
-        secret_keyset = TfheSecretKeySet::read(lr_params.secret_keyset_filename, params);
+        secret_keyset = TfheSecretKeySet::read(lr_params.filename_secret_keyset, params);
     #endif
 
     TGswSample<Torus>* X_cols_l1 = nullptr;
@@ -265,12 +229,10 @@ int main(int argc, char **argv) {
 
     read_data(lr_params, sigmoid_xt_tps, y, X_cols_l1, X_cols_l2, params);
 
-    // lr_params.n = 16;
-    // lr_params.nb_iters = 5;
-    lr_params.update();
-
     if (lr_params.verbose_level)
         lr_params.print();
+
+    RandomGen::set_seed(lr_params.seed);
 
     #ifdef DEBUG
         printf("######### DEBUG MSG BEG #########\n");
@@ -305,11 +267,19 @@ int main(int argc, char **argv) {
         printf("######### DEBUG MSG END #########\n");
     #endif
 
+    log_regr(X_cols_l1, X_cols_l2, y, sigmoid_xt_tps, keyset, params, lr_params);
+
+    del_obj_array(lr_params.n, sigmoid_xt_tps);
+    del_obj(y);
+    del_obj_array(lr_params.k, X_cols_l2);
+    del_obj_array(lr_params.k, X_cols_l1);
 
     #ifdef DEBUG
+        delete secret_keyset;
     #endif
 
-    log_regr(X_cols_l1, X_cols_l2, y, sigmoid_xt_tps, keyset, params, lr_params);
+    delete keyset;
+    delete params;
 
     return 0;
 }

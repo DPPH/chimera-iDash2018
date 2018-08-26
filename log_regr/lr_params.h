@@ -34,10 +34,9 @@ struct LRParams
     const double sigm_in_max = 4.0;
     // const double sigm_multiplier = pow(2., -6);
 
-    const char* const params_filename = "params.bin";
-    const char* const secret_keyset_filename = "secret_keyset.bin";
-    const char* const cloud_keyset_filename = "cloud_keyset.bin";
-    const char* const ks_l2_l1_filename = "ks_l2_l1.bin";
+    const char* const filename_params = "params.bin";
+    const char* const filename_secret_keyset = "secret_keyset.bin";
+    const char* const filename_cloud_keyset = "cloud_keyset.bin";
 
     const char* const filename_data = "data.ctxt";
 

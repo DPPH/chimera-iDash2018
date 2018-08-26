@@ -113,22 +113,23 @@ TfheCloudKeySet* new_cloud_keyset(const TfheSecretKeySet* secret_keyset, const L
 
 
 int main(int argc, char const *argv[]) {
-    uint32_t values[2];
-    values[0] = time(NULL)>>32;
-    values[1] = time(NULL);
-    RandomGen::set_seed(values, 2);
+    // uint32_t values[2];
+    // values[0] = time(NULL)>>32;
+    // values[1] = time(NULL);
+    // RandomGen::set_seed(values, 2);
+    RandomGen::set_seed(42);
 
     LRParams lr_params;
 
     // generate params
     TfheParamSet* params = new_parameters();
-    TfheParamSet::write(lr_params.params_filename, params);
+    TfheParamSet::write(lr_params.filename_params, params);
 
     // generate the secret keyset
     const TfheSecretKeySet *secret_keyset = new_random_secret_keyset(params);
-    TfheSecretKeySet::write(lr_params.secret_keyset_filename, secret_keyset);
+    TfheSecretKeySet::write(lr_params.filename_secret_keyset, secret_keyset);
 
     // generate the cloud keyset
     const TfheCloudKeySet *cloud_keyset = new_cloud_keyset(secret_keyset, lr_params);
-    TfheCloudKeySet::write(lr_params.cloud_keyset_filename, cloud_keyset);
+    TfheCloudKeySet::write(lr_params.filename_cloud_keyset, cloud_keyset);
 }

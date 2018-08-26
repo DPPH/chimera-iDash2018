@@ -10,9 +10,9 @@ public:
     void SetUp() {
         if (params != nullptr) return;
 
-        params = TfheParamSet::read(lr_params.params_filename);
-        secret_keyset = TfheSecretKeySet::read(lr_params.secret_keyset_filename, params);
-        cloud_keyset = TfheCloudKeySet::read(lr_params.cloud_keyset_filename, params);
+        params = TfheParamSet::read(lr_params.filename_params);
+        secret_keyset = TfheSecretKeySet::read(lr_params.filename_secret_keyset, params);
+        cloud_keyset = TfheCloudKeySet::read(lr_params.filename_cloud_keyset, params);
 
         read_data(lr_params, sigmoid_xt_tps, y, X_cols_l1, X_cols_l2, params);
     }

@@ -13,10 +13,8 @@
 int main(int argc, char const *argv[]) {
     LRParams lr_params;
 
-    RandomGen::set_seed(42);
-
-    const TfheParamSet *params = TfheParamSet::read(lr_params.params_filename);
-    const TfheSecretKeySet *secret_keyset = TfheSecretKeySet::read(lr_params.secret_keyset_filename, params);
+    const TfheParamSet *params = TfheParamSet::read(lr_params.filename_params);
+    const TfheSecretKeySet *secret_keyset = TfheSecretKeySet::read(lr_params.filename_secret_keyset, params);
 
     TGswSample<Torus>* X_cols_l1 = nullptr;
     TGswSample<Torus>* X_cols_l2 = nullptr;

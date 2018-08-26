@@ -160,10 +160,14 @@ int main(int argc, char const *argv[]) {
     lr_params.k = data.k;
     lr_params.m = data.m;
 
+    // uint32_t values[2];
+    // values[0] = time(NULL)>>32;
+    // values[1] = time(NULL);
+    // RandomGen::set_seed(values, 2);
     RandomGen::set_seed(42);
 
-    const TfheParamSet *params = TfheParamSet::read(lr_params.params_filename);
-    const TfheSecretKeySet *keyset = TfheSecretKeySet::read(lr_params.secret_keyset_filename, params);
+    const TfheParamSet *params = TfheParamSet::read(lr_params.filename_params);
+    const TfheSecretKeySet *keyset = TfheSecretKeySet::read(lr_params.filename_secret_keyset, params);
 
     ofstream out(lr_params.filename_data, ofstream::binary);
     StdOstream out_stream = to_Ostream(out);

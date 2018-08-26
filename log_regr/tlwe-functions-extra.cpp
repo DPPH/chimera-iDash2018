@@ -23,6 +23,8 @@ void TLweFunctionsExtra<TORUS>::CreateKeySwitchKey_fromArray(
     const int t,
     const int basebit)
 {
+
+    #pragma omp parallel for
     for(int i=0;i<n;i++) {
         for(int j=0;j<t;j++){
             TORUS x=in_key[i]*(TORUS(1)<<(TorusUtils<TORUS>::bit_cnt-(j+1)*basebit));

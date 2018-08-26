@@ -8,7 +8,9 @@
 #include "tfhe_alloc.h"
 #include "tlwe-functions-extra.h"
 
+#ifndef NDEBUG
 #define DEBUG
+#endif
 
 #ifdef DEBUG
     const TfheSecretKeySet* secret_keyset = nullptr;
@@ -158,6 +160,7 @@ void compute_Xt_y(
     const TLweParams<Torus>* trlwe_params = trgsw_params->tlwe_params;
     const LweParams<Torus>* tlwe_params = &(trlwe_params->extracted_lweparams);
 
+    // #pragma omp parallel for
     for (int i = 0; i < lr_params.k; ++i) {
         TLweSample<Torus>* acc = new_obj<TLweSample<Torus>>(trlwe_params);
         TGswFunctions<Torus>::ExternProduct(acc, X_cols+i, y, trgsw_params);
@@ -219,7 +222,7 @@ void compute_X_beta(
 {
     /* switch beta from TLWE to TRLWE and multiply each beta by X columns */
     VERBOSE_1_PRINT("==> compute individual columns of X.beta\n");
-    #pragma omp parallel for ordered schedule(static,1)
+    #pragma omp parallel for ordered schedule(static,1) num_threads(lr_params.nb_threads)
     for (int j = 0; j < lr_params.k; ++j) {
         /* switch from L2 TLWE sample to L1 TRLWE sample  */
         TLweKeySwitch(X_beta_cp+j, ks_l2_l1, beta_in+j);
@@ -277,7 +280,7 @@ void extract_X_beta(
 
     /* extract individual TLWE L0 encryptions of \sum_{j=0..k-1} X_ij.\beta_j from X_beta_cp TRLWE L1 sample */
     VERBOSE_1_PRINT("==> extract individual samples from X.beta\n");
-    #pragma omp parallel for ordered schedule(static,1)
+    #pragma omp parallel for ordered schedule(static,1) num_threads(lr_params.nb_threads)
     for (int i = 0; i < lr_params.n; ++i) {
         LweSample<Torus>* tmp = new_obj<LweSample<Torus>>(tlwe_params);
         TLweFunctions<Torus>::ExtractLweSampleIndex(tmp, X_beta_cp, i, tlwe_params, trlwe_params);
@@ -342,7 +345,7 @@ void compute_Xt_sigma(
 
     /* compute vector Xt.\sigma(u).\alpha of size k (vector element are encoded in k polynomial coefficients) */
     VERBOSE_1_PRINT("==> blindrotate to compute rows of \\alpha.Xt.\\sigma(X.beta)\n");
-    #pragma omp parallel for ordered schedule(static,1)
+    #pragma omp parallel for ordered schedule(static,1) num_threads(lr_params.nb_threads)
     for (int i = 0; i < lr_params.n; ++i) {
         tLweCopy(acc+i, sigmoid_xt_tps+i, trlwe_params);
         blindrotate(acc+i, trlwe_params, X_beta+i, tlwe_params, bk_fft, trgsw_params, lr_params);
@@ -393,7 +396,7 @@ void extract_sub_Xt_y(
 {
     const LweParams<Torus>* tlwe_params = &(trlwe_params->extracted_lweparams);
 
-    #pragma omp parallel for ordered schedule(static,1)
+    #pragma omp parallel for ordered schedule(static,1) num_threads(lr_params.nb_threads)
     for (int j = 0; j < lr_params.k; ++j) {
         LweSample<Torus>* tmp = new_obj<LweSample<Torus>>(tlwe_params);
 
