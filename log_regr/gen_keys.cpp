@@ -108,7 +108,7 @@ TfheCloudKeySet* new_cloud_keyset(const TfheSecretKeySet* secret_keyset, const L
     TGswSample<Torus>* bk = create_bk(secret_keyset->tlwe_key_l0, secret_keyset->trgsw_key_l2);
     LweKeySwitchKey<Torus>* ks_l1_l0 = create_ks_l1_l0(secret_keyset->tlwe_key_l0, secret_keyset->tlwe_key_l1);
     TLweKeySwitchKey<Torus>* ks_l2_l1 = create_ks_l2_l1(secret_keyset->trlwe_key_l1, secret_keyset->tlwe_key_l2);;
-    return new TfheCloudKeySet(secret_keyset->params, bk, ks_l1_l0, ks_l2_l1);
+    return new TfheCloudKeySet(secret_keyset->params, bk, ks_l1_l0, ks_l2_l1, false);
 }
 
 

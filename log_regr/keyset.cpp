@@ -61,12 +61,10 @@ void TfheCloudKeySet::create_bk_fft() {
         printf("Creating bk_fft from l0 to l2\n");
     #endif
 
-    #pragma omp parallel for
     for (int i=0; i<n; ++i) {
         TGswFunctions<Torus>::ToFFTConvert(bk_fft+i, bk+i, bk_params);
     }
 }
-
 
 void TfheSecretKeySet::write(Ostream& out, const TfheSecretKeySet* secret_keyset) {
     IOFunctions<Torus>::write_lweKey(out, secret_keyset->tlwe_key_l0, false);

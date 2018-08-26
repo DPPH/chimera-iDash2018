@@ -103,7 +103,8 @@ public:
         const TfheParamSet* params,
         const TGswSample<Torus>* bk, //TRGSW encryption of TLWE L0 SK
         const LweKeySwitchKey<Torus>* ks_l1_l0, //KS of TLWE L1 SK to TLWE L0 SK
-        const TLweKeySwitchKey<Torus>* ks_l2_l1 //KS of TLWE L2 SK to TRLWE L1 SK
+        const TLweKeySwitchKey<Torus>* ks_l2_l1, //KS of TLWE L2 SK to TRLWE L1 SK
+        bool compute_bk_fft = true
         )
     :
         params(params),
@@ -111,7 +112,8 @@ public:
         ks_l1_l0(ks_l1_l0),
         ks_l2_l1(ks_l2_l1)
     {
-        create_bk_fft();
+        if (compute_bk_fft)
+            create_bk_fft();
     }
 
     static void del(const TfheCloudKeySet*);

@@ -160,7 +160,7 @@ void compute_Xt_y(
     const TLweParams<Torus>* trlwe_params = trgsw_params->tlwe_params;
     const LweParams<Torus>* tlwe_params = &(trlwe_params->extracted_lweparams);
 
-    // #pragma omp parallel for
+    // #pragma omp parallel for // see why this does not work
     for (int i = 0; i < lr_params.k; ++i) {
         TLweSample<Torus>* acc = new_obj<TLweSample<Torus>>(trlwe_params);
         TGswFunctions<Torus>::ExternProduct(acc, X_cols+i, y, trgsw_params);
@@ -350,7 +350,7 @@ void compute_Xt_sigma(
         tLweCopy(acc+i, sigmoid_xt_tps+i, trlwe_params);
         blindrotate(acc+i, trlwe_params, X_beta+i, tlwe_params, bk_fft, trgsw_params, lr_params);
 
-        #ifdef DEBUG
+        // #ifdef DEBUG
         // {
         //     printf("######### DEBUG MSG BEG #########\n");
         //     printf("inp: ");
@@ -368,7 +368,7 @@ void compute_Xt_sigma(
 
         //     printf("######### DEBUG MSG END #########\n");
         // }
-        #endif
+        // #endif
 
         #pragma omp ordered
         VERBOSE_2_PRINT("     %4d/%4d\r", i+1, lr_params.n);
