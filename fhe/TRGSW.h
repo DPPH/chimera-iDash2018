@@ -29,7 +29,7 @@ std::shared_ptr<TRGSWParams> deserializeTRGSWParams(std::istream &in);
 class TRGSW {
 public:
     const TRGSWParams &params;
-    BigComplex *(a[2][TRGSWParams::max_ell][2]);
+    BigComplex *a[2][TRGSWParams::max_ell][2];
     UINT64 plaintext_exponent; //the exponent we should multiply the trgsw to obtain the original plaintext
     UINT64 bits_a;             //bits of the norm 1 of the plaintext
     UINT64 fft_nlimbs; //fft limbs in all BigComplex

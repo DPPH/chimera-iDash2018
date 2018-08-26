@@ -220,7 +220,7 @@ extern shared_ptr<TLweKey> debug_key;
 
 TEST(MAINALGO, compute_A) {
     int64_t k = 3;
-    int64_t n = 23;
+    int64_t n = 250;
     int64_t l = 5;
     int64_t N = 4096;
 
@@ -258,14 +258,18 @@ TEST(MAINALGO, compute_A) {
 
     shared_ptr<TLweKey> key = tlwe_keygen(trlweParams_key);
     debug_key = key;
-
+    cout << "time start encrypt X: " << clock() / double(CLOCKS_PER_SEC) << endl;
     shared_ptr<TRGSWMatrix> X = encrypt_X(plaintext_X, *key, N, L_X + 32 + 5, rho);
 
+    cout << "time start encrypt S: " << clock() / double(CLOCKS_PER_SEC) << endl;
     shared_ptr<TRGSWMatrix> S = encrypt_S(plaintext_S, *key, N, L_S + 32 + 5, rho);
 
+    cout << "time start encrypt W: " << clock() / double(CLOCKS_PER_SEC) << endl;
     shared_ptr<TRLWEVector> W = encrypt_individual_trlwe(plaintext_W, *key, N, L_W, tau_W, rho);
 
+    cout << "time start compute A: " << clock() / double(CLOCKS_PER_SEC) << endl;
     shared_ptr<TRLweMatrix> A = compute_A(*X, *S, *W, NA, NA, rho);
+    cout << "time end compute A: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
     TRLWEVector temp(l, A->data[0][0].params);
 
@@ -292,6 +296,8 @@ TEST(MAINALGO, compute_A) {
             cout << resp_target[i][j] << endl;
             cout << resp[j] << endl;
             EXPECT_LE(log2Diff(resp_target[i][j], resp[j]), tau_S + tau_W + tau_X - rho + 5);
+            if (j == 100) break; //TODO remove
         }
+        break; //TODO remove
     }
 }
