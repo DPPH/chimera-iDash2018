@@ -1,4 +1,5 @@
 #include <cassert>
+#include <omp.h>
 #include "mainalgo.h"
 #include "BigFFT.h"
 #include "TRLwe.h"
@@ -581,8 +582,11 @@ compute_A(const TRGSWMatrix &X, const TRGSWMatrix &S, const TRLWEVector &W, int6
     std::shared_ptr<TRLweParams> temp_trlwe_params = make_shared<TRLweParams>(N, *temp_bt_params);
     store_forever(temp_trlwe_params);
 
-    TRLwe temp(*temp_trlwe_params);
-    TRLwe temp2(*reps_trlwe_params);
+    //We'll use one temp trlwe per thread.
+    const int NUM_THREADS = omp_get_max_threads();
+    cout << "Compute A will use: " << NUM_THREADS << "threads" << endl;
+    TRLWEVector temp(NUM_THREADS, *temp_trlwe_params);
+    TRLWEVector temp2(NUM_THREADS, *reps_trlwe_params);
 
     for (int i = 0; i < X.cols; i++) {
         for (int j = 0; j < S.cols; j++) {
@@ -596,8 +600,10 @@ compute_A(const TRGSWMatrix &X, const TRGSWMatrix &S, const TRLWEVector &W, int6
 #endif
     for (int i = 0; i < X.cols; i++) {
         for (int j = 0; j < S.cols; j++) {
+#pragma omp parallel for //here, we choose to parallelize the loop in n
             for (int k = 0; k < n; k++) {
-                external_product(temp, S.data[k][j], W.data[k], alpha_bits_temp);
+                int threadNo = omp_get_thread_num();
+                external_product(temp.data[threadNo], S.data[k][j], W.data[k], alpha_bits_temp);
 #ifdef DEBUG_COMPUTE_A
                 //debug: temp must be equal to W[k] * S[k][...]
                 vec_RR debug_tmp = slot_decrypt(temp, *debug_key);
@@ -614,9 +620,12 @@ compute_A(const TRGSWMatrix &X, const TRGSWMatrix &S, const TRLWEVector &W, int6
                     cout << "dec: " << debug_tmp[kk] << endl << "exp: " << debug_expect[kk] << endl;
                 }
 #endif
-                external_product(temp2, X.data[k][i], temp, alpha_bits);
-                fixp_add(reps->data[i][j], reps->data[i][j],
-                         temp2); //if temp2 and reps are not with the same params we should use fixp_add
+                external_product(temp2.data[threadNo], X.data[k][i], temp.data[threadNo], alpha_bits);
+#pragma omp critical
+                {
+                    fixp_add(reps->data[i][j], reps->data[i][j],
+                             temp2.data[threadNo]); //if temp2 and reps are not with the same params we should use fixp_add
+                }
             }
         }
     }
