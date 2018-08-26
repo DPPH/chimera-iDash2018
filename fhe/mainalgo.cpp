@@ -540,6 +540,13 @@ compute_w(const TRLWEVector &p, const TRGSW &rk, int64_t target_level_expo, int6
     return shared_ptr<TRLWEVector>(resp);
 }
 
+#ifdef DEBUG_COMPUTE_A
+extern NTL::mat_RR debug_S;
+extern NTL::mat_RR debug_X;
+extern NTL::vec_RR debug_W;
+extern shared_ptr<TLweKey> debug_key;
+#endif
+
 std::shared_ptr<TRLweMatrix>
 compute_A(const TRGSWMatrix &X, const TRGSWMatrix &S, const TRLWEVector &W, int64_t target_level_expo,
           int64_t override_plaintext_exponent, int64_t plaintext_precision_bits) {
@@ -565,8 +572,8 @@ compute_A(const TRGSWMatrix &X, const TRGSWMatrix &S, const TRLWEVector &W, int6
 
     int64_t L_temp = W.data[0].params.fixp_params.level_expo - S.data[0][0].bits_a;
     int64_t tau_temp = W.data[0].params.fixp_params.plaintext_expo + S.data[0][0].plaintext_exponent;
-    int64_t alpha_bits_temp = L_temp + plaintext_precision_bits;
-    int64_t temp_limbs = limb_precision(alpha_bits_temp);
+    int64_t alpha_bits_temp = L_temp + plaintext_precision_bits + 10;
+    int64_t temp_limbs = limb_precision(alpha_bits_temp + 10);
 
     std::shared_ptr<BigTorusParams> temp_bt_params = make_shared<BigTorusParams>(temp_limbs, tau_temp, L_temp);
     store_forever(temp_bt_params);
@@ -579,11 +586,37 @@ compute_A(const TRGSWMatrix &X, const TRGSWMatrix &S, const TRLWEVector &W, int6
 
     for (int i = 0; i < X.cols; i++) {
         for (int j = 0; j < S.cols; j++) {
+            zero(reps->data[i][j]);
+        }
+    }
+#ifdef DEBUG_COMPUTE_A
+    BigTorusParams debug_Sdec1_params(S.data[0][0].fft_nlimbs, 0, 0);
+    BigTorusPolynomial debug_Sdec1(N, debug_Sdec1_params);
+    BigComplex* debug_Sdec2 = new_BigComplex_array(N/2, S.data[0][0].fft_nlimbs);
+#endif
+    for (int i = 0; i < X.cols; i++) {
+        for (int j = 0; j < S.cols; j++) {
             for (int k = 0; k < n; k++) {
                 external_product(temp, S.data[k][j], W.data[k], alpha_bits_temp);
+#ifdef DEBUG_COMPUTE_A
+                //debug: temp must be equal to W[k] * S[k][...]
+                vec_RR debug_tmp = slot_decrypt(temp, *debug_key);
+                vec_RR debug_expect; debug_expect.SetLength(N/2);
+                //vec_RR debug_Sdec = slot_decrypt(S.data[k][j].a[1][0]);
+                native_phase_FFT(debug_Sdec1, S.data[k][j].a[1][0][0], S.data[k][j].a[1][0][1], *debug_key);
+                iFFT(debug_Sdec2, debug_Sdec1);
+
+                for (int kk=0; kk<N/2; kk++) {
+                    debug_expect[kk] = debug_W[k]*debug_S[k][j*N/2+kk];
+                    RR decS = to_RR(debug_Sdec2[kk].real) * power2_RR(S.data[k][j].plaintext_exponent + 32 - S.data[k][j].bits_a);
+                    cout << "s..: " << decS << endl << "exs: " << debug_S[k][j*N/2+kk] << endl;
+                    cout << "w..: " << slot_decrypt(W.data[k], *debug_key)[0] << endl << "exw: " << debug_W[k] << endl;
+                    cout << "dec: " << debug_tmp[kk] << endl << "exp: " << debug_expect[kk] << endl;
+                }
+#endif
                 external_product(temp2, X.data[k][i], temp, alpha_bits);
-                add(reps->data[i][j], reps->data[i][j],
-                    temp2); //if temp2 and reps are not with the same params we should use fixp_add
+                fixp_add(reps->data[i][j], reps->data[i][j],
+                         temp2); //if temp2 and reps are not with the same params we should use fixp_add
             }
         }
     }
