@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(fhe)
 
-set(CMAKE_CXX_FLAGS "--std=c++17")
+set(CMAKE_CXX_FLAGS "--std=c++17 -g3 -O0 -Wall -Werror -fopenmp")
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -Wall -Werror -fopenmp")
 set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O9 -DNDEBUG -fopenmp")

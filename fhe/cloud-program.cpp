@@ -16,10 +16,10 @@ shared_ptr<TLweKey> debug_key;
 int main() {
     int64_t k = 3;
     //int64_t n = 13;
-    int64_t n = 250;
+    int64_t n = 253;
     int64_t l = 5;
-    int64_t N = 128;
-    //int64_t N = 4096;
+    //int64_t N = 128;
+    int64_t N = 4096;
 
     int64_t tau_X = -5;
     int64_t tau_W = -1;
