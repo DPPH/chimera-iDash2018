@@ -6,14 +6,14 @@
 
 using namespace std;
 
-const int n_l0 = 666; // not on purpose, Nicola's formula was noise_alpha * 37 (here we have for 2^-18 noise std)
+const int n_l0 = 730;
 const int n_l1 = 2048;
 const int n_l2 = 8192;
 const int k = 1;
 
 const double stddev_l0 = pow(2., -18);
-const double stddev_l1 = pow(2., -48);
-const double stddev_l2 = pow(2., -48);
+const double stddev_l1 = pow(2., -53);
+const double stddev_l2 = pow(2., -53);
 
 const int l1_l = 8;
 const int l1_Bgbit = 6;
@@ -24,8 +24,8 @@ const int l2_Bgbit = 6;
 const int ks_l1_l0_t = 3;
 const int ks_l1_l0_basebit = 5;
 
-const int ks_l2_l1_t = 5;
-const int ks_l2_l1_basebit = 8;
+const int ks_l2_l1_t = 7;
+const int ks_l2_l1_basebit = 6;
 
 TfheParamSet *new_parameters() {
     LweParams<Torus>* tlwe_params_l0 = new_obj<LweParams<Torus>>(n_l0, stddev_l0, -1);

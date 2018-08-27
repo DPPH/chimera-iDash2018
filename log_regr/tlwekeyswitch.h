@@ -28,7 +28,6 @@ struct TLweKeySwitchKey: InitializerTag {
         const TLweParams<TORUS>* out_params);
     static void destroy_obj(TLweKeySwitchKey<TORUS>* obj);
 
-
     void write(Ostream& out_stream) const;
     static TLweKeySwitchKey* read_new(Istream& inp_stream, const TLweParams<TORUS>* params);
 };

@@ -6,6 +6,7 @@
 #include "test_common.h"
 #include <NTL/ZZX.h>
 #include <NTL/vector.h>
+#include <vector>
 
 using namespace std;
 using namespace NTL;
@@ -129,25 +130,49 @@ TEST_F(LogRegrFuncTest, ks_l2_l1) {
 
     RandomGen::set_seed(41);
 
-    // LweSample<Torus>* inp_sample1 = read_tlwe_samples("ks_inp.ctxt", tlwe_params_l1, 1);
+    const LweParams<Torus>* extract_params = tlwe_key_l2->params;
+    const TLweParams<Torus>* out_params = trlwe_key_l1->params;
+    const int N = extract_params->n;
 
-    LweSample<Torus>* inp_sample2 = new_obj<LweSample<Torus>>(tlwe_params_l2);
-    double msg = 0.1911391;
-    LweFunctions<Torus>::SymEncrypt(inp_sample2, TorusUtils<Torus>::from_double(msg), pow(2.0,-20), tlwe_key_l2);
+    printf("Creating ks from l2 to l1:");
+    printf("%8d input size", N);
+    printf("%8dx%8d output size\n", out_params->N, out_params->k);
 
-    LweSample<Torus>* inp_sample = inp_sample2;
+    int ks_l2_l1_t = 7;
+    int ks_l2_l1_basebit = 6;
 
-    printf("inp tlwe sample: ");
-    print_tlwe_sample(inp_sample, tlwe_key_l2, 1.);
-    printf("\n");
+    TLweKeySwitchKey<Torus>* ks_l2_l1 = new_obj<TLweKeySwitchKey<Torus>>(N, ks_l2_l1_t, ks_l2_l1_basebit, out_params);
+    TLweFunctionsExtra<Torus>::CreateKeySwitchKey(ks_l2_l1, tlwe_key_l2, trlwe_key_l1);
 
+
+    LweSample<Torus>* inp_sample = new_obj<LweSample<Torus>>(tlwe_params_l2);
     TLweSample<Torus>* out_sample = new_obj<TLweSample<Torus>>(trlwe_params_l1);
-    TLweFunctionsExtra<Torus>::KeySwitch(out_sample, cloud_keyset->ks_l2_l1, inp_sample);
+    TorusPolynomial<Torus>* out_msg = new_obj<TorusPolynomial<Torus>>(trlwe_params_l1->N);;
 
-    printf("out tlwe sample: ");
-    print_trlwe_sample(out_sample, trlwe_key_l1, 10, 1.);
+    vector<Torus> deltas;
+    for (int i = 0; i < 30; ++i)
+    {
+        Torus inp_msg = RandomGenTorus<Torus>::uniform();
+        LweFunctions<Torus>::SymEncrypt(inp_sample, inp_msg, pow(2.0,-53), tlwe_key_l2);
+
+        TLweFunctionsExtra<Torus>::KeySwitch(out_sample, ks_l2_l1, inp_sample);
+
+        TLweFunctions<Torus>::Phase(out_msg, out_sample, trlwe_key_l1);
+
+        // printf("%ld %ld\n", inp_msg, out_msg->coefsT[0]);
+        deltas.push_back(abs(out_msg->coefsT[0] - inp_msg));
+        printf(".");
+        fflush(stdout);
+    }
     printf("\n");
 
+    auto t = minmax_element(deltas.begin(), deltas.end());
+    printf("delta min %20ld %e\n", *t.first, TorusUtils<Torus>::to_double(*t.first));
+    printf("delta max %20ld %e\n", *t.second, TorusUtils<Torus>::to_double(*t.second));
+
+    del_obj(out_msg);
+    del_obj(out_sample);
+    del_obj(inp_sample);
 }
 
 
