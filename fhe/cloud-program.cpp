@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <NTL/mat_RR.h>
 #include <memory>
+#include <fstream>
 #include "TLwe.h"
 #include "TRLwe.h"
 #include "mainalgo.h"
@@ -14,6 +15,65 @@ shared_ptr<TLweKey> debug_key;
 
 
 int main() {
+    //algo parameters (TODO: share these parameters everywhere)
+    const int64_t algo_n = 253;
+    const int64_t algo_k = 3;
+    const int64_t algo_m = 10000;
+
+    int64_t n_lvl0 = -1;
+    shared_ptr<TRGSWParams> bk_trgsw_params;
+    //blind-rotate the input ciphertext
+
+    //read the bk key
+    //deserialize bootstrapping key
+    ifstream bk_key_in("bk.key");
+    istream_read_binary(bk_key_in, &n_lvl0, sizeof(int64_t));
+    bk_trgsw_params = deserializeTRGSWParams(bk_key_in);
+    store_forever(bk_trgsw_params);
+    TRGSW *bk = new_TRGSW_array(n_lvl0, *bk_trgsw_params);
+    for (int j = 0; j < n_lvl0; ++j) {
+        deserializeTRGSWContent(bk_key_in, bk[j]);
+    }
+    bk_key_in.close();
+
+    //------ test vector params
+    //------
+    const int64_t N = bk_trgsw_params->N;
+    const int64_t test_vector_level = 80;
+    const int64_t test_vector_plaintext_expo = 0;
+    BigTorusParams test_vector_bt_params(2, test_vector_plaintext_expo, test_vector_level);
+    TRLweParams test_vector_params(N, test_vector_bt_params);
+
+    //create the test vector corresponding to the sigmoid function
+    TRLwe sigmoid_test_vector(test_vector_params);
+    //TODO: fill the sigmoid (recode the test vector from section 1...)
+
+
+    //read the input ciphertexts (from section 1)
+    //TODO decide the format
+    //int64_t *a
+
+    //------ p params
+    //------
+    const int64_t p_level = 80;
+    const int64_t p_plaintext_expo = 0;
+    const int64_t p_limbs = limb_precision(p_level + default_plaintext_precision);
+    BigTorusParams p_bt_params(p_limbs, p_plaintext_expo, p_level);
+    TLweParams p_tlwe_params(N, p_bt_params);  // extract after bootstrap
+    TRLweParams p_trlwe_params(N, p_bt_params); // param after pubKS
+
+    TRLWEVector p_lvl4(algo_n, p_trlwe_params);
+    for (int64_t i = 0; i < algo_n; i++) {
+        //read the input trlwe
+        //blind rotate it
+        //extract the constant term
+        //pubks it to p_lvl4
+    }
+
+}
+
+
+int main2() {
     int64_t k = 3;
     //int64_t n = 13;
     int64_t n = 253;
@@ -93,9 +153,9 @@ int main() {
             cout << resp_target[i][j] << endl;
             cout << resp[j] << endl;
             //EXPECT_LE(log2Diff(resp_target[i][j], resp[j]), tau_S + tau_W + tau_X - rho + 5 + log(N));
-             if (j == 100) break; //TODO remove
+            if (j == 100) break; //TODO remove
         }
-         break; //TODO remove
+        break; //TODO remove
     }
 
 }
