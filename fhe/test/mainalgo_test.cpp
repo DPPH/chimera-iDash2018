@@ -114,7 +114,7 @@ TEST(MAINALGO, product_ind_TRLWE) {
     vec_RR target_resp = decrypt_individual_trlwe(*resp, *key, length);
 
     for (int i = 0; i < length; i++) {
-        EXPECT_LE(log2Diff(target_resp[i], vec_a[i] * vec_b[i]), tau_a + tau_b - rho + 5);
+        EXPECT_LE(log2Diff(target_resp[i], vec_a[i] * vec_b[i]), tau_a + tau_b - rho + 6);
     }
 
 
@@ -220,9 +220,11 @@ extern shared_ptr<TLweKey> debug_key;
 
 TEST(MAINALGO, compute_A) {
     int64_t k = 3;
-    int64_t n = 250;
+    int64_t n = 13;
+    //int64_t n = 250;
     int64_t l = 5;
-    int64_t N = 4096;
+    int64_t N = 128;
+    //int64_t N = 4096;
 
     int64_t tau_X = -5;
     int64_t tau_W = -1;
@@ -293,11 +295,11 @@ TEST(MAINALGO, compute_A) {
         vec_RR resp = decrypt_heaan_packed_trlwe(temp, *key, l * N / 2);
 
         for (int j = 0; j < l * N / 2; j++) {
-            cout << resp_target[i][j] << endl;
-            cout << resp[j] << endl;
-            EXPECT_LE(log2Diff(resp_target[i][j], resp[j]), tau_S + tau_W + tau_X - rho + 5);
-            if (j == 100) break; //TODO remove
+            //cout << resp_target[i][j] << endl;
+            //cout << resp[j] << endl;
+            EXPECT_LE(log2Diff(resp_target[i][j], resp[j]), tau_S + tau_W + tau_X - rho + 5 + log(N));
+            // if (j == 100) break; //TODO remove
         }
-        break; //TODO remove
+        // break; //TODO remove
     }
 }
