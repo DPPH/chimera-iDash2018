@@ -536,6 +536,12 @@ void fixp_sub(TRLwe &reps, const TRLwe &a, const TRLwe &b, UINT64 out_precision_
 
 }
 
+void fixp_add(TRLwe &reps, const TRLwe &a, const TRLwe &b, UINT64 out_precision_bits) {
+    fixp_add(reps.a[0], a.a[0], b.a[0], out_precision_bits);
+    fixp_add(reps.a[1], a.a[1], b.a[1], out_precision_bits);
+
+}
+
 
 pubKsKey128::pubKsKey128(
         const TLweParams &in_params,

@@ -29,7 +29,7 @@ std::shared_ptr<TRGSWParams> deserializeTRGSWParams(std::istream &in);
 class TRGSW {
 public:
     const TRGSWParams &params;
-    BigComplex *(a[2][TRGSWParams::max_ell][2]);
+    BigComplex *a[2][TRGSWParams::max_ell][2];
     UINT64 plaintext_exponent; //the exponent we should multiply the trgsw to obtain the original plaintext
     UINT64 bits_a;             //bits of the norm 1 of the plaintext
     UINT64 fft_nlimbs; //fft limbs in all BigComplex
@@ -76,7 +76,7 @@ std::shared_ptr<TRGSW> deserializeTRGSW(std::istream &in);
 
 void intPoly_encrypt(TRGSW &reps, const int64_t *plaintext, const TLweKey &key, UINT64 alpha_bits);
 
-void binary_encrypt(TRGSW &reps, const UINT64 plaintext, const TLweKey &key, UINT64 alpha_bits);
+void int_encrypt(TRGSW &reps, const int64_t plaintext, const TLweKey &key, UINT64 alpha_bits);
 
 void external_product(TRLwe &reps, const TRGSW &a, const TRLwe &b, int64_t out_alpha_bits);
 

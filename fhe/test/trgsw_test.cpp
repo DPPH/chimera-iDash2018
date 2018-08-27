@@ -108,7 +108,8 @@ TEST(TRGSW_TEST, trgsw_external_product) {
 TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
     //int64_t N = 4096;
     int64_t N = 256;
-    int64_t n_in = 500;
+    //int64_t n_in = 500;
+    int64_t n_in = 50;
     int64_t nblimbs = 2;
     int64_t alpha_bits = 120; //signed
     int64_t out_alpha_bits = alpha_bits - (32 + int(log2(N)));
@@ -133,7 +134,7 @@ TEST(TRGSW_BLINDROTATE_TEST, trgsw_blind_rotate) {
     for (int i = 0; i < n_in; i++) {
         s[i] = rand() % 2;
         a[i] = rand() % (2 * N);
-        binary_encrypt(c[i], s[i], *key, alpha_bits);
+        int_encrypt(c[i], s[i], *key, alpha_bits);
         power += s[i] * a[i];
     }
     cout << "end encrypt: " << clock() / double(CLOCKS_PER_SEC) << endl;

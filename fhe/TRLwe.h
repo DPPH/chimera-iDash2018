@@ -237,6 +237,7 @@ TRLwe *new_TRLwe_array(UINT64 size, const TRLweParams &params);
 /** delete an array of TRGSW */
 void delete_TRLwe_array(UINT64 size, TRLwe *array);
 
+void fixp_add(TRLwe &reps, const TRLwe &a, const TRLwe &b, UINT64 out_precision_bits = NA);
 
 void fixp_sub(TRLwe &reps, const TRLwe &a, const TRLwe &b, UINT64 out_precision_bits = NA);
 
