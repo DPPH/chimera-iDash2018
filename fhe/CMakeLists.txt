@@ -35,6 +35,9 @@ target_link_libraries(fhe chimera-dpph -lntl -lmpfr -lgmp -lntl -lm -pthread)
 add_executable(unittest test/arithmetic_test.cpp test/fft_test.cpp test/tlwe_test.cpp test/trlwe_test.cpp test/trgsw_test.cpp test/serialize_test.cpp test/mainalgo_test.cpp)
 target_link_libraries(unittest gtest gtest_main chimera-dpph -lntl -lmpfr -lgmp -lm -pthread)
 
+add_executable(cloud-program cloud-program.cpp)
+target_link_libraries(cloud-program gtest gtest_main chimera-dpph -lntl -lmpfr -lgmp -lm -pthread)
+
 add_subdirectory(bench)
 
 enable_testing()
