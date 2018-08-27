@@ -38,6 +38,9 @@ target_link_libraries(unittest gtest gtest_main chimera-dpph -lntl -lmpfr -lgmp 
 add_executable(cloud-program cloud-program.cpp)
 target_link_libraries(cloud-program gtest gtest_main chimera-dpph -lntl -lmpfr -lgmp -lm -pthread)
 
+add_executable(key-gen-program key-gen-program.cpp)
+target_link_libraries(key-gen-program gtest gtest_main chimera-dpph -lntl -lmpfr -lgmp -lm -pthread)
+
 add_subdirectory(bench)
 
 enable_testing()
