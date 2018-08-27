@@ -3,8 +3,9 @@ project(fhe)
 
 set(CMAKE_CXX_FLAGS "--std=c++17")
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -Wall -Werror")
-set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O9 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -Wall -Werror -fopenmp")
+set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O9 -DNDEBUG -fopenmp")
+set(CMAKE_EXE_LINKER_FLAGS "-fopenmp")
 
 add_subdirectory(test/googletest)
 include_directories(test/googletest/googletest)
@@ -21,8 +22,8 @@ add_library(chimera-dpph
         BigReal.h
         BigFFT.cpp
         BigFFT.h
-        BigFFT128.cpp
-        BigFFT128.h
+        #BigFFT128.cpp
+        #BigFFT128.h
         BigComplex.cpp
         BigComplex.h
         TLwe.cpp
