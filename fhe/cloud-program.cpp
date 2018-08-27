@@ -15,17 +15,18 @@ shared_ptr<TLweKey> debug_key;
 
 
 int main() {
-    //algo parameters (TODO: share these parameters everywhere)
+    // algo parameters (TODO: share these parameters everywhere)
     const int64_t algo_n = 253;
-    const int64_t algo_k = 3;
-    const int64_t algo_m = 10000;
+    //const int64_t algo_k = 3;
+    //const int64_t algo_m = 10000;
 
     int64_t n_lvl0 = -1;
     shared_ptr<TRGSWParams> bk_trgsw_params;
-    //blind-rotate the input ciphertext
+    // blind-rotate the input ciphertext
 
-    //read the bk key
-    //deserialize bootstrapping key
+    // read the bk key
+    // deserialize bootstrapping key
+    cerr << "deserializing bk" << endl;
     ifstream bk_key_in("bk.key");
     istream_read_binary(bk_key_in, &n_lvl0, sizeof(int64_t));
     bk_trgsw_params = deserializeTRGSWParams(bk_key_in);
@@ -36,39 +37,80 @@ int main() {
     }
     bk_key_in.close();
 
-    //------ test vector params
-    //------
+    // read the ks key
+    cerr << "deserializing ks" << endl;
+    ifstream ks_key_in("ks.key");
+    shared_ptr<pubKsKey32> ks_key = deserializepubKsKey32(ks_key_in);
+    ks_key_in.close();
+
+    // ------ test vector params
+    // ------
     const int64_t N = bk_trgsw_params->N;
     const int64_t test_vector_level = 80;
     const int64_t test_vector_plaintext_expo = 0;
     BigTorusParams test_vector_bt_params(2, test_vector_plaintext_expo, test_vector_level);
     TRLweParams test_vector_params(N, test_vector_bt_params);
 
-    //create the test vector corresponding to the sigmoid function
+    // create the test vector corresponding to the sigmoid function
     TRLwe sigmoid_test_vector(test_vector_params);
-    //TODO: fill the sigmoid (recode the test vector from section 1...)
+    // TODO: fill the sigmoid (recode the test vector from section 1...)
+    zero(sigmoid_test_vector.a[0]);
+    random(sigmoid_test_vector.a[1], 2); //TODO !!!!!
 
 
-    //read the input ciphertexts (from section 1)
-    //TODO decide the format
-    //int64_t *a
+    // read the input ciphertexts (from section 1)
+    // TODO decide the format and read it
+    // read the input trlwe
+    cerr << "reading section 0 ciphertext" << endl;
+    int64_t *in_coefs_raw = new int64_t[(n_lvl0 + 1) * algo_n];
+    for (int64_t j = 0; j < (n_lvl0 + 1) * algo_n; ++j) {
+        in_coefs_raw[j] = random() % 8192; //TODO !!!!!!
+    }
+    int64_t **in_coefs = new int64_t *[algo_n];
+    for (int64_t i = 0; i < algo_n; i++) {
+        in_coefs[i] = in_coefs_raw + (n_lvl0 + 1) * i;
+    }
 
-    //------ p params
-    //------
+    // ------ p params
+    // ------
     const int64_t p_level = 80;
     const int64_t p_plaintext_expo = 0;
-    const int64_t p_limbs = limb_precision(p_level + default_plaintext_precision);
+    const int64_t p_alpha_bits = p_level + default_plaintext_precision;
+    const int64_t p_limbs = limb_precision(p_alpha_bits);
     BigTorusParams p_bt_params(p_limbs, p_plaintext_expo, p_level);
     TLweParams p_tlwe_params(N, p_bt_params);  // extract after bootstrap
     TRLweParams p_trlwe_params(N, p_bt_params); // param after pubKS
 
     TRLWEVector p_lvl4(algo_n, p_trlwe_params);
+
+#pragma omp parallel for
     for (int64_t i = 0; i < algo_n; i++) {
-        //read the input trlwe
+#pragma omp critical
+        cerr << "bootstrapping p_" << i << endl;
+        TRLwe rotated_test_vector(p_trlwe_params);
+        TLwe extracted_sigmoid(p_trlwe_params);
         //blind rotate it
+        copy(rotated_test_vector, sigmoid_test_vector);
+        blind_rotate(rotated_test_vector,
+                     in_coefs[i][n_lvl0], in_coefs[i],
+                     bk, n_lvl0, p_alpha_bits);
         //extract the constant term
+#pragma omp critical
+        cerr << "extract p_" << i << endl;
+        copy(extracted_sigmoid.getAT(N), rotated_test_vector.a[1].getAT(0)); //constant term
+        copy(extracted_sigmoid.getAT(0), rotated_test_vector.a[0].getAT(0));
+        for (int64_t j = 1; j < N; j++) {
+            neg(extracted_sigmoid.getAT(j), rotated_test_vector.a[0].getAT(N - j));
+        }
         //pubks it to p_lvl4
+#pragma omp critical
+        cerr << "pubKS p_" << i << endl;
+        pubKS32(p_lvl4.data[i], extracted_sigmoid, *ks_key, p_limbs);
     }
+
+    // free resources for ks_key and bk_key
+    ks_key = nullptr;
+    delete_TRGSW_array(n_lvl0, bk);
 
 }
 
@@ -157,5 +199,7 @@ int main2() {
         }
         break; //TODO remove
     }
+
+    return 0;
 
 }
