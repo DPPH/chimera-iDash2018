@@ -362,8 +362,9 @@ ks_keygen32(const TRLweParams &out_params, const TLweParams &in_params, const TL
     pubKsKey32 *reps = new pubKsKey32(in_params, out_params, TRLweParams(ks_params), ldec);
 
     //plaintext must have the same precision as the keyswitch key
-    BigTorusPolynomial plaintext(ks_params.N, ks_params.fixp_params);
+#pragma omp parallel for
     for (UINT64 i = 0; i < in_params.N; i++) {
+        BigTorusPolynomial plaintext(ks_params.N, ks_params.fixp_params);
         for (UINT64 j = 1; j <= ldec; j++) {
             // plaintext = ks[i] / Bg^j
             zero(plaintext);
