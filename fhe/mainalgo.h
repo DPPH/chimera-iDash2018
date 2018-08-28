@@ -7,6 +7,15 @@
 
 static const int default_plaintext_precision = 18;
 
+/**
+ * reads the lvl0 lwe key from section 1
+ * @param filename   filename
+ * @param key  destination (must be a pre-allocated array of size n)
+ * @param n    number of bits (n) of the key
+ */
+void read_lwe_key(const char *const filename, int64_t *const key, const int64_t n);
+
+
 class TRGSWMatrix {
 public:
     TRGSW **const data;

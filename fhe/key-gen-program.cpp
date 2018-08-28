@@ -8,21 +8,21 @@
 
 using namespace std;
 
-void read_lwe_key(const char* const fn, int64_t* const key, const int64_t n) {
+void read_lwe_key(const char *const filename, int64_t *const key, const int64_t n) {
     const int32_t LWE_KEY_TYPE_UID = 43;
 
-    ifstream f(fn, ifstream::binary);
+    ifstream f(filename, ifstream::binary);
     if (not f.is_open()) {
-        fprintf(stderr, "Function %s: cannot open file %s\n", __FUNCTION__, fn);
+        fprintf(stderr, "Function %s: cannot open file %s\n", __FUNCTION__, filename);
         exit(-1);
     }
 
     int32_t type_uid;
-    f.read((char*)&type_uid, sizeof(int32_t));
+    istream_read_binary(f, &type_uid, sizeof(int32_t));
     assert(type_uid == LWE_KEY_TYPE_UID);
 
     int* key_tmp = new int[n];
-    f.read((char*)key_tmp, sizeof(int)*n);
+    istream_read_binary(f, key_tmp, sizeof(int) * n);
 
     for (int i = 0; i < n; ++i)
         key[i] = (int64_t)key_tmp[i];
@@ -115,6 +115,11 @@ int main() {
         serializeTRGSWContent(bk_key_out, c[j]);
     }
     bk_key_out.close();
+
+    //serialize the secret key
+    ofstream secret_key_out("section2_secret.key");
+    serializeTLweKey(secret_key_out, *key, N);
+    secret_key_out.close();
 
     //serialize key switch key
     ofstream ks_key_out("ks.key");
