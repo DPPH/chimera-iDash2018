@@ -111,7 +111,35 @@ int main() {
     // free resources for ks_key and bk_key
     ks_key = nullptr;
     delete_TRGSW_array(n_lvl0, bk);
+    delete[] in_coefs;
+    delete[] in_coefs_raw;
 
+    // serialize p (lvl 4)
+    ofstream p_stream("p_lvl4.bin");
+    ostream_write_binary(p_stream, &p_lvl4.length, sizeof(int64_t));
+    serializeTRLweParams(p_stream, p_lvl4.data[0].params);
+    for (int64_t i=0; i<algo_n; i++) {
+        serializeTRLweContent(p_stream, p_lvl4.data[i]);
+    }
+    p_stream.close();
+
+    // ------------------
+    // compute W (lvl 3)
+
+    // -----------------
+    // compute numerator (lvl 0)   (requires enc. y of S)
+
+    // ------------------
+    // compute A (lvl 1)           (requires enc. of S and X)
+
+
+    //free S and X here
+
+    // -------------------
+    // denom_1 proportional to row 0 of A
+
+    // -------------------
+    // denom 2 = 4*norms2(A)
 }
 
 
