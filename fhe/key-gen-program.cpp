@@ -61,12 +61,15 @@ int main() {
 
     read_lwe_key("secret_keyset.bin", s, n_in);
 
-#pragma omp parallel for
+#pragma omp parallel for ordered schedule(static,1)
     for (int i = 0; i < n_in; i++) {
 
         int_encrypt(c[i], s[i], *key, alpha_bits);
-
+        #pragma omp ordered
+        printf("%3d/%3ld\r", i+1, n_in);
+        fflush(stdout);
     }
+    printf("\n");
 
     cout << "end encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
