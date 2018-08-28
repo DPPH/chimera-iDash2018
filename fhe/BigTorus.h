@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <memory>
+#include <cstring>
+#include <NTL/RR.h>
 #include "commons.h"
 
 /**
@@ -58,7 +60,7 @@ public:
     BigTorus(const BigTorusParams &params) :
             params(params) {
         UINT64 *limbs = new UINT64[params.torus_limbs];
-        memset(limbs, 0, params.torus_limbs * sizeof(UINT64));
+        std::memset(limbs, 0, params.torus_limbs * sizeof(UINT64));
         limbs_end = limbs + params.torus_limbs;
 
     }

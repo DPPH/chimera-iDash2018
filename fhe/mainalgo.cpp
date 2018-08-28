@@ -1,10 +1,42 @@
 #include <cassert>
 #include <omp.h>
+#include <fstream>
 #include "mainalgo.h"
 #include "BigFFT.h"
 #include "TRLwe.h"
 
 NTL_CLIENT;
+
+void read_lwe_key(const char *const filename, int64_t *const key, const int64_t n) {
+    const int32_t LWE_KEY_TYPE_UID = 43;
+
+    ifstream f(filename, ifstream::binary);
+    if (f) {
+
+        int32_t type_uid;
+        istream_read_binary(f, &type_uid, sizeof(int32_t));
+        assert(type_uid == LWE_KEY_TYPE_UID);
+
+        int *key_tmp = new int[n];
+        istream_read_binary(f, key_tmp, sizeof(int) * n);
+
+        for (int i = 0; i < n; ++i)
+            key[i] = (int64_t) key_tmp[i];
+        delete[] key_tmp;
+
+        f.close();
+    } else {
+        fprintf(stderr, "Function %s: cannot open file %s\n", __FUNCTION__, filename);
+        srand(42);
+        for (int i = 0; i < n; ++i)
+            key[i] = rand() % 2;
+    }
+
+    // printf("Read key:\n");
+    // for (int i = 0; i < n; ++i)
+    //     printf("%ld ", key[i]);
+    // printf("\n");
+}
 
 std::shared_ptr<TRGSWMatrix>
 encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bits, int64_t plaintext_precision_bits) {

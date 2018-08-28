@@ -19,87 +19,44 @@ int main() {
     // algo parameters (TODO: share these parameters everywhere)
     using namespace section2_params;
 
-    // read the bk key
+    // read the secret key
+    cerr << "deserializing the section2 key" << endl;
+    ifstream key_in(section2_key_filename);
+    assert_dramatically(key_in, "cannot open " << section2_key_filename);
+    shared_ptr<TLweKey> key = deserializeTLweKey(key_in, N);
+    key_in.close();
+
     // deserialize bootstrapping key
     cerr << "deserializing level0 key" << endl;
     vector<int64_t> key_lvl0(n_lvl0);
     read_lwe_key(lvl0_key_filename.c_str(), key_lvl0.data(), n_lvl0);
 
-    // read the secret key
-    cerr << "deserializing the section2 key" << endl;
-    ifstream key_in(section2_key_filename);
-    shared_ptr<TLweKey> key = deserializeTLweKey(key_in, N);
-    key_in.close();
-
-
-    // ------ test vector params
-    // ------
-    const int64_t test_vector_level = 80;
-    const int64_t test_vector_plaintext_expo = 0;
-    BigTorusParams test_vector_bt_params(2, test_vector_plaintext_expo, test_vector_level);
-    TRLweParams test_vector_params(N, test_vector_bt_params);
-
-    // create the test vector corresponding to the sigmoid function
-    TRLwe sigmoid_test_vector(test_vector_params);
-    // TODO: fill the sigmoid (recode the test vector from section 1...)
-    zero(sigmoid_test_vector.a[0]);
-    random(sigmoid_test_vector.a[1], 2); //TODO !!!!!
-
 
     // read the input ciphertexts (from section 1)
     // TODO decide the format and read it
     // read the input trlwe
-    cerr << "reading section 0 ciphertext" << endl;
-    int64_t *in_coefs_raw = new int64_t[(n_lvl0 + 1) * algo_n];
-    for (int64_t j = 0; j < (n_lvl0 + 1) * algo_n; ++j) {
-        in_coefs_raw[j] = random() % 8192; //TODO !!!!!!
-    }
-    int64_t **in_coefs = new int64_t *[algo_n];
-    for (int64_t i = 0; i < algo_n; i++) {
-        in_coefs[i] = in_coefs_raw + (n_lvl0 + 1) * i;
-    }
 
-    // ------ p params
+    // ------ p_lvl4
     // ------
-    const int64_t p_level = 80;
-    const int64_t p_plaintext_expo = 0;
-    const int64_t p_alpha_bits = p_level + default_plaintext_precision;
-    const int64_t p_limbs = limb_precision(p_alpha_bits);
-    BigTorusParams p_bt_params(p_limbs, p_plaintext_expo, p_level);
-    TLweParams p_tlwe_params(N, p_bt_params);  // extract after bootstrap
-    TRLweParams p_trlwe_params(N, p_bt_params); // param after pubKS
-
-    TRLWEVector p_lvl4(algo_n, p_trlwe_params);
-
-#pragma omp parallel for
-    for (int64_t i = 0; i < algo_n; i++) {
-#pragma omp critical
-        cerr << "bootstrapping p_" << i << endl;
-        TRLwe rotated_test_vector(p_trlwe_params);
-        TLwe extracted_sigmoid(p_trlwe_params);
-        //blind rotate it
-        copy(rotated_test_vector, sigmoid_test_vector);
-        blind_rotate(rotated_test_vector,
-                     in_coefs[i][n_lvl0], in_coefs[i],
-                     bk, n_lvl0, p_alpha_bits);
-        //extract the constant term
-#pragma omp critical
-        cerr << "extract p_" << i << endl;
-        copy(extracted_sigmoid.getAT(N), rotated_test_vector.a[1].getAT(0)); //constant term
-        copy(extracted_sigmoid.getAT(0), rotated_test_vector.a[0].getAT(0));
-        for (int64_t j = 1; j < N; j++) {
-            neg(extracted_sigmoid.getAT(j), rotated_test_vector.a[0].getAT(N - j));
+    int64_t dummy;
+    ifstream p_stream(p_lvl4_filename);
+    if (p_stream) {
+        istream_read_binary(p_stream, &dummy, sizeof(int64_t));
+        assert_dramatically(dummy == algo_n, "wrong size of p");
+        auto p_params = deserializeTRLweParams(p_stream);
+        assert_dramatically(int64_t(p_params->N) == N);
+        assert_dramatically(int64_t(p_params->fixp_params.torus_limbs) == p_limbs);
+        assert_dramatically(int64_t(p_params->fixp_params.level_expo) == p_level);
+        assert_dramatically(int64_t(p_params->fixp_params.plaintext_expo) == p_plaintext_expo);
+        TRLWEVector p_lvl4(algo_n, *p_params);
+        for (int64_t i = 0; i < algo_n; i++) {
+            deserializeTRLweContent(p_stream, p_lvl4.data[i]);
         }
-        //pubks it to p_lvl4
-#pragma omp critical
-        cerr << "pubKS p_" << i << endl;
-        pubKS32(p_lvl4.data[i], extracted_sigmoid, *ks_key, p_limbs);
+        cout << "p_lvl4: " << decrypt_individual_trlwe(p_lvl4, *key, algo_n) << endl;
+    } else {
+        cout << "p_lvl4: " << "absent!" << endl;
     }
-
-    // free resources for ks_key and bk_key
-    ks_key = nullptr;
-    delete_TRGSW_array(n_lvl0, bk);
-
+    p_stream.close();
 }
 
 

@@ -5,6 +5,7 @@
 #include "TLwe.h"
 #include "TRLwe.h"
 #include "mainalgo.h"
+#include "section2_params.h"
 
 NTL_CLIENT;
 
@@ -15,20 +16,18 @@ shared_ptr<TLweKey> debug_key;
 
 
 int main() {
-    // algo parameters (TODO: share these parameters everywhere)
-    const int64_t algo_n = 253;
-    //const int64_t algo_k = 3;
-    //const int64_t algo_m = 10000;
+    using namespace section2_params;
 
-    int64_t n_lvl0 = -1;
     shared_ptr<TRGSWParams> bk_trgsw_params;
     // blind-rotate the input ciphertext
 
     // read the bk key
     // deserialize bootstrapping key
     cerr << "deserializing bk" << endl;
-    ifstream bk_key_in("bk.key");
-    istream_read_binary(bk_key_in, &n_lvl0, sizeof(int64_t));
+    ifstream bk_key_in(section1_2_bk_filename);
+    int64_t dummy;
+    istream_read_binary(bk_key_in, &dummy, sizeof(int64_t));
+    assert_dramatically(dummy == n_lvl0);
     bk_trgsw_params = deserializeTRGSWParams(bk_key_in);
     store_forever(bk_trgsw_params);
     TRGSW *bk = new_TRGSW_array(n_lvl0, *bk_trgsw_params);
@@ -39,7 +38,7 @@ int main() {
 
     // read the ks key
     cerr << "deserializing ks" << endl;
-    ifstream ks_key_in("ks.key");
+    ifstream ks_key_in(section1_2_ks_filename);
     shared_ptr<pubKsKey32> ks_key = deserializepubKsKey32(ks_key_in);
     ks_key_in.close();
 
@@ -75,7 +74,7 @@ int main() {
     // ------
     const int64_t p_level = 80;
     const int64_t p_plaintext_expo = 0;
-    const int64_t p_alpha_bits = p_level + default_plaintext_precision;
+    const int64_t p_alpha_bits = p_level + section2_params::default_plaintext_precision;
     const int64_t p_limbs = limb_precision(p_alpha_bits);
     BigTorusParams p_bt_params(p_limbs, p_plaintext_expo, p_level);
     TLweParams p_tlwe_params(N, p_bt_params);  // extract after bootstrap
@@ -83,7 +82,7 @@ int main() {
 
     TRLWEVector p_lvl4(algo_n, p_trlwe_params);
 
-#pragma omp parallel for
+#pragma omp parallel for ordered schedule(dynamic, 1)
     for (int64_t i = 0; i < algo_n; i++) {
 #pragma omp critical
         cerr << "bootstrapping p_" << i << endl;
