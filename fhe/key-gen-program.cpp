@@ -2,10 +2,39 @@
 #include <memory>
 #include <fstream>
 #include <iostream>
+#include <cassert>
 #include "BigTorus.h"
 #include "TRGSW.h"
 
 using namespace std;
+
+void read_lwe_key(const char* const fn, int64_t* const key, const int64_t n) {
+    const int32_t LWE_KEY_TYPE_UID = 43;
+
+    ifstream f(fn, ifstream::binary);
+    if (not f.is_open()) {
+        fprintf(stderr, "Function %s: cannot open file %s\n", __FUNCTION__, fn);
+        exit(-1);
+    }
+
+    int32_t type_uid;
+    f.read((char*)&type_uid, sizeof(int32_t));
+    assert(type_uid == LWE_KEY_TYPE_UID);
+
+    int* key_tmp = new int[n];
+    f.read((char*)key_tmp, sizeof(int)*n);
+
+    for (int i = 0; i < n; ++i)
+        key[i] = (int64_t)key_tmp[i];
+    delete[] key_tmp;
+
+    f.close();
+
+    // printf("Read key:\n");
+    // for (int i = 0; i < n; ++i)
+    //     printf("%ld ", key[i]);
+    // printf("\n");
+}
 
 int main() {
 
@@ -30,10 +59,8 @@ int main() {
 
     cout << "start encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
-    srand(42);
-    for (int i = 0; i < n_in; i++) {
-        s[i] = rand() % 2;  //TODO recuperer la clé de part 1
-    }
+    read_lwe_key("secret_keyset.bin", s, n_in);
+
 #pragma omp parallel for
     for (int i = 0; i < n_in; i++) {
 
