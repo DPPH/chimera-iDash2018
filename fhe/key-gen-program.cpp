@@ -30,14 +30,33 @@ int main() {
 
     cout << "start encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
+    read_tlwe_key("secret_keyset.bin", s, n_in);
 
-#pragma omp parallel for ordered schedule(static,1)
-    for (int i = 0; i < n_lvl0; i++) {
+    if (0) {
+        const int64_t nb_samples = 245;
+        const int64_t nb_coefs = n_in;
 
-        int_encrypt(bk[i], s[i], *key, bk_alpha_bits);
-        #pragma omp ordered
-        printf("%3d/%3ld\r", i + 1, n_lvl0);
-        fflush(stdout);
+        int64_t *samples_raw = new int64_t[nb_samples * (nb_coefs+1)];
+        int64_t **samples = new int64_t*[nb_samples];
+        for (int i = 0; i < nb_samples; ++i)
+            samples[i] = samples_raw+i*(nb_coefs+1);
+
+        read_tlwe_samples("X_beta.ctxt", samples, nb_samples, nb_coefs);
+
+        delete[] samples;
+        delete[] samples_raw;
+    }
+
+    int k = 1;
+    #pragma omp parallel for
+    for (int i = 0; i < n_in; i++) {
+
+        int_encrypt(c[i], s[i], *key, bk_alpha_bits);
+        #pragma omp critical
+        {
+            printf("%3d/%3ld\r", k++, n_in);
+            fflush(stdout);
+        }
     }
     printf("\n");
 
