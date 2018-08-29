@@ -118,7 +118,7 @@ int main() {
 
     TRLWEVector p_lvl4(algo_n, p_trlwe_params);
 
-#pragma omp parallel for ordered schedule(dynamic, 1)
+//#pragma omp parallel for ordered schedule(dynamic, 1)
     for (int64_t i = 0; i < algo_n; i++) {
 #pragma omp critical
         cerr << "bootstrapping p_" << i << endl;
