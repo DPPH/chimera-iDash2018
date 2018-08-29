@@ -26,20 +26,19 @@ int main() {
     shared_ptr<TLweKey> key = tlwe_keygen(bk_trgswParams);
 
     vector<int64_t> s(n_lvl0);
-    read_lwe_key(lvl0_key_filename.c_str(), s.data(), n_lvl0);
+    read_tlwe_key(lvl0_key_filename.c_str(), s.data(), n_lvl0);
 
     cout << "start encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
-    read_tlwe_key("secret_keyset.bin", s, n_in);
-
     if (0) {
-        const int64_t nb_samples = 245;
-        const int64_t nb_coefs = n_in;
+        //todo copy to the right location
+        const int64_t nb_samples = algo_n;
+        const int64_t nb_coefs = n_lvl0;
 
-        int64_t *samples_raw = new int64_t[nb_samples * (nb_coefs+1)];
-        int64_t **samples = new int64_t*[nb_samples];
+        int64_t *samples_raw = new int64_t[nb_samples * (nb_coefs + 1)];
+        int64_t **samples = new int64_t *[nb_samples];
         for (int i = 0; i < nb_samples; ++i)
-            samples[i] = samples_raw+i*(nb_coefs+1);
+            samples[i] = samples_raw + i * (nb_coefs + 1);
 
         read_tlwe_samples("X_beta.ctxt", samples, nb_samples, nb_coefs);
 
@@ -48,13 +47,13 @@ int main() {
     }
 
     int k = 1;
-    #pragma omp parallel for
-    for (int i = 0; i < n_in; i++) {
+#pragma omp parallel for
+    for (int i = 0; i < n_lvl0; i++) {
 
-        int_encrypt(c[i], s[i], *key, bk_alpha_bits);
-        #pragma omp critical
+        int_encrypt(bk[i], s[i], *key, bk_alpha_bits);
+#pragma omp critical
         {
-            printf("%3d/%3ld\r", k++, n_in);
+            printf("%3d/%3ld\r", k++, n_lvl0);
             fflush(stdout);
         }
     }

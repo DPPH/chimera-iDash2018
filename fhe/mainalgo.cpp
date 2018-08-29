@@ -10,8 +10,8 @@
 
 NTL_CLIENT;
 
-void read_lwe_key(const char *const filename, int64_t *const key, const int64_t n) {
-    const int32_t LWE_KEY_TYPE_UID = 43;
+void read_tlwe_key(const char *const filename, int64_t *const key, const int64_t n) {
+    static const int32_t LWE_KEY_TYPE_UID = 43;
 
     ifstream f(filename, ifstream::binary);
     if (f) {
@@ -41,20 +41,21 @@ void read_lwe_key(const char *const filename, int64_t *const key, const int64_t 
     // printf("\n");
 }
 
-void read_tlwe_sample(istream& f, int64_t *const ab, const int64_t n) {
-    const int32_t LWE_SAMPLE_TYPE_UID = 42;
+void read_tlwe_sample(istream &f, int64_t *const ab, const int64_t n) {
+    static const int32_t LWE_SAMPLE_TYPE_UID = 42;
 
     int32_t type_uid;
     istream_read_binary(f, &type_uid, sizeof(int32_t));
     assert(type_uid == LWE_SAMPLE_TYPE_UID);
 
-    istream_read_binary(f, ab, sizeof(int64_t) * (n+1));
+    istream_read_binary(f, ab, sizeof(int64_t) * (n + 1));
 
     double variance;
     istream_read_binary(f, &variance, sizeof(double));
 }
 
-void read_tlwe_samples(const char *const filename, int64_t **const samples, const int64_t nb_samples, const int64_t nb_coefs) {
+void read_tlwe_samples(const char *const filename, int64_t **const samples, const int64_t nb_samples,
+                       const int64_t nb_coefs) {
     ifstream f(filename, ifstream::binary);
     if (not f.is_open()) {
         fprintf(stderr, "Function %s: cannot open file %s\n", __FUNCTION__, filename);

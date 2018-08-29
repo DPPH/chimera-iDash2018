@@ -29,7 +29,7 @@ int main() {
     // deserialize bootstrapping key
     cerr << "deserializing level0 key" << endl;
     vector<int64_t> key_lvl0(n_lvl0);
-    read_lwe_key(lvl0_key_filename.c_str(), key_lvl0.data(), n_lvl0);
+    read_tlwe_key(lvl0_key_filename.c_str(), key_lvl0.data(), n_lvl0);
 
 
     // read the input ciphertexts (from section 1)
