@@ -25,7 +25,7 @@ namespace section2_params {
     //
     static const std::string section1_2_ks_filename = "ks.key";
     static const int64_t ks_nblimbs_out = 2;
-    static const int64_t ks_out_alpha_bits = 80;
+    static const int64_t ks_out_alpha_bits = 90;
     //
     static const std::string section2_rk_filename = "rk.key";
     static const int64_t rk_alpha_bits = 110;
