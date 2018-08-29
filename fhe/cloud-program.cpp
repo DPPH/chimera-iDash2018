@@ -114,6 +114,13 @@ int main() {
 
 }
 
+//Computation of w= (y-p)*S
+int main1() {
+
+
+}
+
+
 
 int main2() {
     int64_t k = 3;
