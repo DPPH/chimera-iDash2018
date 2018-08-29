@@ -32,6 +32,7 @@ int main() {
 
     int k = 1;
 #pragma omp parallel for
+
     for (int i = 0; i < n_lvl0; i++) {
 
         int_encrypt(bk[i], s[i], *key, bk_alpha_bits);

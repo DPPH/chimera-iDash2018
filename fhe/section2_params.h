@@ -38,10 +38,10 @@ namespace section2_params {
     //TODO: synchronize with section 1
     //
     static const std::string p_lvl4_filename = "p_lvl4.bin";
-    const int64_t p_level = 64;
-    const int64_t p_plaintext_expo = 0;
-    const int64_t p_alpha_bits = p_level + default_plaintext_precision;
-    const int64_t p_limbs = limb_precision(p_alpha_bits);
+    static const int64_t p_level = 64;
+    static const int64_t p_plaintext_expo = 0;
+    static const int64_t p_alpha_bits = p_level + default_plaintext_precision;
+    static const int64_t p_limbs = limb_precision(p_alpha_bits);
 
 };
 

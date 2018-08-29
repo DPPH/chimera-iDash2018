@@ -191,7 +191,7 @@ int main() {
     p_stream.close();
 
     // ------------------
-    // compute W (lvl 3)
+    // compute W (lvl 3) w= (y-p)*S
 
     // -----------------
     // compute numerator (lvl 0)   (requires enc. y of S)
