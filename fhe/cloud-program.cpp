@@ -81,10 +81,6 @@ int main() {
 
     // ------ p params
     // ------
-    const int64_t p_level = 80;
-    const int64_t p_plaintext_expo = 0;
-    const int64_t p_alpha_bits = p_level + section2_params::default_plaintext_precision;
-    const int64_t p_limbs = limb_precision(p_alpha_bits);
     BigTorusParams p_bt_params(p_limbs, p_plaintext_expo, p_level);
     TLweParams p_tlwe_params(N, p_bt_params);  // extract after bootstrap
     TRLweParams p_trlwe_params(N, p_bt_params); // param after pubKS
