@@ -2,17 +2,42 @@
 #include <memory>
 #include <fstream>
 #include <iostream>
+#include <cassert>
 #include "BigTorus.h"
 #include "TRGSW.h"
+#include "mainalgo.h"
 
 using namespace std;
+
+// void read_tlwe_key(const char *const filename, int64_t *const key, const int64_t n) {
+//     const int32_t LWE_KEY_TYPE_UID = 43;
+
+//     ifstream f(filename, ifstream::binary);
+//     if (not f.is_open()) {
+//         fprintf(stderr, "Function %s: cannot open file %s\n", __FUNCTION__, filename);
+//         exit(-1);
+//     }
+
+//     int32_t type_uid;
+//     istream_read_binary(f, &type_uid, sizeof(int32_t));
+//     assert(type_uid == LWE_KEY_TYPE_UID);
+
+//     int* key_tmp = new int[n];
+//     istream_read_binary(f, key_tmp, sizeof(int) * n);
+
+//     for (int i = 0; i < n; ++i)
+//         key[i] = (int64_t)key_tmp[i];
+//     delete[] key_tmp;
+
+//     f.close();
+// }
 
 int main() {
 
     // Generation of Bootstrapping key (s)
 
     int64_t N = 4096;
-    int64_t n_in = 500;
+    int64_t n_in = 730;
     int64_t nblimbs = 2;
     int64_t alpha_bits = 120; //signed
 
@@ -30,16 +55,35 @@ int main() {
 
     cout << "start encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
-    srand(42);
-    for (int i = 0; i < n_in; i++) {
-        s[i] = rand() % 2;  //TODO recuperer la clé de part 1
+    read_tlwe_key("secret_keyset.bin", s, n_in);
+
+    if (0) {
+        const int64_t nb_samples = 245;
+        const int64_t nb_coefs = n_in;
+
+        int64_t *samples_raw = new int64_t[nb_samples * (nb_coefs+1)];
+        int64_t **samples = new int64_t*[nb_samples];
+        for (int i = 0; i < nb_samples; ++i)
+            samples[i] = samples_raw+i*(nb_coefs+1);
+
+        read_tlwe_samples("X_beta.ctxt", samples, nb_samples, nb_coefs);
+
+        delete[] samples;
+        delete[] samples_raw;
     }
-#pragma omp parallel for
+
+    int k = 1;
+    #pragma omp parallel for
     for (int i = 0; i < n_in; i++) {
 
         int_encrypt(c[i], s[i], *key, alpha_bits);
-
+        #pragma omp critical
+        {
+            printf("%3d/%3ld\r", k++, n_in);
+            fflush(stdout);
+        }
     }
+    printf("\n");
 
     cout << "end encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
@@ -85,6 +129,11 @@ int main() {
         serializeTRGSWContent(bk_key_out, c[j]);
     }
     bk_key_out.close();
+
+    //serialize the secret key
+    ofstream secret_key_out("section2_secret.key");
+    serializeTLweKey(secret_key_out, *key, N);
+    secret_key_out.close();
 
     //serialize key switch key
     ofstream ks_key_out("ks.key");
