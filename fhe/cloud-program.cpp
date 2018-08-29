@@ -42,7 +42,7 @@ int main() {
     // read the bk key
     // deserialize bootstrapping key
     cerr << "deserializing bk" << endl;
-#if 0 //TODO
+#if 1 //TODO
     shared_ptr<TRGSWParams> bk_trgsw_params;
     ifstream bk_key_in(section1_2_bk_filename);
     int64_t dummy;
@@ -58,14 +58,14 @@ int main() {
     bk_key_in.close();
 #else
     //regenerate a new bootstrapping key
-    BigTorusParams bk_bt_params(2, 0, 0); //bk_nblimbs);
+    BigTorusParams bk_bt_params(bk_nblimbs, 0, 0);
     TRGSWParams bk_trgswParams(N, bk_bt_params);
     cout << "start encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
     TRGSW *bk = new_TRGSW_array(n_lvl0, bk_trgswParams);
     int k = 1;
 #pragma omp parallel for
     for (int i = 0; i < n_lvl0; i++) {
-        int_encrypt(bk[i], s[i], *key, 128); //bk_alpha_bits);
+        int_encrypt(bk[i], s[i], *key, bk_alpha_bits);
 #pragma omp critical
         {
             printf("%3d/%3ld\r", k++, long(n_lvl0));
@@ -128,7 +128,7 @@ int main() {
         copy(rotated_test_vector, sigmoid_test_vector);
         blind_rotate(rotated_test_vector,
                      in_coefs[i][n_lvl0], in_coefs[i],
-                     bk, n_lvl0, 100); // p_alpha_bits + 10); //TODO
+                     bk, n_lvl0, p_alpha_bits + 10);
         //extract the constant term
 #pragma omp critical
         cerr << "extract p_" << i << endl;
