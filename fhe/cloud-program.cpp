@@ -14,6 +14,10 @@ NTL::mat_RR debug_X;
 NTL::vec_RR debug_W;
 shared_ptr<TLweKey> debug_key;
 
+//sigmoid function
+static RR sigmoid(double x) {
+    return to_RR(1) / (to_RR(1) + exp(-to_RR(x)));
+}
 
 int main() {
     using namespace section2_params;
@@ -45,30 +49,35 @@ int main() {
     // ------ test vector params
     // ------
     const int64_t N = bk_trgsw_params->N;
-    const int64_t test_vector_level = 80;
-    const int64_t test_vector_plaintext_expo = 0;
+    const int64_t Ns2 = N / 2;
     BigTorusParams test_vector_bt_params(2, test_vector_plaintext_expo, test_vector_level);
     TRLweParams test_vector_params(N, test_vector_bt_params);
 
     // create the test vector corresponding to the sigmoid function
+    assert_dramatically(lvl0_ciphertext_modulus == 2 * N);
+    vec_RR plaintext_test_vector(INIT_SIZE, N);
+    for (int64_t i = 0; i < Ns2; i++) {
+        // mapping: -modulus/4 (= -N/2)  corresponds to -2^tau
+        // mapping: -modulus/4 (= +N/2)  corresponds to +2^tau
+        // modulus: 2N
+        plaintext_test_vector[i] = sigmoid(i / double(Ns2) * pow(2., test_vector_plaintext_expo));
+    }
+    for (int64_t i = 1; i <= Ns2; i++) {
+        //tv[N-i]=-tv[-i]
+        plaintext_test_vector[N - i] = -sigmoid(-i / double(Ns2) * pow(2., test_vector_plaintext_expo));
+    }
     TRLwe sigmoid_test_vector(test_vector_params);
-    // TODO: fill the sigmoid (recode the test vector from section 1...)
-    zero(sigmoid_test_vector.a[0]);
-    random(sigmoid_test_vector.a[1], 2); //TODO !!!!!
-
+    fixp_trivial(sigmoid_test_vector, plaintext_test_vector, section2_params::default_plaintext_precision);
 
     // read the input ciphertexts (from section 1)
-    // TODO decide the format and read it
     // read the input trlwe
     cerr << "reading section 0 ciphertext" << endl;
     int64_t *in_coefs_raw = new int64_t[(n_lvl0 + 1) * algo_n];
-    for (int64_t j = 0; j < (n_lvl0 + 1) * algo_n; ++j) {
-        in_coefs_raw[j] = random() % 8192; //TODO !!!!!!
-    }
     int64_t **in_coefs = new int64_t *[algo_n];
     for (int64_t i = 0; i < algo_n; i++) {
         in_coefs[i] = in_coefs_raw + (n_lvl0 + 1) * i;
     }
+    read_tlwe_samples(lvl0_ciphertext_filename.c_str(), in_coefs, algo_n, n_lvl0, 2 * N);
 
     // ------ p params
     // ------
@@ -117,7 +126,7 @@ int main() {
     ofstream p_stream("p_lvl4.bin");
     ostream_write_binary(p_stream, &p_lvl4.length, sizeof(int64_t));
     serializeTRLweParams(p_stream, p_lvl4.data[0].params);
-    for (int64_t i=0; i<algo_n; i++) {
+    for (int64_t i = 0; i < algo_n; i++) {
         serializeTRLweContent(p_stream, p_lvl4.data[i]);
     }
     p_stream.close();

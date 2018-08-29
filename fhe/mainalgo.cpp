@@ -41,8 +41,11 @@ void read_tlwe_key(const char *const filename, int64_t *const key, const int64_t
     // printf("\n");
 }
 
-void read_tlwe_sample(istream &f, int64_t *const ab, const int64_t n) {
+void read_tlwe_sample(istream &f, int64_t *const ab, const int64_t n, const int64_t modulus) {
     static const int32_t LWE_SAMPLE_TYPE_UID = 42;
+    assert_dramatically((modulus & (modulus - 1)) == 0, "modulus must be a power of 2");
+    const UINT64 modulus_bits = __builtin_popcount(modulus - 1); //log_2 of modulus
+    const UINT64 t64ToModuloShift = 64ul - modulus_bits;
 
     int32_t type_uid;
     istream_read_binary(f, &type_uid, sizeof(int32_t));
@@ -52,18 +55,30 @@ void read_tlwe_sample(istream &f, int64_t *const ab, const int64_t n) {
 
     double variance;
     istream_read_binary(f, &variance, sizeof(double));
+
+    //modulus-rescale from torus64 to modulus
+    for (int64_t i = 0; i < n + 1; i++) {
+        ab[i] = (UINT64(ab[i]) >> t64ToModuloShift);
+        assert(ab[i] >= 0 && ab[i] < modulus);
+    }
 }
 
 void read_tlwe_samples(const char *const filename, int64_t **const samples, const int64_t nb_samples,
-                       const int64_t nb_coefs) {
+                       const int64_t nb_coefs, const int64_t modulus) {
     ifstream f(filename, ifstream::binary);
-    if (not f.is_open()) {
-        fprintf(stderr, "Function %s: cannot open file %s\n", __FUNCTION__, filename);
-        exit(-1);
-    }
 
-    for (int i = 0; i < nb_samples; ++i)
-        read_tlwe_sample(f, samples[i], nb_coefs);
+    if (f) {
+        for (int i = 0; i < nb_samples; ++i)
+            read_tlwe_sample(f, samples[i], nb_coefs, modulus);
+    } else {
+        fprintf(stderr, "Function %s: cannot open file %s\n", __FUNCTION__, filename);
+        fprintf(stderr, "WARNING: I'll take random instead\n");
+        for (int i = 0; i < nb_samples; ++i) {
+            for (int j = 0; j <= nb_coefs; ++j) {
+                samples[i][j] = rand() % modulus;
+            }
+        }
+    }
 
     f.close();
 }
