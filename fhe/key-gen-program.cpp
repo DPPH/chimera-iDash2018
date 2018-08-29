@@ -40,7 +40,7 @@ int main() {
         for (int i = 0; i < nb_samples; ++i)
             samples[i] = samples_raw + i * (nb_coefs + 1);
 
-        read_tlwe_samples("X_beta.ctxt", samples, nb_samples, nb_coefs);
+        read_tlwe_samples("X_beta.ctxt", samples, nb_samples, nb_coefs, 2 * N);
 
         delete[] samples;
         delete[] samples_raw;
