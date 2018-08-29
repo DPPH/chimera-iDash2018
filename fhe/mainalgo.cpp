@@ -18,7 +18,7 @@ void read_tlwe_key(const char *const filename, int64_t *const key, const int64_t
 
         int32_t type_uid;
         istream_read_binary(f, &type_uid, sizeof(int32_t));
-        assert(type_uid == LWE_KEY_TYPE_UID);
+        assert_dramatically(type_uid == LWE_KEY_TYPE_UID);
 
         int *key_tmp = new int[n];
         istream_read_binary(f, key_tmp, sizeof(int) * n);
@@ -35,10 +35,10 @@ void read_tlwe_key(const char *const filename, int64_t *const key, const int64_t
             key[i] = rand() % 2;
     }
 
-    // printf("Read key:\n");
-    // for (int i = 0; i < n; ++i)
-    //     printf("%ld ", key[i]);
-    // printf("\n");
+    printf("Read key:\n");
+    for (int i = 0; i < n; ++i)
+        printf("%ld ", long(key[i]));
+    printf("\n");
 }
 
 void read_tlwe_sample(istream &f, int64_t *const ab, const int64_t n, const int64_t modulus) {
@@ -49,7 +49,7 @@ void read_tlwe_sample(istream &f, int64_t *const ab, const int64_t n, const int6
 
     int32_t type_uid;
     istream_read_binary(f, &type_uid, sizeof(int32_t));
-    assert(type_uid == LWE_SAMPLE_TYPE_UID);
+    assert_dramatically(type_uid == LWE_SAMPLE_TYPE_UID);
 
     istream_read_binary(f, ab, sizeof(int64_t) * (n + 1));
 
@@ -322,7 +322,7 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
 
     int64_t trgsw_alpha_bits = accum_alpha_bits + A.data[0][0].bits_a + log2(N);
     int64_t ell = ceil(trgsw_alpha_bits / double(TRGSWParams::Bgbits));
-    assert(ell <= int64_t(A.data[0][0].ell));
+    assert_dramatically(ell <= int64_t(A.data[0][0].ell));
 
     store_forever(accum_bt_params);
     store_forever(accum_trlwe_params);
