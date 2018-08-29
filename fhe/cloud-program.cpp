@@ -65,7 +65,7 @@ int main() {
     int k = 1;
 #pragma omp parallel for
     for (int i = 0; i < n_lvl0; i++) {
-        int_encrypt(bk[i], s[i], *key, 120); //bk_alpha_bits);
+        int_encrypt(bk[i], s[i], *key, 128); //bk_alpha_bits);
 #pragma omp critical
         {
             printf("%3d/%3ld\r", k++, long(n_lvl0));
@@ -118,7 +118,7 @@ int main() {
 
     TRLWEVector p_lvl4(algo_n, p_trlwe_params);
 
-//#pragma omp parallel for ordered schedule(dynamic, 1)
+#pragma omp parallel for ordered schedule(dynamic, 1)
     for (int64_t i = 0; i < algo_n; i++) {
 #pragma omp critical
         cerr << "bootstrapping p_" << i << endl;

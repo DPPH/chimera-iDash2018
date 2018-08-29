@@ -7,7 +7,7 @@
 #include "commons.h"
 
 namespace section2_params {
-    static const int64_t algo_n = 253;
+    static const int64_t algo_n = 245;
     static const int64_t algo_k = 3;
     static const int64_t algo_m = 10000;
     //
@@ -16,7 +16,7 @@ namespace section2_params {
     static const int64_t n_lvl0 = 50;    //TODO: synchronize with section 1
     static const std::string lvl0_key_filename = "secret_keyset.bin";
     //
-    static const int64_t N = 256;
+    static const int64_t N = 4096;
     static const std::string section2_key_filename = "section2_secret.key";
     //
     static const std::string section1_2_bk_filename = "bk.key";
@@ -38,7 +38,7 @@ namespace section2_params {
     //TODO: synchronize with section 1
     //
     static const std::string p_lvl4_filename = "p_lvl4.bin";
-    const int64_t p_level = 80;
+    const int64_t p_level = 64;
     const int64_t p_plaintext_expo = 0;
     const int64_t p_alpha_bits = p_level + default_plaintext_precision;
     const int64_t p_limbs = limb_precision(p_alpha_bits);
