@@ -14,16 +14,36 @@ NTL::mat_RR debug_X;
 NTL::vec_RR debug_W;
 shared_ptr<TLweKey> debug_key;
 
+//sigmoid function
+static RR sigmoid(double x) {
+    return to_RR(1) / (to_RR(1) + exp(-to_RR(x)));
+}
+
+#define DEBUG_MODE
 
 int main() {
     using namespace section2_params;
 
-    shared_ptr<TRGSWParams> bk_trgsw_params;
-    // blind-rotate the input ciphertext
+#ifdef DEBUG_MODE
+    cerr << "DEBUG!!! reading lvl0 key...";
+    vector<int64_t> s(n_lvl0);
+    read_tlwe_key(lvl0_key_filename.c_str(), s.data(), n_lvl0);
+
+    cerr << "DEBUG!!! deserializing the section2 key" << endl;
+    ifstream key_in(section2_key_filename);
+    assert_dramatically(key_in, "cannot open " << section2_key_filename);
+    shared_ptr<TLweKey> key = deserializeTLweKey(key_in, N);
+    assert_dramatically(key_in, "problem in keyswitch key");
+    key_in.close();
+
+
+#endif
 
     // read the bk key
     // deserialize bootstrapping key
     cerr << "deserializing bk" << endl;
+#if 1 //TODO
+    shared_ptr<TRGSWParams> bk_trgsw_params;
     ifstream bk_key_in(section1_2_bk_filename);
     int64_t dummy;
     istream_read_binary(bk_key_in, &dummy, sizeof(int64_t));
@@ -33,8 +53,28 @@ int main() {
     TRGSW *bk = new_TRGSW_array(n_lvl0, *bk_trgsw_params);
     for (int j = 0; j < n_lvl0; ++j) {
         deserializeTRGSWContent(bk_key_in, bk[j]);
+        assert_dramatically(bk_key_in, "problem in the serialization file");
     }
     bk_key_in.close();
+#else
+    //regenerate a new bootstrapping key
+    BigTorusParams bk_bt_params(bk_nblimbs, 0, 0);
+    TRGSWParams bk_trgswParams(N, bk_bt_params);
+    cout << "start encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
+    TRGSW *bk = new_TRGSW_array(n_lvl0, bk_trgswParams);
+    int k = 1;
+#pragma omp parallel for
+    for (int i = 0; i < n_lvl0; i++) {
+        int_encrypt(bk[i], s[i], *key, bk_alpha_bits);
+#pragma omp critical
+        {
+            printf("%3d/%3ld\r", k++, long(n_lvl0));
+            fflush(stdout);
+        }
+    }
+    printf("\n");
+    cout << "end encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
+#endif
 
     // read the ks key
     cerr << "deserializing ks" << endl;
@@ -42,43 +82,39 @@ int main() {
     shared_ptr<pubKsKey32> ks_key = deserializepubKsKey32(ks_key_in);
     ks_key_in.close();
 
-    // ------ test vector params
+    // ------ test vector and p params
     // ------
-    const int64_t N = bk_trgsw_params->N;
-    const int64_t test_vector_level = 80;
-    const int64_t test_vector_plaintext_expo = 0;
-    BigTorusParams test_vector_bt_params(2, test_vector_plaintext_expo, test_vector_level);
-    TRLweParams test_vector_params(N, test_vector_bt_params);
+    BigTorusParams p_bt_params(p_limbs, p_plaintext_expo, p_level);
+    TLweParams p_tlwe_params(N, p_bt_params);  // extract after bootstrap
+    TRLweParams p_trlwe_params(N, p_bt_params); // param after pubKS
+
+    const int64_t Ns2 = N / 2;
 
     // create the test vector corresponding to the sigmoid function
-    TRLwe sigmoid_test_vector(test_vector_params);
-    // TODO: fill the sigmoid (recode the test vector from section 1...)
-    zero(sigmoid_test_vector.a[0]);
-    random(sigmoid_test_vector.a[1], 2); //TODO !!!!!
-
+    assert_dramatically(lvl0_ciphertext_modulus == 2 * N);
+    vec_RR plaintext_test_vector(INIT_SIZE, N);
+    for (int64_t i = 0; i < Ns2; i++) {
+        // mapping: -modulus/4 (= -N/2)  corresponds to -2^tau
+        // mapping: -modulus/4 (= +N/2)  corresponds to +2^tau
+        // modulus: 2N
+        plaintext_test_vector[i] = sigmoid(i / double(Ns2) * pow(2., lvl0_ciphertext_plaintext_expo));
+    }
+    for (int64_t i = 1; i <= Ns2; i++) {
+        //tv[N-i]=-tv[-i]
+        plaintext_test_vector[N - i] = -sigmoid(-i / double(Ns2) * pow(2., lvl0_ciphertext_plaintext_expo));
+    }
+    TRLwe sigmoid_test_vector(p_trlwe_params);
+    fixp_trivial(sigmoid_test_vector, plaintext_test_vector, section2_params::default_plaintext_precision);
 
     // read the input ciphertexts (from section 1)
-    // TODO decide the format and read it
     // read the input trlwe
     cerr << "reading section 0 ciphertext" << endl;
     int64_t *in_coefs_raw = new int64_t[(n_lvl0 + 1) * algo_n];
-    for (int64_t j = 0; j < (n_lvl0 + 1) * algo_n; ++j) {
-        in_coefs_raw[j] = random() % 8192; //TODO !!!!!!
-    }
     int64_t **in_coefs = new int64_t *[algo_n];
     for (int64_t i = 0; i < algo_n; i++) {
         in_coefs[i] = in_coefs_raw + (n_lvl0 + 1) * i;
     }
-
-    // ------ p params
-    // ------
-    const int64_t p_level = 80;
-    const int64_t p_plaintext_expo = 0;
-    const int64_t p_alpha_bits = p_level + section2_params::default_plaintext_precision;
-    const int64_t p_limbs = limb_precision(p_alpha_bits);
-    BigTorusParams p_bt_params(p_limbs, p_plaintext_expo, p_level);
-    TLweParams p_tlwe_params(N, p_bt_params);  // extract after bootstrap
-    TRLweParams p_trlwe_params(N, p_bt_params); // param after pubKS
+    read_tlwe_samples(lvl0_ciphertext_filename.c_str(), in_coefs, algo_n, n_lvl0, 2 * N);
 
     TRLWEVector p_lvl4(algo_n, p_trlwe_params);
 
@@ -92,7 +128,7 @@ int main() {
         copy(rotated_test_vector, sigmoid_test_vector);
         blind_rotate(rotated_test_vector,
                      in_coefs[i][n_lvl0], in_coefs[i],
-                     bk, n_lvl0, p_alpha_bits);
+                     bk, n_lvl0, p_alpha_bits + 10);
         //extract the constant term
 #pragma omp critical
         cerr << "extract p_" << i << endl;
@@ -105,6 +141,38 @@ int main() {
 #pragma omp critical
         cerr << "pubKS p_" << i << endl;
         pubKS32(p_lvl4.data[i], extracted_sigmoid, *ks_key, p_limbs);
+
+#ifdef DEBUG_MODE
+        //input phase
+        int64_t in_phase = in_coefs[i][n_lvl0];
+        for (int j = 0; j < n_lvl0; j++) in_phase -= in_coefs[i][j] * s[j];
+        in_phase = ((in_phase % lvl0_ciphertext_modulus) + lvl0_ciphertext_modulus) % lvl0_ciphertext_modulus;
+        //expected output phase
+        RR expected_phase;
+        vec_RR actual_test_vector = fixp_decrypt(sigmoid_test_vector, *key);
+        RR actual_phase_trivial;
+        if (in_phase < N) {
+            expected_phase = plaintext_test_vector[in_phase];
+            actual_phase_trivial = actual_test_vector[in_phase];
+        } else {
+            expected_phase = -plaintext_test_vector[in_phase - N];
+            actual_phase_trivial = -actual_test_vector[in_phase - N];
+        }
+        //actual phase
+        RR actual_phase_blindrotate = fixp_decrypt_number(rotated_test_vector, *key);
+        RR actual_phase_extract = slot_decrypt(extracted_sigmoid, *key);
+        RR actual_phase_ks = fixp_decrypt_number(p_lvl4.data[i], *key);
+#pragma omp critical
+        {
+            cout << "at index i............: " << endl;
+            cout << "in phase..............: " << in_phase << endl;
+            cout << "expected output phase.: " << expected_phase << endl;
+            cout << "actual phase trivial..: " << actual_phase_trivial << endl;
+            cout << "actual blindrotate....: " << actual_phase_blindrotate << endl;
+            cout << "actual extract........: " << actual_phase_extract << endl;
+            cout << "actual ks.............: " << actual_phase_ks << endl;
+        }
+#endif //DEBUG_MODE
     }
 
     // free resources for ks_key and bk_key
@@ -117,13 +185,13 @@ int main() {
     ofstream p_stream("p_lvl4.bin");
     ostream_write_binary(p_stream, &p_lvl4.length, sizeof(int64_t));
     serializeTRLweParams(p_stream, p_lvl4.data[0].params);
-    for (int64_t i=0; i<algo_n; i++) {
+    for (int64_t i = 0; i < algo_n; i++) {
         serializeTRLweContent(p_stream, p_lvl4.data[i]);
     }
     p_stream.close();
 
     // ------------------
-    // compute W (lvl 3)
+    // compute W (lvl 3) w= (y-p)*S
 
     // -----------------
     // compute numerator (lvl 0)   (requires enc. y of S)
