@@ -3,8 +3,8 @@ project(fhe)
 
 set(CMAKE_CXX_FLAGS "--std=c++17 -g3 -O0 -Wall -Werror -fopenmp")
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -Wall -Werror -fopenmp")
-set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O9 -DNDEBUG -fopenmp")
+set(CMAKE_CXX_FLAGS_DEBUG "--std=c++17 -g3 -O0 -Wall -Werror -fopenmp")
+set(CMAKE_CXX_FLAGS_RELEASE "--std=c++17 -g3 -O9 -DNDEBUG -fopenmp")
 set(CMAKE_EXE_LINKER_FLAGS "-fopenmp")
 
 add_subdirectory(test/googletest)
@@ -27,19 +27,35 @@ add_library(chimera-dpph
         BigComplex.cpp
         BigComplex.h
         TLwe.cpp
-        TLwe.h BigTorusVector.cpp BigTorusVector.h BigTorusPolynomial.cpp BigTorusPolynomial.h TRLwe.cpp TRLwe.h TRGSW.cpp TRGSW.h mainalgo.cpp mainalgo.h)
+        TLwe.h
+        BigTorusVector.cpp BigTorusVector.h
+        BigTorusPolynomial.cpp BigTorusPolynomial.h
+        TRLwe.cpp TRLwe.h
+        TRGSW.cpp TRGSW.h
+        mainalgo.cpp mainalgo.h section2_params.h)
 
-add_executable(fhe main.cpp )
-target_link_libraries(fhe chimera-dpph -lntl -lmpfr -lgmp -lntl -lm -pthread)
+set(MAIN_PROGS
+        main.cpp
+        cloud-program.cpp
+        key-gen-program.cpp
+        debug-decrypt-program.cpp
+        )
 
-add_executable(unittest test/arithmetic_test.cpp test/fft_test.cpp test/tlwe_test.cpp test/trlwe_test.cpp test/trgsw_test.cpp test/serialize_test.cpp test/mainalgo_test.cpp)
+foreach (PROG_CPP ${MAIN_PROGS})
+    get_filename_component(PROG ${PROG_CPP} NAME_WE)
+    add_executable(${PROG} ${PROG_CPP})
+    target_link_libraries(${PROG} chimera-dpph -lntl -lmpfr -lgmp -lntl -lm -pthread)
+endforeach ()
+
+add_executable(unittest
+        test/arithmetic_test.cpp
+        test/fft_test.cpp
+        test/tlwe_test.cpp
+        test/trlwe_test.cpp
+        test/trgsw_test.cpp
+        test/serialize_test.cpp
+        test/mainalgo_test.cpp)
 target_link_libraries(unittest gtest gtest_main chimera-dpph -lntl -lmpfr -lgmp -lm -pthread)
-
-add_executable(cloud-program cloud-program.cpp)
-target_link_libraries(cloud-program gtest gtest_main chimera-dpph -lntl -lmpfr -lgmp -lm -pthread)
-
-add_executable(key-gen-program key-gen-program.cpp)
-target_link_libraries(key-gen-program gtest gtest_main chimera-dpph -lntl -lmpfr -lgmp -lm -pthread)
 
 add_subdirectory(bench)
 

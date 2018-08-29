@@ -2,60 +2,74 @@
 #include <memory>
 #include <fstream>
 #include <iostream>
+#include <cassert>
 #include "BigTorus.h"
 #include "TRGSW.h"
+#include "mainalgo.h"
+#include "section2_params.h"
 
 using namespace std;
 
 int main() {
+    using namespace section2_params;
 
     // Generation of Bootstrapping key (s)
 
-    int64_t N = 4096;
-    int64_t n_in = 500;
-    int64_t nblimbs = 2;
-    int64_t alpha_bits = 120; //signed
+    BigTorusParams bk_bt_params(bk_nblimbs);
+    TRGSWParams bk_trgswParams(N, bk_bt_params);
 
-    BigTorusParams bt_params(nblimbs);
+    BigTorusPolynomial phase(N, bk_bt_params);
 
-    TRGSWParams trgswParams(N, bt_params);
+    TRLwe reps(bk_trgswParams);
+    TRGSW *bk = new_TRGSW_array(n_lvl0, bk_trgswParams);
 
-    BigTorusPolynomial phase(N, bt_params);
+    shared_ptr<TLweKey> key = tlwe_keygen(bk_trgswParams);
 
-    TRLwe reps(trgswParams);
-    TRGSW *c = new_TRGSW_array(n_in, trgswParams);
-    shared_ptr<TLweKey> key = tlwe_keygen(trgswParams);
-
-    int64_t *s = new int64_t[n_in];
+    vector<int64_t> s(n_lvl0);
+    read_tlwe_key(lvl0_key_filename.c_str(), s.data(), n_lvl0);
 
     cout << "start encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
-    srand(42);
-    for (int i = 0; i < n_in; i++) {
-        s[i] = rand() % 2;  //TODO recuperer la clé de part 1
+    if (0) {
+        //todo copy to the right location
+        const int64_t nb_samples = algo_n;
+        const int64_t nb_coefs = n_lvl0;
+
+        int64_t *samples_raw = new int64_t[nb_samples * (nb_coefs + 1)];
+        int64_t **samples = new int64_t *[nb_samples];
+        for (int i = 0; i < nb_samples; ++i)
+            samples[i] = samples_raw + i * (nb_coefs + 1);
+
+        read_tlwe_samples("X_beta.ctxt", samples, nb_samples, nb_coefs);
+
+        delete[] samples;
+        delete[] samples_raw;
     }
+
+    int k = 1;
 #pragma omp parallel for
-    for (int i = 0; i < n_in; i++) {
+    for (int i = 0; i < n_lvl0; i++) {
 
-        int_encrypt(c[i], s[i], *key, alpha_bits);
-
+        int_encrypt(bk[i], s[i], *key, bk_alpha_bits);
+#pragma omp critical
+        {
+            printf("%3d/%3ld\r", k++, n_lvl0);
+            fflush(stdout);
+        }
     }
+    printf("\n");
 
     cout << "end encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
     //Generation KS key (ks_key)
 
-    int64_t N_in = N;
-    int64_t N_out = N;
-    int64_t nblimbs_in = 3;
-    int64_t nblimbs_out = 3;
-    int64_t alpha_bits_ks = 80;
-    //int64_t limb_prec = limb_precision(alpha_bits_ks);
+    int64_t ks_N_in = bk_trgswParams.N;
+    int64_t ks_N_out = N;
 
-    BigTorusParams bt_params_in(nblimbs_in);
-    BigTorusParams bt_params_out(nblimbs_out);
-    TLweParams tlwe_params_in(N_in, bt_params_in);
-    TRLweParams trlwe_params_out(N_out, bt_params_out);
+    BigTorusParams &ks_bt_params_in = bk_bt_params;
+    BigTorusParams ks_bt_params_out(ks_nblimbs_out);
+    TLweParams tlwe_params_in(ks_N_in, ks_bt_params_in);
+    TRLweParams trlwe_params_out(ks_N_out, ks_bt_params_out);
 
     shared_ptr<TLweKey> key_in = key;
     shared_ptr<TLweKey> key_out = key;
@@ -63,36 +77,39 @@ int main() {
     cout << "start keygen key switch key at: " << clock() / double(CLOCKS_PER_SEC) << endl;
     shared_ptr<pubKsKey32> ks_key = ks_keygen32(
             trlwe_params_out, tlwe_params_in,
-            *key_in, *key_out, alpha_bits_ks);
+            *key_in, *key_out, ks_out_alpha_bits);
     cout << "end keygen key switch key at: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
     //Generation RK key (rk)
 
-    int64_t alpha_rk = 110;
-    int64_t nblimbs_rk = limb_precision(alpha_rk);
-    BigTorusParams bt_params_rk(nblimbs_rk);
+    BigTorusParams bt_params_rk(rk_nblimbs);
     TRGSWParams trgswParams_rk(N, bt_params_rk);
     TRGSW rk(trgswParams_rk);
     cout << "start keygen rk key at: " << clock() / double(CLOCKS_PER_SEC) << endl;
-    intPoly_encrypt(rk, key->key, *key, alpha_rk);
+    intPoly_encrypt(rk, key->key, *key, rk_alpha_bits);
     cout << "end keygen rk key at: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
     //serialize bootstrapping key
-    ofstream bk_key_out("bk.key");
-    ostream_write_binary(bk_key_out, &n_in, sizeof(int64_t));
-    serializeTRGSWParams(bk_key_out, trgswParams);
-    for (int j = 0; j < n_in; ++j) {
-        serializeTRGSWContent(bk_key_out, c[j]);
+    ofstream bk_key_out(section1_2_bk_filename);
+    ostream_write_binary(bk_key_out, &n_lvl0, sizeof(int64_t));
+    serializeTRGSWParams(bk_key_out, bk_trgswParams);
+    for (int j = 0; j < n_lvl0; ++j) {
+        serializeTRGSWContent(bk_key_out, bk[j]);
     }
     bk_key_out.close();
 
+    //serialize the secret key
+    ofstream secret_key_out(section2_key_filename);
+    serializeTLweKey(secret_key_out, *key, N);
+    secret_key_out.close();
+
     //serialize key switch key
-    ofstream ks_key_out("ks.key");
+    ofstream ks_key_out(section1_2_ks_filename);
     serializepubKsKey32(ks_key_out, *ks_key);
     ks_key_out.close();
 
     //serialize relian. key
-    ofstream rk_key_out("rk.key");
+    ofstream rk_key_out(section2_rk_filename);
     serializeTRGSW(rk_key_out, rk);
     rk_key_out.close();
 
