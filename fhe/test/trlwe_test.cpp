@@ -204,10 +204,10 @@ TEST(TRLWE_TEST, pubKS128) {
 }
 
 TEST(TRLWE_TEST, pubKS32) {
-    int64_t N_in = 32;
-    int64_t N_out = 64;
-    int64_t nblimbs_in = 3;
-    int64_t nblimbs_out = 4;
+    int64_t N_in = 4096;
+    int64_t N_out = 4096;
+    int64_t nblimbs_in = 2;
+    int64_t nblimbs_out = 2;
     int64_t alpha_bits = 80;
     int64_t limb_prec = limb_precision(alpha_bits);
 

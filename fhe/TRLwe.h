@@ -7,6 +7,7 @@
 #include <memory>
 #include "commons.h"
 #include <cstdint>
+#include <NTL/mat_RR.h>
 
 
 class TRLweParams : public TLweParams {

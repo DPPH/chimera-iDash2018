@@ -1,4 +1,5 @@
 #include <include/gtest/gtest.h>
+#include <NTL/mat_RR.h>
 #include "../BigReal.h"
 #include "../BigComplex.h"
 #include "../BigFFT.h"

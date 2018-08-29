@@ -1,4 +1,4 @@
-#include <NTL/RR.h>
+#include <NTL/mat_RR.h>
 #include <NTL/ZZ_limbs.h>
 #include <assert.h>
 #include <cassert>
