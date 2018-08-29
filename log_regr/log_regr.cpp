@@ -19,7 +19,8 @@ void log_regr_iter(
     const TfheCloudKeySet* keyset,
     const TfheParamSet* params,
     const LRParams& lr_params,
-    LweSample<Torus>* X_beta_out = nullptr
+    LweSample<Torus>* X_beta,
+    bool only_x_beta = false //compute up to X.beta only
     )
 {
     TLweSample<Torus>* X_beta_cp = new_obj_array<TLweSample<Torus>>(lr_params.k, params->trlwe_params_l1);
@@ -58,12 +59,6 @@ void log_regr_iter(
     }
     #endif
 
-    LweSample<Torus>* X_beta = nullptr;
-    if (X_beta_out != nullptr)
-        X_beta = X_beta_out;
-    else
-        X_beta = new_obj_array<LweSample<Torus>>(lr_params.n, params->tlwe_params_l0);
-
     extract_X_beta(X_beta, X_beta_cp, params->trlwe_params_l1, keyset->ks_l1_l0, lr_params);
     del_obj_array(lr_params.k, X_beta_cp);
 
@@ -77,13 +72,10 @@ void log_regr_iter(
         printf("######### DEBUG MSG END #########\n");
     #endif
 
-    if (X_beta_out != nullptr) return;
+    if (only_x_beta) return;
 
     TLweSample<Torus> *acc = new_obj_array<TLweSample<Torus>>(lr_params.n, params->trlwe_params_l2);
     compute_Xt_sigma(acc, sigmoid_xt_tps, params->trgsw_params_l2, X_beta, params->tlwe_params_l0, keyset->bk_fft, lr_params);
-
-    if (X_beta_out == nullptr)
-        del_obj_array(lr_params.n, X_beta);
 
     VERBOSE_1_PRINT("==> accumulate to compute \\alpha.Xt.\\sigma(X.beta) ... ");
     for (int i = 1; i < lr_params.n; ++i) {
@@ -144,13 +136,25 @@ void log_regr(
     }
     #endif
 
-    write_tlwe_samples(lr_params.filename_prefix_beta + to_string(0) + ".ctxt", beta, params->tlwe_params_l2, lr_params.k);
+    if (lr_params.write_all_beta)
+        write_tlwe_samples(lr_params.filename_prefix_beta + to_string(0) + ".ctxt",
+            beta, params->tlwe_params_l2, lr_params.k);
+
+    LweSample<Torus>* X_beta = new_obj_array<LweSample<Torus>>(lr_params.n, params->tlwe_params_l0);
 
     VERBOSE_1_PRINT("Logistic regression:\n");
     for (int iter = 1; iter < lr_params.nb_iters; ++iter)
     {
         VERBOSE_1_PRINT("> iteration %d start\n", iter);
-        log_regr_iter(beta, sigmoid_xt_tps, Xt_y_arr, X_cols_l1, keyset, params, lr_params);
+        log_regr_iter(beta, sigmoid_xt_tps, Xt_y_arr, X_cols_l1, keyset, params, lr_params, X_beta, false);
+
+        if (lr_params.write_all_x_beta)
+            write_tlwe_samples(lr_params.filename_prefix_X_beta + to_string(iter) + ".ctxt",
+                X_beta, params->tlwe_params_l0, lr_params.n);
+
+        if (lr_params.write_all_beta)
+            write_tlwe_samples(lr_params.filename_prefix_beta + to_string(iter) + ".ctxt",
+                beta, params->tlwe_params_l2, lr_params.k);
 
         #ifdef DEBUG
             printf("######### DEBUG MSG BEG #########\n");
@@ -161,16 +165,14 @@ void log_regr(
             printf("\n");
             printf("######### DEBUG MSG END #########\n");
         #endif
-
-        write_tlwe_samples(lr_params.filename_prefix_beta + to_string(iter) + ".ctxt", beta, params->tlwe_params_l2, lr_params.k);
     }
 
     VERBOSE_1_PRINT("> compute X.beta result\n");
-    LweSample<Torus>* X_beta = new_obj_array<LweSample<Torus>>(lr_params.n, params->tlwe_params_l0);
-    log_regr_iter(beta, sigmoid_xt_tps, Xt_y_arr, X_cols_l1, keyset, params, lr_params, X_beta);
+    log_regr_iter(beta, sigmoid_xt_tps, Xt_y_arr, X_cols_l1, keyset, params, lr_params, X_beta, true);
 
     VERBOSE_1_PRINT("> write X.beta\n");
-    write_tlwe_samples(lr_params.filename_X_beta, X_beta, params->tlwe_params_l0, lr_params.n);
+    write_tlwe_samples(string(lr_params.filename_prefix_X_beta) + "ctxt",
+        X_beta, params->tlwe_params_l0, lr_params.n);
 
     del_obj_array(lr_params.n, X_beta);
     del_obj_array(lr_params.k, Xt_y_arr);
@@ -192,6 +194,8 @@ LRParams parse_args(int argc, char** argv) {
         ;
 
     options.add_options("general")
+        ("write_all_x_beta",  "write X.beta at each iteration")
+        ("write_all_beta",    "write beta at each iteration")
         ("threads",           "number of execution threads", cxxopts::value<uint>()->default_value("4"))
         ("v",                 "verbose level ('v' count gives verbosity level)")
         ("h,help",            "print this message")
@@ -204,6 +208,8 @@ LRParams parse_args(int argc, char** argv) {
         exit(-1);
     }
 
+    lr_params.write_all_beta = result.count("write_all_beta") > 0;
+    lr_params.write_all_x_beta = result.count("write_all_x_beta") > 0;
     lr_params.nb_iters = result["iters"].as<uint>();
     lr_params.seed = result["seed"].as<uint>();
     lr_params.nb_threads = result["threads"].as<uint>();

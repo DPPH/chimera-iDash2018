@@ -1,7 +1,6 @@
 #ifndef FHE_COMMONS_H
 #define FHE_COMMONS_H
 
-#include <NTL/LLL.h>
 #include <memory>
 #include <vector>
 
@@ -20,17 +19,17 @@ inline int64_t limb_precision(UINT64 bit_precision) {
     return (bit_precision + BITS_PER_LIMBS - 1) / BITS_PER_LIMBS;
 }
 
-inline void assert_dramatically(bool condition, const std::string &message = "") {
-    if (!condition) {
-        std::cerr << "ASSERT_FAILED: " << message << std::endl;
-        abort();
-    }
+#define assert_dramatically(condition, ...) { \
+    if (!(condition)) { \
+        std::cerr << "ASSERT_FAILED: " __FILE__ ":" << __LINE__ << "\n" __VA_ARGS__ << std::endl; \
+        abort(); \
+    } \
 }
 
-inline void assert_weakly(bool condition, const std::string &message = "") {
-    if (!condition) {
-        std::cerr << "ASSERT_WARNING: " << message << std::endl;
-    }
+#define assert_weakly(condition, ...) { \
+    if (!(condition)) { \
+        std::cerr << "ASSERT_WARNING: " __FILE__ ":" << __LINE__<< "\n" __VA_ARGS__ << std::endl; \
+    } \
 }
 
 /**

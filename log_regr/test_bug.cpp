@@ -135,8 +135,8 @@ int main() {
 
     RandomGen::set_seed(42);
 
-    const TfheParamSet *params = TfheParamSet::read(lr_params.params_filename);
-    const TfheSecretKeySet *keyset = TfheSecretKeySet::read(lr_params.secret_keyset_filename, params);
+    const TfheParamSet *params = TfheParamSet::read(lr_params.filename_params);
+    const TfheSecretKeySet *keyset = TfheSecretKeySet::read(lr_params.filename_secret_keyset, params);
 
 
     encrypt_lwe("tlwe.l0", keyset->tlwe_key_l0);

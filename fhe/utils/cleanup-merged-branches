@@ -1,0 +1,6 @@
+#!/bin/bash -v
+
+git fetch origin
+git remote prune origin
+for branch in `git branch --merged origin/master| grep -v '^[*]' | grep -v master`; do git branch -d $branch; done
+

@@ -52,7 +52,7 @@ void encrypt_write_sigmoid_xt(Ostream& out_stream, const Data& data, const LRPar
     const int N = params->N;
     const double alpha = params->alpha_min;
 
-    #pragma omp parallel for ordered schedule(static,1)
+    #pragma omp parallel for ordered schedule(dynamic,1)
     for (int i = 0; i < data.n; ++i) {
         TorusPolynomial<Torus> *test_poly = new_obj<TorusPolynomial<Torus>>(N);
         TLweSample<Torus> *test_poly_enc = new_obj<TLweSample<Torus>>(params);
@@ -124,7 +124,7 @@ void encrypt_write_X_cols(Ostream& out_stream, const Data& data, const LRParams&
 
     assert(data.n < N);
 
-    #pragma omp parallel for ordered schedule(static,1)
+    #pragma omp parallel for ordered schedule(dynamic,1)
     for (int j = 0; j < data.k; ++j) {
         IntPolynomial *msg = new_obj<IntPolynomial>(N);
         IntPolyFunctions::Clear(msg);

@@ -1,5 +1,6 @@
 #include "commons.h"
 #include <map>
+#include <NTL/LLL.h>
 
 NTL_CLIENT;
 

@@ -370,7 +370,7 @@ void blind_rotate(TRLwe &reps, int64_t b, int64_t *a, const TRGSW *c, int64_t n_
 
     TRLwe tmp(reps.params);
     rotate(reps, reps, -b);
-
+    
     for (int i = 0; i < n_in; i++) {
         rotate(tmp, reps, a[i]);
         cmux(reps, c[i], tmp, reps, out_alpha_bits);

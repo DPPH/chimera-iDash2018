@@ -1,10 +1,88 @@
 #include <cassert>
 #include <omp.h>
+#include <fstream>
 #include "mainalgo.h"
 #include "BigFFT.h"
 #include "TRLwe.h"
+#include <fstream>
+#include <iostream>
+#include <cassert>
 
 NTL_CLIENT;
+
+void read_tlwe_key(const char *const filename, int64_t *const key, const int64_t n) {
+    static const int32_t LWE_KEY_TYPE_UID = 43;
+
+    ifstream f(filename, ifstream::binary);
+    if (f) {
+
+        int32_t type_uid;
+        istream_read_binary(f, &type_uid, sizeof(int32_t));
+        assert_dramatically(type_uid == LWE_KEY_TYPE_UID);
+
+        int *key_tmp = new int[n];
+        istream_read_binary(f, key_tmp, sizeof(int) * n);
+
+        for (int i = 0; i < n; ++i)
+            key[i] = (int64_t) key_tmp[i];
+        delete[] key_tmp;
+
+        f.close();
+    } else {
+        fprintf(stderr, "Function %s: cannot open file %s\n", __FUNCTION__, filename);
+        srand(42);
+        for (int i = 0; i < n; ++i)
+            key[i] = rand() % 2;
+    }
+
+    printf("Read key:\n");
+    for (int i = 0; i < n; ++i)
+        printf("%ld ", long(key[i]));
+    printf("\n");
+}
+
+void read_tlwe_sample(istream &f, int64_t *const ab, const int64_t n, const int64_t modulus) {
+    static const int32_t LWE_SAMPLE_TYPE_UID = 42;
+    assert_dramatically((modulus & (modulus - 1)) == 0, "modulus must be a power of 2");
+    const UINT64 modulus_bits = __builtin_popcount(modulus - 1); //log_2 of modulus
+    const UINT64 t64ToModuloShift = 64ul - modulus_bits;
+
+    int32_t type_uid;
+    istream_read_binary(f, &type_uid, sizeof(int32_t));
+    assert_dramatically(type_uid == LWE_SAMPLE_TYPE_UID);
+
+    istream_read_binary(f, ab, sizeof(int64_t) * (n + 1));
+
+    double variance;
+    istream_read_binary(f, &variance, sizeof(double));
+
+    //modulus-rescale from torus64 to modulus
+    for (int64_t i = 0; i < n + 1; i++) {
+        ab[i] = (UINT64(ab[i]) >> t64ToModuloShift);
+        assert(ab[i] >= 0 && ab[i] < modulus);
+    }
+}
+
+void read_tlwe_samples(const char *const filename, int64_t **const samples, const int64_t nb_samples,
+                       const int64_t nb_coefs, const int64_t modulus) {
+    ifstream f(filename, ifstream::binary);
+
+    if (f) {
+        for (int i = 0; i < nb_samples; ++i)
+            read_tlwe_sample(f, samples[i], nb_coefs, modulus);
+    } else {
+        fprintf(stderr, "Function %s: cannot open file %s\n", __FUNCTION__, filename);
+        fprintf(stderr, "WARNING: I'll take random instead\n");
+        for (int i = 0; i < nb_samples; ++i) {
+            for (int j = 0; j <= nb_coefs; ++j) {
+                samples[i][j] = rand() % modulus;
+            }
+        }
+    }
+
+    f.close();
+}
+
 
 std::shared_ptr<TRGSWMatrix>
 encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bits, int64_t plaintext_precision_bits) {
@@ -244,7 +322,7 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
 
     int64_t trgsw_alpha_bits = accum_alpha_bits + A.data[0][0].bits_a + log2(N);
     int64_t ell = ceil(trgsw_alpha_bits / double(TRGSWParams::Bgbits));
-    assert(ell <= int64_t(A.data[0][0].ell));
+    assert_dramatically(ell <= int64_t(A.data[0][0].ell));
 
     store_forever(accum_bt_params);
     store_forever(accum_trlwe_params);
