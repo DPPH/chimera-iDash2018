@@ -82,11 +82,13 @@ int main() {
     shared_ptr<pubKsKey32> ks_key = deserializepubKsKey32(ks_key_in);
     ks_key_in.close();
 
-    // ------ test vector params
+    // ------ test vector and p params
     // ------
+    BigTorusParams p_bt_params(p_limbs, p_plaintext_expo, p_level);
+    TLweParams p_tlwe_params(N, p_bt_params);  // extract after bootstrap
+    TRLweParams p_trlwe_params(N, p_bt_params); // param after pubKS
+
     const int64_t Ns2 = N / 2;
-    BigTorusParams test_vector_bt_params(2, test_vector_plaintext_expo, test_vector_level);
-    TRLweParams test_vector_params(N, test_vector_bt_params);
 
     // create the test vector corresponding to the sigmoid function
     assert_dramatically(lvl0_ciphertext_modulus == 2 * N);
@@ -95,13 +97,13 @@ int main() {
         // mapping: -modulus/4 (= -N/2)  corresponds to -2^tau
         // mapping: -modulus/4 (= +N/2)  corresponds to +2^tau
         // modulus: 2N
-        plaintext_test_vector[i] = sigmoid(i / double(Ns2) * pow(2., test_vector_plaintext_expo));
+        plaintext_test_vector[i] = sigmoid(i / double(Ns2) * pow(2., lvl0_ciphertext_plaintext_expo));
     }
     for (int64_t i = 1; i <= Ns2; i++) {
         //tv[N-i]=-tv[-i]
-        plaintext_test_vector[N - i] = -sigmoid(-i / double(Ns2) * pow(2., test_vector_plaintext_expo));
+        plaintext_test_vector[N - i] = -sigmoid(-i / double(Ns2) * pow(2., lvl0_ciphertext_plaintext_expo));
     }
-    TRLwe sigmoid_test_vector(test_vector_params);
+    TRLwe sigmoid_test_vector(p_trlwe_params);
     fixp_trivial(sigmoid_test_vector, plaintext_test_vector, section2_params::default_plaintext_precision);
 
     // read the input ciphertexts (from section 1)
@@ -113,12 +115,6 @@ int main() {
         in_coefs[i] = in_coefs_raw + (n_lvl0 + 1) * i;
     }
     read_tlwe_samples(lvl0_ciphertext_filename.c_str(), in_coefs, algo_n, n_lvl0, 2 * N);
-
-    // ------ p params
-    // ------
-    BigTorusParams p_bt_params(p_limbs, p_plaintext_expo, p_level);
-    TLweParams p_tlwe_params(N, p_bt_params);  // extract after bootstrap
-    TRLweParams p_trlwe_params(N, p_bt_params); // param after pubKS
 
     TRLWEVector p_lvl4(algo_n, p_trlwe_params);
 

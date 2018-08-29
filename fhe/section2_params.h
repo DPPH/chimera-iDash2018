@@ -31,11 +31,10 @@ namespace section2_params {
     static const int64_t rk_alpha_bits = 110;
     static const int64_t rk_nblimbs = limb_precision(rk_alpha_bits);
     //
+    // input tlwe during mega-bootstrap (mapping N/2 -> 2^test_vector_plaintext_expo)
     static const std::string lvl0_ciphertext_filename = "X_beta.ctxt";
     static const int64_t lvl0_ciphertext_modulus = 2 * N; //lvl0_ciphertext are Torus64 and will be read as modulo 2N
-    // test vector during mega-bootstrap (mapping N/2 -> 2^test_vector_plaintext_expo)
-    const int64_t test_vector_level = 80;
-    const int64_t test_vector_plaintext_expo = 2; //the test vector is between -4 and 4
+    static const int64_t lvl0_ciphertext_plaintext_expo = 2; //the test vector is between -4 and 4
     //TODO: synchronize with section 1
     //
     static const std::string p_lvl4_filename = "p_lvl4.bin";
