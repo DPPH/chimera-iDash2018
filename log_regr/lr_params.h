@@ -28,11 +28,11 @@ struct LRParams
     int nb_threads;
     int seed;
     int verbose_level;
+    bool write_all_beta;
+    bool write_all_x_beta;
 
-    // const int sigm_levels = 16;
     const double sigm_in_min = -4.0;
     const double sigm_in_max = 4.0;
-    // const double sigm_multiplier = pow(2., -6);
 
     const char* const filename_params = "params.bin";
     const char* const filename_secret_keyset = "secret_keyset.bin";
@@ -40,8 +40,8 @@ struct LRParams
 
     const char* const filename_data = "data.ctxt";
 
-    const char* const filename_X_beta = "X_beta.ctxt";
-    const char* const filename_prefix_beta = "beta_iter_";
+    const char* const filename_prefix_X_beta = "X_beta.";
+    const char* const filename_prefix_beta = "beta.";
 
     /* LR step */
     const int alpha = 4;
