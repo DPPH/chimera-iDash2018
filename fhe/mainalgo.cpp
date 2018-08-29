@@ -3,8 +3,61 @@
 #include "mainalgo.h"
 #include "BigFFT.h"
 #include "TRLwe.h"
+#include <fstream>
+#include <iostream>
+#include <cassert>
 
 NTL_CLIENT;
+
+void read_tlwe_key(const char *const filename, int64_t *const key, const int64_t n) {
+    const int32_t LWE_KEY_TYPE_UID = 43;
+
+    ifstream f(filename, ifstream::binary);
+    if (not f.is_open()) {
+        fprintf(stderr, "Function %s: cannot open file %s\n", __FUNCTION__, filename);
+        exit(-1);
+    }
+
+    int32_t type_uid;
+    istream_read_binary(f, &type_uid, sizeof(int32_t));
+    assert(type_uid == LWE_KEY_TYPE_UID);
+
+    int* key_tmp = new int[n];
+    istream_read_binary(f, key_tmp, sizeof(int) * n);
+
+    for (int i = 0; i < n; ++i)
+        key[i] = (int64_t)key_tmp[i];
+    delete[] key_tmp;
+
+    f.close();
+}
+
+void read_tlwe_sample(istream& f, int64_t *const ab, const int64_t n) {
+    const int32_t LWE_SAMPLE_TYPE_UID = 42;
+
+    int32_t type_uid;
+    istream_read_binary(f, &type_uid, sizeof(int32_t));
+    assert(type_uid == LWE_SAMPLE_TYPE_UID);
+
+    istream_read_binary(f, ab, sizeof(int64_t) * (n+1));
+
+    double variance;
+    istream_read_binary(f, &variance, sizeof(double));
+}
+
+void read_tlwe_samples(const char *const filename, int64_t **const samples, const int64_t nb_samples, const int64_t nb_coefs) {
+    ifstream f(filename, ifstream::binary);
+    if (not f.is_open()) {
+        fprintf(stderr, "Function %s: cannot open file %s\n", __FUNCTION__, filename);
+        exit(-1);
+    }
+
+    for (int i = 0; i < nb_samples; ++i)
+        read_tlwe_sample(f, samples[i], nb_coefs);
+
+    f.close();
+}
+
 
 std::shared_ptr<TRGSWMatrix>
 encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bits, int64_t plaintext_precision_bits) {
