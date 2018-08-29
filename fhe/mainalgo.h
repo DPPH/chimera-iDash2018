@@ -22,8 +22,9 @@ void read_tlwe_key(const char *const filename, int64_t *const key, const int64_t
  * @param f input stream
  * @param ab allocated array of size n+1, first n elements are a and the last one is b
  * @param n lwe sample size
+ * @param modulus the modulus on which the ciphertexts are encoded
  */
-void read_tlwe_sample(std::istream &f, int64_t *const ab, const int64_t n);
+void read_tlwe_sample(std::istream &f, int64_t *const ab, const int64_t n, const int64_t modulus);
 
 /**
  * @brief read several tlwe samples
@@ -32,9 +33,10 @@ void read_tlwe_sample(std::istream &f, int64_t *const ab, const int64_t n);
  * @param samples allocated array of size nb_samples x (nb_coefs+1), the +1 is for the b elements of lwe sample
  * @param nb_samples number of tlwe samples to read
  * @param nb_coefs number of coefficients in each sample
+ * @param modulus the modulus on which the ciphertexts are encoded
  */
 void read_tlwe_samples(const char *const filename, int64_t **const samples, const int64_t nb_samples,
-                       const int64_t nb_coefs);
+                       const int64_t nb_coefs, const int64_t modulus);
 
 class TRGSWMatrix {
 public:

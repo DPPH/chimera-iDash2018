@@ -40,7 +40,7 @@ int main() {
         for (int i = 0; i < nb_samples; ++i)
             samples[i] = samples_raw + i * (nb_coefs + 1);
 
-        read_tlwe_samples("X_beta.ctxt", samples, nb_samples, nb_coefs);
+        read_tlwe_samples("X_beta.ctxt", samples, nb_samples, nb_coefs, 2 * N);
 
         delete[] samples;
         delete[] samples_raw;
@@ -53,7 +53,7 @@ int main() {
         int_encrypt(bk[i], s[i], *key, bk_alpha_bits);
 #pragma omp critical
         {
-            printf("%3d/%3ld\r", k++, n_lvl0);
+            printf("%3d/%3ld\r", k++, long(n_lvl0));
             fflush(stdout);
         }
     }
