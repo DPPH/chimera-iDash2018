@@ -6,14 +6,31 @@
 
 using namespace std;
 
-const int n_l0 = 730;
+// const int n_l0 = 535;
+// const double stddev_l0 = pow(2., -13);
+
+// const int n_l0 = 574;
+// const double stddev_l0 = pow(2., -14);
+
+const int n_l0 = 612;
+const double stddev_l0 = pow(2., -15);
+
+// const int n_l0 = 649;
+// const double stddev_l0 = pow(2., -16);
+
+// const int n_l0 = 687;
+// const double stddev_l0 = pow(2., -17);
+
+// const int n_l0 = 730;
+// const double stddev_l0 = pow(2., -18);
+
 const int n_l1 = 2048;
+const double stddev_l1 = pow(2., -53);
+
 const int n_l2 = 8192;
 const int k = 1;
-
-const double stddev_l0 = pow(2., -18);
-const double stddev_l1 = pow(2., -53);
 const double stddev_l2 = pow(2., -53);
+
 
 const int l1_l = 8;
 const int l1_Bgbit = 6;
@@ -113,11 +130,11 @@ TfheCloudKeySet* new_cloud_keyset(const TfheSecretKeySet* secret_keyset, const L
 
 
 int main(int argc, char const *argv[]) {
-    // uint32_t values[2];
-    // values[0] = time(NULL)>>32;
-    // values[1] = time(NULL);
-    // RandomGen::set_seed(values, 2);
-    RandomGen::set_seed(42);
+    uint32_t values[2];
+    values[0] = time(NULL)>>32;
+    values[1] = time(NULL);
+    RandomGen::set_seed(values, 2);
+    // RandomGen::set_seed(42);
 
     LRParams lr_params;
 
