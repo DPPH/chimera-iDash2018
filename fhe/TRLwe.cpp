@@ -201,6 +201,21 @@ void fixp_encrypt(TRLwe &reps, const NTL::vec_RR &plaintext, const TLweKey &key,
     native_encrypt(reps, tmp, key, alpha_bits);
 }
 
+void fixp_trivial(TRLwe &reps, const NTL::vec_RR &plaintext, UINT64 plaintext_precision) {
+    assert_dramatically(reps.params.fixp_params.level_expo > 0); //"level exponent is not set";
+    int64_t alpha_bits = reps.params.fixp_params.level_expo + plaintext_precision;
+    assert_dramatically(int64_t(reps.params.fixp_params.torus_limbs) >=
+                        limb_precision(alpha_bits)); //"the bigtorus is not precise enough";
+    int64_t N = reps.params.N;
+    zero(reps.a[0]);
+    for (int64_t i = 0; i < N; i++) {
+        if (i < plaintext.length())
+            to_fixP(reps.a[1].getAT(i), plaintext[i]);
+        else
+            zero(reps.a[1].getAT(i));
+    }
+}
+
 NTL::vec_RR fixp_decrypt(const TRLwe &tlwe, const TLweKey &key) {
     assert(tlwe.params.fixp_params.level_expo > 0); //"level exponent is not set";
     int64_t N = tlwe.params.N;
@@ -248,6 +263,12 @@ void fixp_encrypt_number(TRLwe &reps, const NTL::RR &plaintext, const TLweKey &k
     NTL::vec_RR tmp(NTL::INIT_SIZE, 1);
     tmp[0] = plaintext;
     fixp_encrypt(reps, tmp, key, plaintext_precision);
+}
+
+void fixp_trivial_number(TRLwe &reps, const NTL::RR &plaintext, UINT64 plaintext_precision) {
+    NTL::vec_RR tmp(NTL::INIT_SIZE, 1);
+    tmp[0] = plaintext;
+    fixp_trivial(reps, tmp, plaintext_precision);
 }
 
 NTL::RR fixp_decrypt_number(const TRLwe &tlwe, const TLweKey &key) {

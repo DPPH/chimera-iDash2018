@@ -30,30 +30,15 @@ int main() {
 
     cout << "start encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
-    if (0) {
-        //todo copy to the right location
-        const int64_t nb_samples = algo_n;
-        const int64_t nb_coefs = n_lvl0;
-
-        int64_t *samples_raw = new int64_t[nb_samples * (nb_coefs + 1)];
-        int64_t **samples = new int64_t *[nb_samples];
-        for (int i = 0; i < nb_samples; ++i)
-            samples[i] = samples_raw + i * (nb_coefs + 1);
-
-        read_tlwe_samples("X_beta.ctxt", samples, nb_samples, nb_coefs);
-
-        delete[] samples;
-        delete[] samples_raw;
-    }
-
     int k = 1;
 #pragma omp parallel for
+
     for (int i = 0; i < n_lvl0; i++) {
 
         int_encrypt(bk[i], s[i], *key, bk_alpha_bits);
 #pragma omp critical
         {
-            printf("%3d/%3ld\r", k++, n_lvl0);
+            printf("%3d/%3ld\r", k++, long(n_lvl0));
             fflush(stdout);
         }
     }
@@ -112,6 +97,5 @@ int main() {
     ofstream rk_key_out(section2_rk_filename);
     serializeTRGSW(rk_key_out, rk);
     rk_key_out.close();
-
 
 }
