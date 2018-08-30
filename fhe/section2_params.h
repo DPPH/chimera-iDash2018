@@ -9,7 +9,7 @@
 namespace section2_params {
     static const int64_t algo_n = 245;
     static const int64_t algo_k = 3;
-    static const int64_t algo_m = 10000;
+    static const int64_t algo_m = 10643;
     //
     static const int64_t default_plaintext_precision = 16;
     //
@@ -49,6 +49,20 @@ namespace section2_params {
     static const int64_t w_alpha_bits = w_level + default_plaintext_precision;
     static const int64_t w_limbs = limb_precision(w_alpha_bits);
 
+    static const std::string y_lvl2_filename = "y_lvl2.bin";
+    static const int64_t y_level = 32;
+    static const int64_t y_plaintext_expo = 0;
+
+    static const std::string S_lvl3_filename = "S_lvl3.bin";
+    static const int64_t S_level = 48;
+    static const int64_t S_plaintext_expo = 0;
+    static const int64_t S_alpha_bits = S_level + 32 + 5;
+
+
+    static const std::string X_lvl2_filename = "X_lvl2.bin";
+    static const int64_t X_level = 32;
+    static const int64_t X_plaintext_expo = 0;
+    static const int64_t X_alpha_bits = X_level + 32 + 5;
 
 };
 

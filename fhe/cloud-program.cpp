@@ -211,6 +211,7 @@ int main() {
     // -----------------
     // compute numerator (lvl 0)   (requires enc. y of S)
 
+
     // ------------------
     // compute A (lvl 1)           (requires enc. of S and X)
 

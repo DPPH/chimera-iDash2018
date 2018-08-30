@@ -75,6 +75,106 @@ void fill_matrix_S(BigTorusMatrix &S) {
     ifs.close();
 }
 
+void fill_matrix_S(mat_RR &S) {
+    const long m = S.NumCols();
+    const long n = S.NumRows();
+
+    basic_ifstream<char> ifs("data/snpMat.txt");
+    assert_dramatically(bool(ifs), "data/snpMat.txt not found!");
+    RR rrbuf;
+    basic_string<char> line;
+    std::getline(ifs, line); //ignore first header line
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < m; j++) {
+            ifs >> rrbuf;
+            assert(is_binary(rrbuf)); //S binary
+            S[i][j] = rrbuf;
+        }
+    assert(ifs); //verify that all values have been read
+    ifs.close();
+}
+
+
+void fill_matrix_Xy(mat_RR &X, vec_RR &y) {
+    const UINT64 n = X.NumRows();
+    const UINT64 k = X.NumCols();
+    assert_dramatically(y.length() == long(n), "dimension of X, y are wrong");
+    basic_ifstream<char> ifs("data/covariates.csv");
+    assert(ifs);
+    mat_RR B;
+    vec_RR sums;
+    vec_RR nbels;
+    B.SetDims(k, n);
+    sums.SetLength(k);
+    clear(sums);
+    nbels.SetLength(k);
+    clear(nbels);
+
+    string line;
+    string buf;
+    RR rrbuf;
+    std::getline(ifs, line); //ignore first header line
+    for (UINT64 i = 0; i < n; i++) {
+        std::getline(ifs, line);
+        for (int j = 0; j < int(line.size()); j++) {
+            if (line[j] == ',') line[j] = ' ';
+        }
+        istringstream iss(line);
+        iss >> buf; //ignore label
+        iss >> rrbuf; //read y
+        assert(is_binary(rrbuf)); //y binary
+        y[i] = rrbuf;
+
+        B[0][i] = 1.; //intercept first
+        nbels[0]++;
+        for (UINT64 j = 1; j < k; j++) {
+            iss >> buf;
+            if (buf == "NA") {
+                B[j][i] = -1e80;
+            } else {
+                B[j][i] = stod(buf);
+                sums[j] += B[j][i];
+                nbels[j]++;
+            }
+        }
+        assert(iss);
+    }
+    assert(ifs);
+    ifs.close();
+    //replace all NANs by average
+    //cout << B << endl;
+    //cout << nbels << endl;
+    for (UINT64 j = 0; j < k; j++) {
+        sums[j] /= nbels[j];
+    }
+    for (UINT64 i = 0; i < n; i++) {
+        for (UINT64 j = 0; j < k; j++) {
+            if (B[j][i] < 1e-75) {
+                B[j][i] = sums[j];
+            }
+        }
+    }
+    //orthogonalize B
+    for (UINT64 i = 0; i < k; i++) {
+        //remove component on previous vectors
+        for (UINT64 j = 0; j < i; j++) {
+            B[i] -= (B[i] * B[j]) * B[j];
+        }
+        //normalize B[i]
+        RR alpha = inv(sqrt(B[i] * B[i]));
+        B[i] *= alpha;
+    }
+    //cout << B << endl;
+    //cout << B*transpose(B) << endl;
+    //put B in X
+    for (UINT64 i = 0; i < n; i++) {
+        for (UINT64 j = 0; j < k; j++) {
+            X[i][j] = B[j][i];
+        }
+    }
+}
+
+
 void fill_matrix_Xy(BigTorusMatrix &X, BigTorusVector &y) {
     const UINT64 n = X.rows;
     const UINT64 k = X.cols;

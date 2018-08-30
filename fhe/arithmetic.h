@@ -3,6 +3,7 @@
 
 #include "BigTorusVector.h"
 #include "BigTorus.h"
+#include <NTL/mat_RR.h>
 
 double log2Diff(const NTL::RR &a, const NTL::RR &b);
 
@@ -22,7 +23,11 @@ void fixp_tAb_prod_fake(BigTorusVector &res, BigTorusMatrix &A, BigTorusVector &
 
 void fill_matrix_S(BigTorusMatrix &S);
 
+void fill_matrix_S(NTL::mat_RR &S);
+
 void fill_matrix_Xy(BigTorusMatrix &X, BigTorusVector &y);
+
+void fill_matrix_Xy(NTL::mat_RR &X, NTL::vec_RR &y);
 
 void fixp_sigmoid_vec(BigTorusVector &p, BigTorusVector &w, BigTorusVector &x);
 
