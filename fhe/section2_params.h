@@ -64,6 +64,22 @@ namespace section2_params {
     static const int64_t X_plaintext_expo = 0;
     static const int64_t X_alpha_bits = X_level + 32 + 5;
 
+    static const std::string numerator_lvl0_filename = "numerator_lvl0.bin";
+    static const int64_t numerator_level = 1;
+    static const int64_t numerator_plaintext_expo = 0;//TODO
+
+    static const std::string A_lvl1_filename = "A_lvl1.bin";
+    static const int64_t A_level = 16;
+    static const int64_t A_plaintext_expo = 0; //TODO
+
+
+    static const std::string denominator_lvl0_filename = "denominator_lvl0.bin";
+    static const int64_t denominator_level = 1;
+    static const int64_t denominator_plaintext_expo = 0; //TODO
+    static const int64_t denominator_alpha_bits = denominator_level + default_plaintext_precision;
+    static const int64_t denominator_limbs = limb_precision(denominator_alpha_bits);
+
+
 };
 
 

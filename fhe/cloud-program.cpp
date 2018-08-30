@@ -210,19 +210,137 @@ int main() {
 
     // -----------------
     // compute numerator (lvl 0)   (requires enc. y of S)
+    // read y
+    cerr << "deserializing y" << endl;
+    ifstream y_in(y_lvl2_filename);
+    int64_t y_length;
+    istream_read_binary(y_in, &y_length, sizeof(int64_t));
+
+    shared_ptr<TRLweParams> y_params = deserializeTRLweParams(y_in);
+    TRLWEVector y(y_length, *y_params);
+
+    for (int64_t i = 0; i < algo_n; i++) {
+        deserializeTRLweContent(y_in, y.data[i]);
+    }
+    y_in.close();
+
+
+    // read S
+    cerr << "deserializing S" << endl;
+    ifstream S_in(S_lvl3_filename);
+    int64_t S_rows;
+    int64_t S_cols;
+    istream_read_binary(S_in, &S_rows, sizeof(int64_t));
+    istream_read_binary(S_in, &S_cols, sizeof(int64_t));
+
+
+    shared_ptr<TRGSWParams> S_params = deserializeTRGSWParams(S_in);
+    TRGSWMatrix *S = new TRGSWMatrix(S_rows, S_cols, *S_params);
+    for (int64_t i = 0; i < S_rows; i++) {
+        for (int64_t j = 0; j < S_cols; j++) {
+            deserializeTRGSWContent(S_in, S->data[i][j]);
+        }
+    }
+    S_in.close();
+    //(y-p)*S
+
+    shared_ptr<TRLWEVector> temp1 = substract_ind_TRLWE(y, p_lvl4, y_level, y_plaintext_expo,
+                                                        section2_params::default_plaintext_precision);
+    shared_ptr<TRLWEVector> numerator = mat_vec_prod(*temp1, *S, numerator_level, numerator_plaintext_expo,
+                                                     section2_params::default_plaintext_precision);
+
+
+    // serialize numerator (lvl 0)
+    ofstream numerator_stream("numerator_lvl0.bin");
+    ostream_write_binary(numerator_stream, &numerator->length, sizeof(int64_t));
+    serializeTRLweParams(numerator_stream, numerator->data[0].params);
+    for (int64_t i = 0; i < numerator->length; i++) {
+        serializeTRLweContent(numerator_stream, numerator->data[i]);
+    }
+    numerator_stream.close();
+
 
 
     // ------------------
     // compute A (lvl 1)           (requires enc. of S and X)
 
+    // read X
+    cerr << "deserializing X" << endl;
+    ifstream X_in(X_lvl2_filename);
+    int64_t X_rows;
+    int64_t X_cols;
+    istream_read_binary(X_in, &X_rows, sizeof(int64_t));
+    istream_read_binary(X_in, &X_cols, sizeof(int64_t));
+
+    shared_ptr<TRGSWParams> X_params = deserializeTRGSWParams(X_in);
+    TRGSWMatrix *X = new TRGSWMatrix(X_rows, X_cols, *X_params);
+    for (int64_t i = 0; i < X_rows; i++) {
+        for (int64_t j = 0; j < X_cols; j++) {
+            deserializeTRGSWContent(X_in, X->data[i][j]);
+        }
+    }
+    X_in.close();
+
+    shared_ptr<TRLweMatrix> A = compute_A(*X, *S, *w_lvl3, A_level, A_plaintext_expo,
+                                          section2_params::default_plaintext_precision);
+
+    // serialize A (lvl 1)
+    ofstream A_stream("A_lvl1.bin");
+    ostream_write_binary(numerator_stream, &numerator->length, sizeof(int64_t));
+
+    ostream_write_binary(A_stream, &A->rows, sizeof(int64_t));
+    ostream_write_binary(A_stream, &A->cols, sizeof(int64_t));
+    serializeTRLweParams(A_stream, A->data[0][0].params);
+
+    for (int64_t i = 0; i < A->rows; i++) {
+        for (int64_t j = 0; j < A->cols; j++) {
+            serializeTRLweContent(A_stream, A->data[i][j]);
+        }
+    }
+
+    A_stream.close();
 
     //free S and X here
+    S = nullptr;
+    X = nullptr;
 
     // -------------------
-    // denom_1 proportional to row 0 of A
+    // denom_1 proportional to row 0 of A    A[0]*sqrt(algo_n)= denom_1
+
+    BigTorusParams denom_bt_params(denominator_limbs, denominator_plaintext_expo, denominator_level);
+    TRLweParams denom_params(N, denom_bt_params);
+    TRLWEVector denom_1(A->cols, denom_params);
+
+    for (int i = 0; i < A->cols; i++) {
+        fixp_public_product(denom_1.data[i], A->data[0][i], sqrt(algo_n)); //TODO
+    }
 
     // -------------------
     // denom 2 = 4*norms2(A)
+    TRLwe temps(denom_params);
+    TRLWEVector denom_2(A->cols, denom_params);
+
+    for (int i = 0; i < A->rows; i++) {
+        zero(denom_2.data[i]);
+        for (int j = 0; j < A->cols; j++) {
+            fixp_internal_product(temps, A->data[i][j], A->data[i][j], *rk, denominator_alpha_bits);
+            fixp_public_product(temps, temps, 4);
+            fixp_add(denom_2.data[i], denom_2.data[i], temps);
+        }
+    }
+    shared_ptr<TRLWEVector> denominator = substract_ind_TRLWE(denom_1, denom_2, denominator_level,
+                                                              denominator_plaintext_expo,
+                                                              section2_params::default_plaintext_precision);
+
+    // serialize denominator (lvl 0)
+    ofstream denominator_stream("denominator_lvl0.bin");
+    ostream_write_binary(denominator_stream, &denominator->length, sizeof(int64_t));
+    serializeTRLweParams(denominator_stream, denominator->data[0].params);
+    for (int64_t i = 0; i < denominator->length; i++) {
+        serializeTRLweContent(denominator_stream, denominator->data[i]);
+    }
+    denominator_stream.close();
+
 }
 
 
