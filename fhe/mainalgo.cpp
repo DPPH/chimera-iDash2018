@@ -220,6 +220,7 @@ encrypt_X(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
     store_forever(trgsw_params);
     TRGSWMatrix *reps = new TRGSWMatrix(rows, cols, *trgsw_params);
 
+#pragma omp parallel for
     for (int64_t r = 0; r < rows; r++) {
         for (int64_t c = 0; c < cols; c++) {
             RR::SetPrecision(plain_limbs * BITS_PER_LIMBS);
