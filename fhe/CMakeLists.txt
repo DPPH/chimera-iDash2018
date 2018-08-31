@@ -39,6 +39,7 @@ set(MAIN_PROGS
         cloud-program.cpp
         key-gen-program.cpp
         debug-decrypt-program.cpp
+        encrypt-program.cpp
         )
 
 foreach (PROG_CPP ${MAIN_PROGS})

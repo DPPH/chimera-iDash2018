@@ -57,6 +57,26 @@ int main() {
         cout << "p_lvl4: " << "absent!" << endl;
     }
     p_stream.close();
+
+
+    ifstream w_stream(w_lvl3_filename);
+    if (w_stream) {
+        istream_read_binary(w_stream, &dummy, sizeof(int64_t));
+        assert_dramatically(dummy == algo_n, "wrong size of w");
+        auto w_params = deserializeTRLweParams(w_stream);
+        assert_dramatically(int64_t(w_params->N) == N);
+        assert_dramatically(int64_t(w_params->fixp_params.torus_limbs) == w_limbs);
+        assert_dramatically(int64_t(w_params->fixp_params.level_expo) == w_level);
+        assert_dramatically(int64_t(w_params->fixp_params.plaintext_expo) == w_plaintext_expo);
+        TRLWEVector w_lvl3(algo_n, *w_params);
+        for (int64_t i = 0; i < algo_n; i++) {
+            deserializeTRLweContent(w_stream, w_lvl3.data[i]);
+        }
+        cout << "w_lvl3: " << decrypt_individual_trlwe(w_lvl3, *key, algo_n) << endl;
+    } else {
+        cout << "w_lvl3: " << "absent!" << endl;
+    }
+    w_stream.close();
 }
 
 

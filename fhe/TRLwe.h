@@ -246,6 +246,7 @@ void fixp_add(TRLwe &reps, const TRLwe &a, const TRLwe &b, UINT64 out_precision_
 
 void fixp_sub(TRLwe &reps, const TRLwe &a, const TRLwe &b, UINT64 out_precision_bits = NA);
 
+void fixp_public_product(TRLwe &reps, const TRLwe &a, double value);
 
 #endif //FHE_TRLWE_H
 

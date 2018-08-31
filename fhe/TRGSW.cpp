@@ -465,7 +465,7 @@ vec_RR centerMod1(const vec_RR &ra) {
 extern TLweKey *debug_key;
 #endif
 
-void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TRGSW &rk, int precision_bits) {
+void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TRGSW &rk, int plaintext_precision) {
     const int64_t N = reps.params.N;
     assert_dramatically(a.params.fixp_params.level_expo > 0, "missing level info in a");
     assert_dramatically(b.params.fixp_params.level_expo > 0, "missing level info in b");
@@ -476,12 +476,24 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
     //compute parameters
     // input level noise: bit precision of the FFT of the first part of the product
     //                    we round everything to exact multiples of 1/2^input_level_expo
-    int64_t input_level_expo = reps.params.fixp_params.level_expo + precision_bits;
+
+    //we will do as if the target plaintext expo was the following
+    int64_t virtual_target_plaintext_expo = a.params.fixp_params.plaintext_expo + b.params.fixp_params.plaintext_expo;
+    int64_t pediff = reps.params.fixp_params.plaintext_expo - virtual_target_plaintext_expo;
+    int64_t virtual_target_level_expo;
+    if (pediff < 0) { //plaintext prec override
+        virtual_target_level_expo = reps.params.fixp_params.level_expo + pediff;
+    } else {
+        virtual_target_plaintext_expo = reps.params.fixp_params.plaintext_expo;
+        virtual_target_level_expo = reps.params.fixp_params.level_expo;
+    }
+
+    int64_t input_level_expo = virtual_target_level_expo + plaintext_precision;
     int64_t a_lshift = a.params.fixp_params.level_expo - input_level_expo;
     int64_t b_lshift = b.params.fixp_params.level_expo - input_level_expo;
     assert_dramatically(a_lshift >= 0, "level expo of a too small");
     assert_dramatically(b_lshift >= 0, "level expo of b too small");
-    int64_t input_level_noise = reps.params.fixp_params.level_expo + 2 * precision_bits;
+    int64_t input_level_noise = virtual_target_level_expo + 2 * plaintext_precision;
     int64_t fft_bits = 2 * input_level_noise + int64_t(log2(N)); //precision of the fft: twice as large
     int64_t fft_nlimbs = limb_precision(fft_bits);
     BigReal *a1 = new_BigReal_array(N, fft_nlimbs);
@@ -528,9 +540,9 @@ void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TR
 #endif
 
     //Now, we create the intermediate TRLWE ciphertexts
-    int64_t intermediate_level_expo = reps.params.fixp_params.level_expo;
-    int64_t intermediate_plaintext_expo = reps.params.fixp_params.plaintext_expo;
-    int64_t intermediate_level_noise = reps.params.fixp_params.level_expo + precision_bits + 1;
+    int64_t intermediate_level_expo = virtual_target_level_expo;
+    int64_t intermediate_plaintext_expo = virtual_target_plaintext_expo;
+    int64_t intermediate_level_noise = virtual_target_level_expo + plaintext_precision + 1;
     int64_t intermediate_trgsw_noise = input_level_noise + 32 + log(N);
     int64_t decomp_length = intermediate_level_noise + log2(N);
     int64_t target_ell = (decomp_length + 31) / 32;
