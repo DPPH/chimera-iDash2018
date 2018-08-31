@@ -77,6 +77,7 @@ void subMul64(BigTorusVector &out, int64_t a, const BigTorusVector &in, const UI
         subMulS64(out.getAT(i), a, in.getAT(i), out_limb_prec);
     }
 }
+
 void copy(BigTorusVector &out, const BigTorusVector &in, UINT64 out_limbs_prec) {
     for (UINT64 i = 0; i < out.length; i++) {
         copy(out.getAT(i), in.getAT(i), out_limbs_prec);
@@ -161,6 +162,14 @@ void lshift(BigTorusVector &out, const BigTorusVector &in, int64_t shift_bits) {
     assert(in.length == out.length);
     for (uint64_t i = 0; i < in.length; i++) {
         lshift(out.getAT(i), in.getAT(i), shift_bits);
+    }
+}
+
+void public_scale(BigTorusVector &out, const BigTorusVector &in, int64_t multiplier) {
+    const int64_t N = in.length;
+    assert_dramatically(int64_t(out.length) == N, "wrong length");
+    for (int64_t i = 0; i < N; i++) {
+        mulS64(out.getAT(i), multiplier, in.getAT(i), std::min(out.btp.torus_limbs, in.btp.torus_limbs));
     }
 }
 

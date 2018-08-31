@@ -564,6 +564,25 @@ void fixp_add(TRLwe &reps, const TRLwe &a, const TRLwe &b, UINT64 out_precision_
 
 }
 
+void fixp_public_product(TRLwe &reps, const TRLwe &a, double value) {
+    if (value == 0) { //corner case
+        zero(reps);
+        return;
+    }
+
+    int64_t shift_amount = a.params.fixp_params.plaintext_expo + a.params.fixp_params.level_expo
+                           - reps.params.fixp_params.plaintext_expo - reps.params.fixp_params.level_expo;
+    // actual multiplier
+    //torus = torus_a * 2^(a.pe+a.le) * 2^-(r.pe+r.le)
+    double actual_multiplier = value * pow(2., shift_amount);
+    int64_t actual_multiplier_int64 = int64_t(rint(actual_multiplier));
+    double relative_error = abs(actual_multiplier - actual_multiplier_int64) / abs(actual_multiplier);
+    assert_weakly(relative_error <= 0.01, "level too high: a large error of " << relative_error << " will arise");
+
+    public_scale(reps.a[0], a.a[0], actual_multiplier_int64);
+    public_scale(reps.a[1], a.a[1], actual_multiplier_int64);
+}
+
 
 pubKsKey128::pubKsKey128(
         const TLweParams &in_params,

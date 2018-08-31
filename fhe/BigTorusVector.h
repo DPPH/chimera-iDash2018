@@ -114,6 +114,8 @@ void add(BigTorusVector &out, const BigTorusVector &a, const BigTorusVector &b, 
 /** @brief left shift the all torus by exactly shift_bits */
 void lshift(BigTorusVector &out, const BigTorusVector &in, int64_t shift_bits);
 
+/** @brief multiply all torus elems by multiplier */
+void public_scale(BigTorusVector &out, const BigTorusVector &in, int64_t multiplier);
 
 
 #endif //FHE_BIGTORUSVECTOR_H
