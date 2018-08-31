@@ -13,10 +13,10 @@ namespace section2_params {
     //
     static const int64_t default_plaintext_precision = 16;
     //
-    static const int64_t n_lvl0 = 680;    //TODO: synchronize with section 1
+    static const int64_t n_lvl0 = 50;    //TODO: synchronize with section 1
     static const std::string lvl0_key_filename = "secret_keyset.bin";
     //
-    static const int64_t N = 4096;
+    static const int64_t N = 256; //TODO
     static const std::string section2_key_filename = "section2_secret.key";
     //
     static const std::string section1_2_bk_filename = "bk.key";
@@ -66,19 +66,18 @@ namespace section2_params {
 
     static const std::string numerator_lvl0_filename = "numerator_lvl0.bin";
     static const int64_t numerator_level = 1;
-    static const int64_t numerator_plaintext_expo = 0;//TODO
+    static const int64_t numerator_plaintext_expo = 5; //TODO
 
     static const std::string A_lvl1_filename = "A_lvl1.bin";
-    static const int64_t A_level = 16;
-    static const int64_t A_plaintext_expo = 0; //TODO
+    static const int64_t A_level = 12;
+    static const int64_t A_plaintext_expo = 2; //TODO
 
 
     static const std::string denominator_lvl0_filename = "denominator_lvl0.bin";
     static const int64_t denominator_level = 1;
-    static const int64_t denominator_plaintext_expo = 0; //TODO
+    static const int64_t denominator_plaintext_expo = 4; //TODO
     static const int64_t denominator_alpha_bits = denominator_level + default_plaintext_precision;
     static const int64_t denominator_limbs = limb_precision(denominator_alpha_bits);
-
 
 };
 

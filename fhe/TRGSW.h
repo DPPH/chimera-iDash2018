@@ -30,7 +30,7 @@ class TRGSW {
 public:
     const TRGSWParams &params;
     BigComplex *a[2][TRGSWParams::max_ell][2];
-    UINT64 plaintext_exponent; //the exponent we should multiply the trgsw to obtain the original plaintext
+    int64_t plaintext_exponent; //the exponent we should multiply the trgsw to obtain the original plaintext
     UINT64 bits_a;             //bits of the norm 1 of the plaintext
     UINT64 fft_nlimbs; //fft limbs in all BigComplex
     UINT64 ell;        //actual decomposition length
@@ -102,7 +102,7 @@ TRGSW *new_TRGSW_array(UINT64 size, const TRGSWParams &params);
 void delete_TRGSW_array(UINT64 size, TRGSW *array);
 
 
-void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TRGSW &rk, int precision_bits);
+void fixp_internal_product(TRLwe &reps, const TRLwe &a, const TRLwe &b, const TRGSW &rk, int plaintext_precision);
 
 
 #endif //FHE_TRGSW_H

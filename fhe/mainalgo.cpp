@@ -127,16 +127,13 @@ encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
     // * do the FFT in the [-1,1] domain
     // * post shift by +plaintext_expo-trgsw_shift=trgsw_bits_a
     const int64_t plain_limbs = limb_precision(plaintext_precision_bits + log2(N));
-    BigComplex *cslots = new_BigComplex_array(Ns2, plain_limbs);
-    BigReal *rcoefs = new_BigReal_array(N, plain_limbs);
-    int64_t *icoefs = new int64_t[N];
     const BigComplex *powombar = fftAutoPrecomp.omegabar(n, plain_limbs);
 
     //Then, for the TRGSW encryption itself:
     //  * alpha is the requested error level
-    int64_t reps_limbs = limb_precision(alpha_bits);
-    int64_t reps_plaintext_exponent = 0; //these two are unused (we leave 0: no shift, for test purposes)
-    int64_t reps_level_exponent = 0;     //these two are unused (we leave 0: no shift, for test purposes)
+    const int64_t reps_limbs = limb_precision(alpha_bits);
+    const int64_t reps_plaintext_exponent = 0; //these two are unused (we leave 0: no shift, for test purposes)
+    const int64_t reps_level_exponent = 0;     //these two are unused (we leave 0: no shift, for test purposes)
     shared_ptr<BigTorusParams> bt_params = make_shared<BigTorusParams>(reps_limbs, reps_plaintext_exponent,
                                                                        reps_level_exponent);
     store_forever(bt_params);
@@ -144,7 +141,12 @@ encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
     store_forever(trgsw_params);
     TRGSWMatrix *reps = new TRGSWMatrix(rows, cols, *trgsw_params);
 
+#pragma omp parallel for
     for (int64_t r = 0; r < rows; r++) {
+        BigComplex *cslots = new_BigComplex_array(Ns2, plain_limbs);
+        BigReal *rcoefs = new_BigReal_array(N, plain_limbs);
+        int64_t *icoefs = new int64_t[N];
+
         for (int64_t c = 0; c < cols; c++) {
             RR::SetPrecision(plain_limbs * BITS_PER_LIMBS);
             //set the slots at position (r,c)
@@ -176,11 +178,12 @@ encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
             reps->data[r][c].bits_a = trgsw_bits_a;
             reps->data[r][c].plaintext_exponent = real_plaintext_exponent;
         }
+        //free resources
+        delete_BigComplex_array(Ns2, cslots);
+        delete_BigReal_array(N, rcoefs);
+        delete[] icoefs;
     }
     //free resources
-    delete_BigComplex_array(Ns2, cslots);
-    delete_BigReal_array(N, rcoefs);
-    delete[] icoefs;
     return std::shared_ptr<TRGSWMatrix>(reps);
 }
 
@@ -268,7 +271,7 @@ encrypt_individual_trlwe(NTL::vec_RR plaintext, const TLweKey &key, int64_t N, i
 }
 
 std::shared_ptr<TRLWEVector>
-mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_expo, int64_t override_plaintext_exponent,
+vec_mat_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_expo, int64_t override_plaintext_exponent,
              int64_t plaintext_precision_bits) {
     //true plaintext: v * 2^(Lv + pl_v) * A * 2^shift_expo  where plaintext_expo = bits_a + shift_expo.
     //        actual expo:          Lv + pl_v + shift_expo = Lv + pl_v + plaintext_expo - bits_a
@@ -308,7 +311,7 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
     int64_t shifted_input_limbs = limb_precision(shifted_input_alpha_bits + 5);
     BigTorusParams shifted_input_bt_params(shifted_input_limbs, shifted_input_plaintext_expo, shifted_input_level);
     TRLweParams shifted_input_trlwe_params(N, shifted_input_bt_params);
-    TRLWEVector shifted_input(A.cols, shifted_input_trlwe_params);
+    TRLWEVector shifted_input(A.rows, shifted_input_trlwe_params);
 
     //step 2: Prepare the external product
     int64_t accum_level = target_level_expo;
@@ -328,7 +331,7 @@ mat_vec_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
     store_forever(accum_trlwe_params);
     TRLWEVector *reps = new TRLWEVector(A.cols, *accum_trlwe_params);
 
-    for (int j = 0; j < A.cols; j++) {
+    for (int j = 0; j < A.rows; j++) {
         lshift(shifted_input.data[j], v.data[j], rsBits);
     }
 
@@ -363,6 +366,25 @@ NTL::vec_RR decrypt_heaan_packed_trlwe(const TRLWEVector &ciphertext, const TLwe
     return reps;
 }
 
+//return a vector with the real part of all slots
+NTL::mat_RR decrypt_heaan_packed_trlwe(const TRLweMatrix &ciphertext, const TLweKey &key, int64_t plaintext_cols) {
+    int64_t Ns2 = ciphertext.data[0][0].params.N / 2;
+    assert(int64_t(ciphertext.cols * Ns2) >= plaintext_cols);
+    assert(int64_t ((ciphertext.cols-1) * Ns2) < plaintext_cols);
+    mat_RR reps;
+    reps.SetDims(ciphertext.rows, plaintext_cols);
+    for (int64_t i = 0; i < ciphertext.rows; i++) {
+        for (int64_t j = 0; j < ciphertext.cols; j++) {
+            vec_RR plaintexts = slot_decrypt(ciphertext.data[i][j], key);
+            for (int64_t k = 0; k < Ns2; k++) {
+                int64_t idx = j * Ns2 + k;
+                if (idx < plaintext_cols) reps[i][idx] = plaintexts[k];
+            }
+        }
+    }
+    return reps;
+}
+
 NTL::vec_RR decrypt_individual_trlwe(const TRLWEVector &ciphertext, const TLweKey &key, int64_t length) {
     assert(int64_t(ciphertext.length) == length);
     vec_RR reps;
@@ -387,8 +409,6 @@ product_ind_TRLWE(const TRLWEVector &a, const TRLWEVector &b, const TRGSW &rk, i
     int64_t tau_a = a.data[0].params.fixp_params.plaintext_expo;
     int64_t tau_b = b.data[0].params.fixp_params.plaintext_expo;
     int64_t tau = tau_a + tau_b;
-
-
 
     //L=min(L_a + L_b) - rho
     int64_t L_a = a.data[0].params.fixp_params.level_expo;
@@ -458,8 +478,8 @@ std::shared_ptr<TRLWEVector> substract_ind_TRLWE(const TRLWEVector &a, const TRL
     int64_t rho = plaintext_precision_bits;
 
     //tau=max(tau_a, tau_b) + 1
-    int64_t tau_a = a.data[0].params.fixp_params.plaintext_expo; //50   tau_a=83   L_a= 17
-    int64_t tau_b = b.data[0].params.fixp_params.plaintext_expo; //-50  tau_b=70   L_b= 13
+    const int64_t tau_a = a.data[0].params.fixp_params.plaintext_expo; //50   tau_a=83   L_a= 17
+    const int64_t tau_b = b.data[0].params.fixp_params.plaintext_expo; //-50  tau_b=70   L_b= 13
     int64_t tau = std::max(tau_a, tau_b) + 1; //51  tau= 84
 
     //L=min(L_a + tau_a, L_b+ tau_b) - tau
@@ -474,13 +494,14 @@ std::shared_ptr<TRLWEVector> substract_ind_TRLWE(const TRLWEVector &a, const TRL
     assert(L >= 0);
 
     if (override_plaintext_exponent != int64_t(NA)) {
-        tau = override_plaintext_exponent;
-        L = L + tau_a + tau_b - tau;
+        int64_t difftau = override_plaintext_exponent - tau;
+        tau = override_plaintext_exponent; // tau + difftau
+        L = L - difftau;
     }
 
 
     if (target_level_expo != int64_t(NA)) {
-        assert(target_level_expo < L);
+        assert(target_level_expo <= L);
         L = target_level_expo;
     }
 
@@ -612,7 +633,7 @@ std::shared_ptr<TRLWEVector>
 compute_w(const TRLWEVector &p, const TRGSW &rk, int64_t target_level_expo, int64_t override_plaintext_exponent,
           int64_t plaintext_precision_bits) {
 
-    std::shared_ptr<TRLWEVector> pp = product_ind_TRLWE(p, p, rk, target_level_expo, override_plaintext_exponent,
+    std::shared_ptr<TRLWEVector> pp = product_ind_TRLWE(p, p, rk, NA, NA,
                                                         plaintext_precision_bits);
     std::shared_ptr<TRLWEVector> resp = substract_ind_TRLWE(p, *pp, target_level_expo, override_plaintext_exponent,
                                                             plaintext_precision_bits);
@@ -637,28 +658,44 @@ compute_A(const TRGSWMatrix &X, const TRGSWMatrix &S, const TRLWEVector &W, int6
     int64_t L = W.data[0].params.fixp_params.level_expo - S.data[0][0].bits_a - X.data[0][0].bits_a;
     int64_t tau = W.data[0].params.fixp_params.plaintext_expo + S.data[0][0].plaintext_exponent +
                   X.data[0][0].plaintext_exponent;
-    int64_t alpha_bits = L + plaintext_precision_bits;
-    int64_t reps_limbs = limb_precision(alpha_bits);
-    int64_t N = W.data[0].params.N;
-
-    std::shared_ptr<BigTorusParams> reps_bt_params = make_shared<BigTorusParams>(reps_limbs, tau, L);
-    store_forever(reps_bt_params);
-
-    std::shared_ptr<TRLweParams> reps_trlwe_params = make_shared<TRLweParams>(N, *reps_bt_params);
-    store_forever(reps_trlwe_params);
-
-    TRLweMatrix *reps = new TRLweMatrix(X.cols, S.cols, *reps_trlwe_params);
+    const int64_t N = W.data[0].params.N;
 
     int64_t L_temp = W.data[0].params.fixp_params.level_expo - S.data[0][0].bits_a;
     int64_t tau_temp = W.data[0].params.fixp_params.plaintext_expo + S.data[0][0].plaintext_exponent;
     int64_t alpha_bits_temp = L_temp + plaintext_precision_bits + 10;
     int64_t temp_limbs = limb_precision(alpha_bits_temp + 10);
 
+    int64_t tau_reps;
+    int64_t L_reps;
+    if (override_plaintext_exponent != int64_t(NA)) {
+        int64_t tau_diff = override_plaintext_exponent - tau;
+        tau_reps = override_plaintext_exponent; //tau_temp + tau_diff
+        L_reps = L - tau_diff;
+    } else {
+        tau_reps = tau;
+        L_reps = L;
+    }
+    if (target_level_expo != int64_t(NA)) {
+        int64_t L_diff = L_reps - target_level_expo;
+        L_reps = target_level_expo;
+        assert_dramatically(L_diff >= 0, "requested level too high");
+    }
+    int64_t reps_alpha_bits = L_reps + plaintext_precision_bits;
+    int64_t reps_limbs = limb_precision(reps_alpha_bits);
+
     std::shared_ptr<BigTorusParams> temp_bt_params = make_shared<BigTorusParams>(temp_limbs, tau_temp, L_temp);
     store_forever(temp_bt_params);
 
     std::shared_ptr<TRLweParams> temp_trlwe_params = make_shared<TRLweParams>(N, *temp_bt_params);
     store_forever(temp_trlwe_params);
+
+    std::shared_ptr<BigTorusParams> reps_bt_params = make_shared<BigTorusParams>(reps_limbs, tau_reps, L_reps);
+    store_forever(reps_bt_params);
+
+    std::shared_ptr<TRLweParams> reps_trlwe_params = make_shared<TRLweParams>(N, *reps_bt_params);
+    store_forever(reps_trlwe_params);
+
+    TRLweMatrix *reps = new TRLweMatrix(X.cols, S.cols, *reps_trlwe_params);
 
     //We'll use one temp trlwe per thread.
     const int NUM_THREADS = omp_get_max_threads();
@@ -698,7 +735,7 @@ compute_A(const TRGSWMatrix &X, const TRGSWMatrix &S, const TRLWEVector &W, int6
                     cout << "dec: " << debug_tmp[kk] << endl << "exp: " << debug_expect[kk] << endl;
                 }
 #endif
-                external_product(temp2.data[threadNo], X.data[k][i], temp.data[threadNo], alpha_bits);
+                external_product(temp2.data[threadNo], X.data[k][i], temp.data[threadNo], reps_alpha_bits);
 #pragma omp critical
                 {
                     fixp_add(reps->data[i][j], reps->data[i][j],

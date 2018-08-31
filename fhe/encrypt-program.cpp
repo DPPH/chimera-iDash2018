@@ -16,7 +16,7 @@ int main() {
     using namespace section2_params;
 
 
-    cerr << "Deserializing the section2 key" << endl;
+    cerr << "Deserializing the section2 key (N = " << N << ")" << endl;
     ifstream key_in(section2_key_filename);
     assert_dramatically(key_in, "cannot open " << section2_key_filename);
     shared_ptr<TLweKey> key = deserializeTLweKey(key_in, N);
@@ -27,17 +27,27 @@ int main() {
     mat_RR S(INIT_SIZE, algo_n, algo_m);
     vec_RR y(INIT_SIZE, algo_n);
 
-    fill_matrix_S(S);
+    cerr << "reading X,y..." << endl;
     fill_matrix_Xy(X, y);
+    cerr << "reading S..." << endl;
+    fill_matrix_S(S);
 
+
+    cerr << "encrypt y..." << endl;
     shared_ptr<TRLWEVector> ciphertext_y = encrypt_individual_trlwe(y, *key, N, y_level, y_plaintext_expo,
                                                                     section2_params::default_plaintext_precision);
+    cerr << "encrypt X..." << endl;
+    shared_ptr<TRGSWMatrix> ciphertext_X = encrypt_X(X, *key, N, X_alpha_bits,
+                                                     section2_params::default_plaintext_precision);
 
+    cerr << "encrypt S..." << endl;
     shared_ptr<TRGSWMatrix> ciphertext_S = encrypt_S(S, *key, N, S_alpha_bits,
                                                      section2_params::default_plaintext_precision);
 
-    shared_ptr<TRGSWMatrix> ciphertext_X = encrypt_X(X, *key, N, X_alpha_bits,
-                                                     section2_params::default_plaintext_precision);
+#ifdef DEBUG_MODE
+    cerr << "y :" << y << endl;
+    cerr << "encrypted_y :" << decrypt_individual_trlwe(*ciphertext_y, *key, algo_n) << endl;
+#endif
 
 
     // serialize y (lvl 2)

@@ -6,6 +6,7 @@
 #include "TRLwe.h"
 #include "mainalgo.h"
 #include "section2_params.h"
+#include "arithmetic.h"
 
 NTL_CLIENT;
 
@@ -36,13 +37,16 @@ int main() {
     assert_dramatically(key_in, "problem in keyswitch key");
     key_in.close();
 
-
+    mat_RR plain_S(INIT_SIZE, algo_n, algo_m);
+    mat_RR plain_X(INIT_SIZE, algo_n, algo_k + 1);
+    vec_RR plain_y(INIT_SIZE, algo_n);
+    fill_matrix_S(plain_S);
+    fill_matrix_Xy(plain_X, plain_y);
 #endif
 
     // read the bk key
     // deserialize bootstrapping key
     cerr << "deserializing bk" << endl;
-#if 1 //TODO
     shared_ptr<TRGSWParams> bk_trgsw_params;
     ifstream bk_key_in(section1_2_bk_filename);
     int64_t dummy;
@@ -56,25 +60,6 @@ int main() {
         assert_dramatically(bk_key_in, "problem in the serialization file");
     }
     bk_key_in.close();
-#else
-    //regenerate a new bootstrapping key
-    BigTorusParams bk_bt_params(bk_nblimbs, 0, 0);
-    TRGSWParams bk_trgswParams(N, bk_bt_params);
-    cout << "start encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
-    TRGSW *bk = new_TRGSW_array(n_lvl0, bk_trgswParams);
-    int k = 1;
-#pragma omp parallel for
-    for (int i = 0; i < n_lvl0; i++) {
-        int_encrypt(bk[i], s[i], *key, bk_alpha_bits);
-#pragma omp critical
-        {
-            printf("%3d/%3ld\r", k++, long(n_lvl0));
-            fflush(stdout);
-        }
-    }
-    printf("\n");
-    cout << "end encrypt bootstrapping key: " << clock() / double(CLOCKS_PER_SEC) << endl;
-#endif
 
     // read the ks key
     cerr << "deserializing ks" << endl;
@@ -190,6 +175,11 @@ int main() {
     }
     p_stream.close();
 
+#ifdef DEBUG_MODE
+    vec_RR decrypted_p = decrypt_individual_trlwe(p_lvl4, *key, algo_n);
+    cerr << "DEBUG decrypt p: " << decrypted_p << endl;
+#endif //DEBUG_MODE
+
     // ------------------
     // compute W (lvl 3) w = p(1-p)
     cerr << "deserializing rk" << endl;
@@ -208,6 +198,16 @@ int main() {
     }
     w_stream.close();
 
+#ifdef DEBUG_MODE
+    vec_RR expected_W(INIT_SIZE, algo_n);
+    vec_RR decrypted_W = decrypt_individual_trlwe(*w_lvl3, *key, algo_n);
+    for (int i = 0; i < algo_n; i++) expected_W[i] = decrypted_p[i] - decrypted_p[i] * decrypted_p[i];
+    cerr << "DEBUG decrypt w: " << decrypted_W << endl;
+    cerr << "DEBUG expect w: " << expected_W << endl;
+#endif //DEBUG_MODE
+
+
+
     // -----------------
     // compute numerator (lvl 0)   (requires enc. y of S)
     // read y
@@ -224,6 +224,20 @@ int main() {
     }
     y_in.close();
 
+#ifdef DEBUG_MODE
+    vec_RR decrypted_y = decrypt_individual_trlwe(y, *key, algo_n);
+    cerr << "DEBUG decrypt y: " << decrypt_individual_trlwe(y, *key, algo_n) << endl;
+    cerr << "DEBUG expect y: " << plain_y << endl;
+#endif //DEBUG_MODE
+
+    shared_ptr<TRLWEVector> ymp = substract_ind_TRLWE(y, p_lvl4, y_level, y_plaintext_expo,
+                                                      section2_params::default_plaintext_precision);
+#ifdef DEBUG_MODE
+    vec_RR expected_ymp = decrypted_y - decrypted_p;
+    vec_RR decrypted_ymp = decrypt_individual_trlwe(*ymp, *key, algo_n);
+    cerr << "DEBUG decrypt ymp: " << decrypted_ymp << endl;
+    cerr << "DEBUG expectd ymp: " << expected_ymp << endl;
+#endif //DEBUG_MODE
 
     // read S
     cerr << "deserializing S" << endl;
@@ -244,9 +258,13 @@ int main() {
     S_in.close();
     //(y-p)*S
 
-    shared_ptr<TRLWEVector> temp1 = substract_ind_TRLWE(y, p_lvl4, y_level, y_plaintext_expo,
-                                                        section2_params::default_plaintext_precision);
-    shared_ptr<TRLWEVector> numerator = mat_vec_prod(*temp1, *S, numerator_level, numerator_plaintext_expo,
+//#ifdef DEBUG_MODE
+//    cerr << "DEBUG decrypt S: " << decrypt_heaan_packed_trlwe(*S, *key, p_lvl4.length) << endl;
+//#endif //DEBUG_MODE
+
+
+
+    shared_ptr<TRLWEVector> numerator = vec_mat_prod(*ymp, *S, numerator_level, numerator_plaintext_expo,
                                                      section2_params::default_plaintext_precision);
 
 
@@ -259,6 +277,12 @@ int main() {
     }
     numerator_stream.close();
 
+#ifdef DEBUG_MODE
+    vec_RR expected_numerator = decrypted_ymp * plain_S;
+    vec_RR decrypted_numerator = decrypt_heaan_packed_trlwe(*numerator, *key, algo_m);
+    cerr << "DEBUG decrypt numerator: " << decrypted_numerator << endl;
+    cerr << "DEBUG expectd numerator: " << expected_numerator << endl;
+#endif //DEBUG_MODE
 
 
     // ------------------
@@ -300,6 +324,22 @@ int main() {
 
     A_stream.close();
 
+#ifdef DEBUG_MODE
+    mat_RR expected_A(INIT_SIZE, algo_k + 1, algo_m);
+    clear(expected_A);
+    for (int64_t i = 0; i < algo_k + 1; i++) {
+        for (int64_t j = 0; j < algo_m; j++) {
+            for (int64_t k = 0; k < algo_n; k++) {
+                expected_A[i][j] += decrypted_W[k] * plain_X[k][i] * plain_S[k][j];
+            }
+        }
+    }
+    mat_RR decrypted_A = decrypt_heaan_packed_trlwe(*A, *key, algo_m);
+    cerr << "DEBUG decrypt A: " << decrypted_A << endl;
+    cerr << "DEBUG expectd A: " << expected_A << endl;
+#endif //DEBUG_MODE
+
+
     //free S and X here
     S = nullptr;
     X = nullptr;
@@ -315,19 +355,48 @@ int main() {
         fixp_public_product(denom_1.data[i], A->data[0][i], sqrt(algo_n)); //TODO
     }
 
+#ifdef DEBUG_MODE
+    vec_RR expected_denom1 = sqrt(algo_n) * decrypted_A[0];
+    vec_RR decrypted_denom1 = decrypt_heaan_packed_trlwe(denom_1, *key, algo_m);
+    cerr << "DEBUG decrypt denom1: " << decrypted_denom1 << endl;
+    cerr << "DEBUG expectd denom1: " << expected_denom1 << endl;
+#endif //DEBUG_MODE
+
+
     // -------------------
     // denom 2 = 4*norms2(A)
     TRLwe temps(denom_params);
     TRLWEVector denom_2(A->cols, denom_params);
 
+    for (int j = 0; j < A->cols; j++) {
+        zero(denom_2.data[j]);
+    }
     for (int i = 0; i < A->rows; i++) {
-        zero(denom_2.data[i]);
         for (int j = 0; j < A->cols; j++) {
-            fixp_internal_product(temps, A->data[i][j], A->data[i][j], *rk, denominator_alpha_bits + 2);
+            cerr << "AO-" << i << "-" << j << ": " << slot_decrypt(A->data[i][j], *key) << endl;
+            fixp_internal_product(temps, A->data[i][j], A->data[i][j], *rk,
+                                  section2_params::default_plaintext_precision - 5);
+            cerr << "AA-" << i << "-" << j << ": " << slot_decrypt(temps, *key) << endl;
             fixp_public_product(temps, temps, 4);
-            fixp_add(denom_2.data[i], denom_2.data[i], temps);
+            cerr << "AB-" << i << "-" << j << ": " << slot_decrypt(temps, *key) << endl;
+            fixp_add(denom_2.data[j], denom_2.data[j], temps);
+            cerr << "AC-" << i << "-" << j << ": " << slot_decrypt(denom_2.data[j], *key) << endl;
         }
     }
+
+#ifdef DEBUG_MODE
+    vec_RR expected_denom2(INIT_SIZE, algo_m);
+    clear(expected_denom2);
+    for (int64_t i = 0; i < algo_k + 1; i++) {
+        for (int64_t j = 0; j < algo_m; j++) {
+            expected_denom2[j] += 4 * decrypted_A[i][j] * decrypted_A[i][j];
+        }
+    }
+    vec_RR decrypted_denom2 = decrypt_heaan_packed_trlwe(denom_2, *key, algo_m);
+    cerr << "DEBUG decrypt denom2: " << decrypted_denom2 << endl;
+    cerr << "DEBUG expectd denom2: " << expected_denom2 << endl;
+#endif //DEBUG_MODE
+
     shared_ptr<TRLWEVector> denominator = substract_ind_TRLWE(denom_1, denom_2, denominator_level,
                                                               denominator_plaintext_expo,
                                                               section2_params::default_plaintext_precision);
@@ -340,5 +409,12 @@ int main() {
         serializeTRLweContent(denominator_stream, denominator->data[i]);
     }
     denominator_stream.close();
+
+#ifdef DEBUG_MODE
+    vec_RR expected_denominator = decrypted_denom1 - decrypted_denom2;
+    vec_RR decrypted_denominator = decrypt_heaan_packed_trlwe(*denominator, *key, algo_m);
+    cerr << "DEBUG decrypt denominator: " << decrypted_denominator << endl;
+    cerr << "DEBUG expectd denominator: " << expected_denominator << endl;
+#endif //DEBUG_MODE
 
 }
