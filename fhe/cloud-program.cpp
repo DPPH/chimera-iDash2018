@@ -16,7 +16,7 @@ NTL::vec_RR debug_W;
 shared_ptr<TLweKey> debug_key;
 
 //sigmoid function
-static RR sigmoid(double x) {
+RR sigmoid(double x) {
     return to_RR(1) / (to_RR(1) + exp(-to_RR(x)));
 }
 
@@ -44,6 +44,22 @@ int main() {
     fill_matrix_Xy(plain_X, plain_y);
 #endif
 
+
+#define FAKE_BOOTSTRAPPING
+#ifdef FAKE_BOOTSTRAPPING
+    // ------ test vector and p params
+    // ------
+    BigTorusParams p_bt_params(p_limbs, p_plaintext_expo, p_level);
+    TLweParams p_tlwe_params(N, p_bt_params);  // extract after bootstrap
+    TRLweParams p_trlwe_params(N, p_bt_params); // param after pubKS
+    vec_RR pp(INIT_SIZE, algo_n);
+    for (int64_t i = 0; i < algo_n; i++) {
+        pp[i] = random_RR();
+    }
+    shared_ptr<TRLWEVector> p_lvl4p = encrypt_individual_trlwe(pp, *key, N, p_level, p_plaintext_expo,
+                                                               section2_params::default_plaintext_precision);
+    TRLWEVector &p_lvl4 = *p_lvl4p;
+#else
     // read the bk key
     // deserialize bootstrapping key
     cerr << "deserializing bk" << endl;
@@ -177,6 +193,7 @@ int main() {
         serializeTRLweContent(p_stream, p_lvl4.data[i]);
     }
     p_stream.close();
+#endif //FAKE_BOOTSTRAPPING
 
 #ifdef DEBUG_MODE
     vec_RR decrypted_p = decrypt_individual_trlwe(p_lvl4, *key, algo_n);
