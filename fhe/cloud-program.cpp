@@ -49,6 +49,7 @@ int main() {
 #ifdef FAKE_BOOTSTRAPPING
     // ------ test vector and p params
     // ------
+    cerr << "DEBUG: faking the bootstrapping completely!!" << endl;
     BigTorusParams p_bt_params(p_limbs, p_plaintext_expo, p_level);
     TLweParams p_tlwe_params(N, p_bt_params);  // extract after bootstrap
     TRLweParams p_trlwe_params(N, p_bt_params); // param after pubKS
