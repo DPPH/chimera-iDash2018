@@ -678,7 +678,8 @@ compute_A(const TRGSWMatrix &X, const TRGSWMatrix &S, const TRLWEVector &W, int6
     if (target_level_expo != int64_t(NA)) {
         int64_t L_diff = L_reps - target_level_expo;
         L_reps = target_level_expo;
-        assert_dramatically(L_diff >= 0, "requested level too high");
+        assert_dramatically(L_diff == 0, "requested level too high");
+        //TODO: allow >=0 and do a lshift
     }
     int64_t reps_alpha_bits = L_reps + plaintext_precision_bits;
     int64_t reps_limbs = limb_precision(reps_alpha_bits);

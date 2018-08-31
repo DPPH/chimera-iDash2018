@@ -375,7 +375,7 @@ int main() {
         for (int j = 0; j < A->cols; j++) {
             cerr << "AO-" << i << "-" << j << ": " << slot_decrypt(A->data[i][j], *key) << endl;
             fixp_internal_product(temps, A->data[i][j], A->data[i][j], *rk,
-                                  section2_params::default_plaintext_precision - 5);
+                                  section2_params::default_plaintext_precision);
             cerr << "AA-" << i << "-" << j << ": " << slot_decrypt(temps, *key) << endl;
             fixp_public_product(temps, temps, 4);
             cerr << "AB-" << i << "-" << j << ": " << slot_decrypt(temps, *key) << endl;
