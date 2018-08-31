@@ -16,7 +16,7 @@ NTL::vec_RR debug_W;
 shared_ptr<TLweKey> debug_key;
 
 //sigmoid function
-static RR sigmoidx(double x) {
+static RR sigmoid(double x) {
     return to_RR(1) / (to_RR(1) + exp(-to_RR(x)));
 }
 
