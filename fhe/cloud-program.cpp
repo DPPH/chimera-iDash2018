@@ -16,7 +16,7 @@ NTL::vec_RR debug_W;
 shared_ptr<TLweKey> debug_key;
 
 //sigmoid function
-static RR sigmoid(double x) {
+static RR sigmoidx(double x) {
     return to_RR(1) / (to_RR(1) + exp(-to_RR(x)));
 }
 
@@ -82,12 +82,14 @@ int main() {
         // mapping: -modulus/4 (= -N/2)  corresponds to -2^tau
         // mapping: -modulus/4 (= +N/2)  corresponds to +2^tau
         // modulus: 2N
-        plaintext_test_vector[i] = sigmoid(i / double(Ns2) * pow(2., lvl0_ciphertext_plaintext_expo));
+        plaintext_test_vector[i] = sigmoid(i / double(Ns2) * pow(2., lvl0_ciphertext_plaintext_expo)) - 0.5;
     }
     for (int64_t i = 1; i <= Ns2; i++) {
         //tv[N-i]=-tv[-i]
-        plaintext_test_vector[N - i] = -sigmoid(-i / double(Ns2) * pow(2., lvl0_ciphertext_plaintext_expo));
+        plaintext_test_vector[N - i] = -sigmoid(-i / double(Ns2) * pow(2., lvl0_ciphertext_plaintext_expo)) + 0.5;
     }
+    BigTorus sigmoid_offset(p_bt_params);
+    to_fixP(sigmoid_offset, to_RR(0.5));
     TRLwe sigmoid_test_vector(p_trlwe_params);
     fixp_trivial(sigmoid_test_vector, plaintext_test_vector, section2_params::default_plaintext_precision);
 
@@ -117,11 +119,12 @@ int main() {
         //extract the constant term
 #pragma omp critical
         cerr << "extract p_" << i << endl;
-        copy(extracted_sigmoid.getAT(N), rotated_test_vector.a[1].getAT(0)); //constant term
+        add(extracted_sigmoid.getAT(N), rotated_test_vector.a[1].getAT(0), sigmoid_offset); //constant term
         copy(extracted_sigmoid.getAT(0), rotated_test_vector.a[0].getAT(0));
         for (int64_t j = 1; j < N; j++) {
             neg(extracted_sigmoid.getAT(j), rotated_test_vector.a[0].getAT(N - j));
         }
+
         //pubks it to p_lvl4
 #pragma omp critical
         cerr << "pubKS p_" << i << endl;
