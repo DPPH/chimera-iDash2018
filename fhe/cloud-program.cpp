@@ -417,6 +417,9 @@ int main() {
     // denom 2 = 4*norms2(A)
     TRLwe temps(denom_params);
     TRLWEVector denom_2(A->cols, denom_params);
+    BigTorusParams A2_bt_params(A2_limbs, A2_plaintext_expo, A2_level);
+    TRLweParams A2_params(N, A2_bt_params);
+    TRLwe tempsA2(A2_params);
 
     for (int j = 0; j < A->cols; j++) {
         zero(denom_2.data[j]);
@@ -424,10 +427,10 @@ int main() {
     for (int i = 0; i < A->rows; i++) {
         for (int j = 0; j < A->cols; j++) {
             cerr << "AO-" << i << "-" << j << ": " << slot_decrypt(A->data[i][j], *key) << endl;
-            fixp_internal_product(temps, A->data[i][j], A->data[i][j], *rk,
+            fixp_internal_product(tempsA2, A->data[i][j], A->data[i][j], *rk,
                                   section2_params::default_plaintext_precision);
             cerr << "AA-" << i << "-" << j << ": " << slot_decrypt(temps, *key) << endl;
-            fixp_public_product(temps, temps, 4);
+            fixp_public_product(temps, tempsA2, 4);
             cerr << "AB-" << i << "-" << j << ": " << slot_decrypt(temps, *key) << endl;
             fixp_add(denom_2.data[j], denom_2.data[j], temps);
             cerr << "AC-" << i << "-" << j << ": " << slot_decrypt(denom_2.data[j], *key) << endl;

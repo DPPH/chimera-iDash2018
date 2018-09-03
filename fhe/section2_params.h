@@ -72,6 +72,10 @@ namespace section2_params {
     static const int64_t A_level = 21;
     static const int64_t A_plaintext_expo = 2; //TODO
 
+    static const std::string A2_lvl0_filename = "A2_lvl0.bin";
+    static const int64_t A2_level = A_level - default_plaintext_precision;
+    static const int64_t A2_plaintext_expo = 4; //TODO
+    static const int64_t A2_limbs = limb_precision(A2_level + default_plaintext_precision);
 
     static const std::string denominator_lvl0_filename = "denominator_lvl0.bin";
     static const int64_t denominator_level = 1;

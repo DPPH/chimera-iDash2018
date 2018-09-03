@@ -266,6 +266,119 @@ TEST(TRGSW_TEST, trlwe_internal_product) {
     delete_BigComplex_array(Ns2, slots_prod);
 }
 
+TEST(TRGSW_TEST, trlwe_internal_product_square) {
+
+    //int64_t N = 4096;
+    int64_t N = 4096;
+
+    int64_t L_a = 21; //90; //level expo of a
+    int64_t L_b = 21; //90; //level expo of b
+    int64_t rho = 14; //precision bits
+    int64_t Ns2 = N / 2;
+    int64_t n = N * 2;
+    int64_t nblimbs_a = limb_precision(L_a + rho + 5);
+    int64_t nblimbs_b = limb_precision(L_b + rho + 5);
+    int64_t L = 1; //std::min(L_a, L_b) - rho; //output level expo
+    int64_t nblimbs_reps = limb_precision(L + rho + 5);
+    int64_t alpha_rk = L + rho + 32 + log2(N / 2);
+    int64_t nblimbs_rk = limb_precision(alpha_rk);
+
+    BigTorusParams bt_params_a(nblimbs_a, 0, L_a);
+    BigTorusParams bt_params_b(nblimbs_b, 0, L_b);
+    BigTorusParams bt_params_reps(nblimbs_reps, 0, L);
+
+    TRLweParams trlweParams_a(N, bt_params_a);
+    TRLweParams trlweParams_b(N, bt_params_b);
+    TRLweParams trlweParams_reps(N, bt_params_reps);
+
+    BigTorusParams bt_params_rk(nblimbs_rk);
+    TRGSWParams trgswParams_rk(N, bt_params_rk);
+
+    shared_ptr<TLweKey> key = tlwe_keygen(trlweParams_reps);
+    debug_key = key.get();
+
+    TRLwe a(trlweParams_a);
+    TRLwe b(trlweParams_b);
+    TRLwe reps(trlweParams_reps);
+    TRGSW rk(trgswParams_rk);
+
+    //here, we draw complex slots at random (w.r.t. their respective level) and compute the product
+    BigComplex *slots_a = new_BigComplex_array(Ns2, nblimbs_a);
+    BigComplex *slots_b = new_BigComplex_array(Ns2, nblimbs_b);
+    BigComplex *slots_prod = new_BigComplex_array(Ns2, nblimbs_reps);
+    BigComplex *slots_prod2 = new_BigComplex_array(Ns2, nblimbs_reps);
+    BigReal *coefs_a = new_BigReal_array(N, nblimbs_a);
+    BigReal *coefs_b = new_BigReal_array(N, nblimbs_b);
+    //BigReal *coefs_prod = new_BigReal_array(N, nblimbs_reps); //TODO
+
+    RR::SetPrecision(nblimbs_a * BITS_PER_LIMBS + 32);
+    for (int i = 0; i < Ns2; i++) {
+        RR are = (random_RR() - to_RR(0.5));
+        RR aim = (random_RR() - to_RR(0.5));
+        RR bre = are; // (random_RR() - to_RR(0.5));
+        RR bim = aim; // (random_RR() - to_RR(0.5));
+        to_BigReal(slots_a[i].real, are * power2_RR(-L_a));
+        to_BigReal(slots_a[i].imag, aim * power2_RR(-L_a));
+        to_BigReal(slots_b[i].real, bre * power2_RR(-L_b));
+        to_BigReal(slots_b[i].imag, bim * power2_RR(-L_b));
+        RR rre = are * bre - aim * bim;
+        RR rim = aim * bre + are * bim;
+        to_BigReal(slots_prod[i].real, rre * power2_RR(-L));
+        to_BigReal(slots_prod[i].imag, rim * power2_RR(-L));
+    }
+    //Then, we compute their FFT and consider a and b as plaintext
+    FFT(coefs_a, slots_a, n, fftAutoPrecomp.omegabar(n, nblimbs_a));
+    FFT(coefs_b, slots_b, n, fftAutoPrecomp.omegabar(n, nblimbs_b));
+    //FFT(coefs_prod, slots_prod, n, fftAutoPrecomp.omegabar(n, nblimbs_reps)); //TODO
+
+    BigTorusPolynomial plaintext_a(N, bt_params_a);
+    BigTorusPolynomial plaintext_b(N, bt_params_b);
+    for (int i = 0; i < N; i++) {
+        shift_toBigTorus(plaintext_a.getAT(i), coefs_a[i], 0);
+        shift_toBigTorus(plaintext_b.getAT(i), coefs_b[i], 0);
+    }
+
+    //we encrypt a, b, and the relin key, and perform a heaan product
+    native_encrypt(a, plaintext_a, *key, L_a + rho + 1);
+    native_encrypt(b, plaintext_b, *key, L_b + rho + 1);
+
+    intPoly_encrypt(rk, key->key, *key, alpha_rk);
+
+    cout << "time: " << clock() / double(CLOCKS_PER_SEC) << endl;
+    fixp_internal_product(reps, a, b, rk, rho);
+    cout << "time: " << clock() / double(CLOCKS_PER_SEC) << endl;
+    fixp_internal_product(reps, a, b, rk, rho);
+    cout << "time: " << clock() / double(CLOCKS_PER_SEC) << endl;
+
+    // finally, we verify that the product matches the expected product
+    BigTorusPolynomial phase(N, bt_params_reps);
+    native_phase(phase, reps, *key, L + rho);
+
+    iFFT(slots_prod2, phase);
+
+    // for (int64_t i = 0; i < N; i++) {
+    //    EXPECT_LE(log2Diff(to_RR(phase.getAT(i)), to_RR(coefs_prod[i])), -L - rho + 5-1000);
+    // }
+    for (int64_t i = 0; i < N / 2; i++) {
+        if (i == 0) {
+            cout << "re: " << to_RR(slots_prod[i].real) << endl;
+            cout << "im: " << to_RR(slots_prod[i].imag) << endl;
+            cout << "re2: " << to_RR(slots_prod2[i].real) << endl;
+            cout << "im2: " << to_RR(slots_prod2[i].imag) << endl;
+        }
+        EXPECT_LE(log2Diff(to_RR(slots_prod[i].real), to_RR(slots_prod2[i].real)), -L - rho + 5 - 1000);
+        EXPECT_LE(log2Diff(to_RR(slots_prod[i].imag), to_RR(slots_prod2[i].imag)), -L - rho + 5 - 1000);
+    }
+
+    delete_BigReal_array(N, coefs_a);
+    delete_BigReal_array(N, coefs_b);
+    //delete_BigReal_array(N, coefs_prod);
+    delete_BigComplex_array(Ns2, slots_a);
+    delete_BigComplex_array(Ns2, slots_b);
+    delete_BigComplex_array(Ns2, slots_prod);
+    delete_BigComplex_array(Ns2, slots_prod2);
+}
+
 TEST(TRGSW_TEST, trlwe_internal_product_const) {
 
     int64_t N = 4096;
