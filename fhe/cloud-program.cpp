@@ -42,6 +42,43 @@ int64_t compute_public_exponent(const mat_RR &A) {
     return int64_t(ceil(pubExpo));
 }
 
+void print_difference(const vec_RR &actual, const vec_RR &expected, const string &name) {
+    RR max_diff;
+    max_diff = 0;
+    RR avg_diff;
+    avg_diff = 0;
+    ofstream ofs(name + string(".dat"));
+    for (int64_t i = 0; i < actual.length(); i++) {
+        ofs << i << " " << actual[i] << " " << expected[i] << endl;
+        RR diff = abs(actual[i] - expected[i]);
+        if (diff > max_diff) max_diff = diff;
+        avg_diff += diff;
+    }
+    ofs.close();
+    avg_diff /= actual.length();
+    cerr << "Distance " << name << " max-error: " << max_diff << " avg-error: " << avg_diff << endl;
+}
+
+void print_difference(const mat_RR &actual, const mat_RR &expected, const string &name) {
+    RR max_diff;
+    max_diff = 0;
+    RR avg_diff;
+    avg_diff = 0;
+    ofstream ofs(name + string(".dat"));
+    for (int64_t i = 0; i < actual.NumRows(); i++) {
+        for (int64_t j = 0; j < actual.NumCols(); j++) {
+            ofs << i << " " << j << " " << actual[i] << " " << expected[i] << endl;
+            RR diff = abs(actual[i][j] - expected[i][j]);
+            if (diff > max_diff) max_diff = diff;
+            avg_diff += diff;
+        }
+        ofs << endl;
+    }
+    ofs.close();
+    avg_diff /= (actual.NumRows() * actual.NumCols());
+    cerr << "Distance " << name << " max-error: " << max_diff << " avg-error: " << avg_diff << endl;
+}
+
 #define DEBUG_MODE
 
 int main() {
@@ -249,6 +286,7 @@ int main() {
     for (int i = 0; i < algo_n; i++) expected_W[i] = decrypted_p[i] - decrypted_p[i] * decrypted_p[i];
     cerr << "DEBUG decrypt w: " << decrypted_W << endl;
     cerr << "DEBUG expect w: " << expected_W << endl;
+    print_difference(decrypted_W, expected_W, "W");
     assert_weakly(compute_public_exponent(decrypted_W) <= w_lvl3->data[0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
@@ -283,6 +321,7 @@ int main() {
     vec_RR decrypted_ymp = decrypt_individual_trlwe(*ymp, *key, algo_n);
     cerr << "DEBUG decrypt ymp: " << decrypted_ymp << endl;
     cerr << "DEBUG expectd ymp: " << expected_ymp << endl;
+    print_difference(decrypted_ymp, expected_ymp, "ymp");
     assert_weakly(compute_public_exponent(decrypted_ymp) <= ymp->data[0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
@@ -329,6 +368,7 @@ int main() {
     vec_RR decrypted_numerator = decrypt_heaan_packed_trlwe(*numerator, *key, algo_m);
     cerr << "DEBUG decrypt numerator: " << decrypted_numerator << endl;
     cerr << "DEBUG expectd numerator: " << expected_numerator << endl;
+    print_difference(decrypted_numerator, expected_numerator, "numerator");
     assert_weakly(compute_public_exponent(decrypted_numerator) <= numerator->data[0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
@@ -385,6 +425,7 @@ int main() {
     mat_RR decrypted_A = decrypt_heaan_packed_trlwe(*A, *key, algo_m);
     cerr << "DEBUG decrypt A: " << decrypted_A << endl;
     cerr << "DEBUG expectd A: " << expected_A << endl;
+    print_difference(decrypted_A, expected_A, "A");
     assert_weakly(compute_public_exponent(decrypted_A) <= A->data[0][0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
@@ -409,6 +450,7 @@ int main() {
     vec_RR decrypted_denom1 = decrypt_heaan_packed_trlwe(denom_1, *key, algo_m);
     cerr << "DEBUG decrypt denom1: " << decrypted_denom1 << endl;
     cerr << "DEBUG expectd denom1: " << expected_denom1 << endl;
+    print_difference(decrypted_denom1, expected_denom1, "denom1");
     assert_weakly(compute_public_exponent(decrypted_denom1) <= denom_1.data[0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
@@ -448,6 +490,7 @@ int main() {
     vec_RR decrypted_denom2 = decrypt_heaan_packed_trlwe(denom_2, *key, algo_m);
     cerr << "DEBUG decrypt denom2: " << decrypted_denom2 << endl;
     cerr << "DEBUG expectd denom2: " << expected_denom2 << endl;
+    print_difference(decrypted_denom2, expected_denom2, "denom2");
     assert_weakly(compute_public_exponent(decrypted_denom2) <= denom_2.data[0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
@@ -469,6 +512,7 @@ int main() {
     vec_RR decrypted_denominator = decrypt_heaan_packed_trlwe(*denominator, *key, algo_m);
     cerr << "DEBUG decrypt denominator: " << decrypted_denominator << endl;
     cerr << "DEBUG expectd denominator: " << expected_denominator << endl;
+    print_difference(decrypted_denominator, expected_denominator, "denominator");
     assert_weakly(
             compute_public_exponent(decrypted_denominator) <= denominator->data[0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
