@@ -45,7 +45,7 @@ namespace section2_params {
 
     static const std::string w_lvl3_filename = "w_lvl3.bin";
     static const int64_t w_level = 54; //80-2*14+2
-    static const int64_t w_plaintext_expo = -2;
+    static const int64_t w_plaintext_expo = -1;
     static const int64_t w_alpha_bits = w_level + default_plaintext_precision;
     static const int64_t w_limbs = limb_precision(w_alpha_bits);
 
