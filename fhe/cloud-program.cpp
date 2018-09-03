@@ -20,6 +20,26 @@ RR sigmoid(double x) {
     return to_RR(1) / (to_RR(1) + exp(-to_RR(x)));
 }
 
+int64_t compute_public_exponent(const vec_RR &v) {
+    double pubExpo = -INFINITY;
+    for (int64_t i = 0; i < v.length(); i++) {
+        if (v[i] == 0) continue;
+        pubExpo = std::max(pubExpo, to_double(log(abs(v[i]))));
+    }
+    return int64_t(ceil(pubExpo));
+}
+
+int64_t compute_public_exponent(const mat_RR &A) {
+    double pubExpo = -INFINITY;
+    for (int64_t i = 0; i < A.NumRows(); i++) {
+        for (int64_t j = 0; j < A.NumCols(); j++) {
+            if (A[i][j] == 0) continue;
+            pubExpo = std::max(pubExpo, to_double(log(abs(A[i][j]))));
+        }
+    }
+    return int64_t(ceil(pubExpo));
+}
+
 #define DEBUG_MODE
 
 int main() {
@@ -199,6 +219,8 @@ int main() {
 #ifdef DEBUG_MODE
     vec_RR decrypted_p = decrypt_individual_trlwe(p_lvl4, *key, algo_n);
     cerr << "DEBUG decrypt p: " << decrypted_p << endl;
+    assert_weakly(compute_public_exponent(decrypted_p) <= p_lvl4.data[0].params.fixp_params.plaintext_expo);
+
 #endif //DEBUG_MODE
 
     // ------------------
@@ -225,6 +247,7 @@ int main() {
     for (int i = 0; i < algo_n; i++) expected_W[i] = decrypted_p[i] - decrypted_p[i] * decrypted_p[i];
     cerr << "DEBUG decrypt w: " << decrypted_W << endl;
     cerr << "DEBUG expect w: " << expected_W << endl;
+    assert_weakly(compute_public_exponent(decrypted_W) <= w_lvl3->data[0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
 
@@ -258,6 +281,7 @@ int main() {
     vec_RR decrypted_ymp = decrypt_individual_trlwe(*ymp, *key, algo_n);
     cerr << "DEBUG decrypt ymp: " << decrypted_ymp << endl;
     cerr << "DEBUG expectd ymp: " << expected_ymp << endl;
+    assert_weakly(compute_public_exponent(decrypted_ymp) <= ymp->data[0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
     // read S
@@ -303,6 +327,7 @@ int main() {
     vec_RR decrypted_numerator = decrypt_heaan_packed_trlwe(*numerator, *key, algo_m);
     cerr << "DEBUG decrypt numerator: " << decrypted_numerator << endl;
     cerr << "DEBUG expectd numerator: " << expected_numerator << endl;
+    assert_weakly(compute_public_exponent(decrypted_numerator) <= numerator->data[0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
 
@@ -358,6 +383,7 @@ int main() {
     mat_RR decrypted_A = decrypt_heaan_packed_trlwe(*A, *key, algo_m);
     cerr << "DEBUG decrypt A: " << decrypted_A << endl;
     cerr << "DEBUG expectd A: " << expected_A << endl;
+    assert_weakly(compute_public_exponent(decrypted_A) <= A->data[0][0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
 
@@ -381,6 +407,7 @@ int main() {
     vec_RR decrypted_denom1 = decrypt_heaan_packed_trlwe(denom_1, *key, algo_m);
     cerr << "DEBUG decrypt denom1: " << decrypted_denom1 << endl;
     cerr << "DEBUG expectd denom1: " << expected_denom1 << endl;
+    assert_weakly(compute_public_exponent(decrypted_denom1) <= denom_1.data[0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
 
@@ -416,6 +443,7 @@ int main() {
     vec_RR decrypted_denom2 = decrypt_heaan_packed_trlwe(denom_2, *key, algo_m);
     cerr << "DEBUG decrypt denom2: " << decrypted_denom2 << endl;
     cerr << "DEBUG expectd denom2: " << expected_denom2 << endl;
+    assert_weakly(compute_public_exponent(decrypted_denom2) <= denom_2.data[0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
     shared_ptr<TRLWEVector> denominator = substract_ind_TRLWE(denom_1, denom_2, denominator_level,
@@ -436,6 +464,8 @@ int main() {
     vec_RR decrypted_denominator = decrypt_heaan_packed_trlwe(*denominator, *key, algo_m);
     cerr << "DEBUG decrypt denominator: " << decrypted_denominator << endl;
     cerr << "DEBUG expectd denominator: " << expected_denominator << endl;
+    assert_weakly(
+            compute_public_exponent(decrypted_denominator) <= denominator->data[0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
 }
