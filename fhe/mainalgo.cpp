@@ -220,6 +220,7 @@ encrypt_X(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
     store_forever(trgsw_params);
     TRGSWMatrix *reps = new TRGSWMatrix(rows, cols, *trgsw_params);
 
+#pragma omp parallel for
     for (int64_t r = 0; r < rows; r++) {
         for (int64_t c = 0; c < cols; c++) {
             RR::SetPrecision(plain_limbs * BITS_PER_LIMBS);
@@ -321,7 +322,6 @@ vec_mat_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
     shared_ptr<BigTorusParams> accum_bt_params = make_shared<BigTorusParams>(accum_limbs, accum_plaintext_expo,
                                                                              accum_level);
     shared_ptr<TRLweParams> accum_trlwe_params = make_shared<TRLweParams>(N, *accum_bt_params);
-    TRLwe accum(*accum_trlwe_params);
 
     int64_t trgsw_alpha_bits = accum_alpha_bits + A.data[0][0].bits_a + log2(N);
     int64_t ell = ceil(trgsw_alpha_bits / double(TRGSWParams::Bgbits));
@@ -338,8 +338,9 @@ vec_mat_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
     for (int j = 0; j < A.cols; j++) {
         zero(reps->data[j]);
     }
-
+#pragma omp parallel for
     for (int i = 0; i < A.rows; i++) {
+        TRLwe accum(*accum_trlwe_params);
         for (int j = 0; j < A.cols; j++) {
             external_product(accum, A.data[i][j], shifted_input.data[i], accum_alpha_bits);
             add(reps->data[j], reps->data[j], accum);
