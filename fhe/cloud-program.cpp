@@ -429,7 +429,7 @@ int main() {
             cerr << "AO-" << i << "-" << j << ": " << slot_decrypt(A->data[i][j], *key) << endl;
             fixp_internal_product(tempsA2, A->data[i][j], A->data[i][j], *rk,
                                   section2_params::default_plaintext_precision);
-            cerr << "AA-" << i << "-" << j << ": " << slot_decrypt(temps, *key) << endl;
+            cerr << "AA-" << i << "-" << j << ": " << slot_decrypt(tempsA2, *key) << endl;
             fixp_public_product(temps, tempsA2, 4);
             cerr << "AB-" << i << "-" << j << ": " << slot_decrypt(temps, *key) << endl;
             fixp_add(denom_2.data[j], denom_2.data[j], temps);
