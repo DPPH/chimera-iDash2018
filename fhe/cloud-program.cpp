@@ -67,7 +67,7 @@ void print_difference(const mat_RR &actual, const mat_RR &expected, const string
     ofstream ofs(name + string(".dat"));
     for (int64_t i = 0; i < actual.NumRows(); i++) {
         for (int64_t j = 0; j < actual.NumCols(); j++) {
-            ofs << i << " " << j << " " << actual[i] << " " << expected[i] << endl;
+            ofs << i << " " << j << " " << actual[i][j] << " " << expected[i][j] << endl;
             RR diff = abs(actual[i][j] - expected[i][j]);
             if (diff > max_diff) max_diff = diff;
             avg_diff += diff;
