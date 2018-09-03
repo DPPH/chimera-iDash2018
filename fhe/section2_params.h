@@ -74,7 +74,7 @@ namespace section2_params {
 
 
     static const std::string denominator_lvl0_filename = "denominator_lvl0.bin";
-    static const int64_t denominator_level = 1;
+    static const int64_t denominator_level = 5;
     static const int64_t denominator_plaintext_expo = 4; //TODO
     static const int64_t denominator_alpha_bits = denominator_level + default_plaintext_precision;
     static const int64_t denominator_limbs = limb_precision(denominator_alpha_bits);
