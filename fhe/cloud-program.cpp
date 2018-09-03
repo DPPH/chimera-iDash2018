@@ -24,8 +24,9 @@ int64_t compute_public_exponent(const vec_RR &v) {
     double pubExpo = -INFINITY;
     for (int64_t i = 0; i < v.length(); i++) {
         if (v[i] == 0) continue;
-        pubExpo = std::max(pubExpo, to_double(log(abs(v[i]))));
+        pubExpo = std::max(pubExpo, to_double(log(abs(v[i]))) / log(2));
     }
+    cerr << "computed plaintext expo: " << pubExpo << endl;
     return int64_t(ceil(pubExpo));
 }
 
@@ -34,9 +35,10 @@ int64_t compute_public_exponent(const mat_RR &A) {
     for (int64_t i = 0; i < A.NumRows(); i++) {
         for (int64_t j = 0; j < A.NumCols(); j++) {
             if (A[i][j] == 0) continue;
-            pubExpo = std::max(pubExpo, to_double(log(abs(A[i][j]))));
+            pubExpo = std::max(pubExpo, to_double(log(abs(A[i][j]))) / log(2.));
         }
     }
+    cerr << "computed plaintext expo: " << pubExpo << endl;
     return int64_t(ceil(pubExpo));
 }
 
