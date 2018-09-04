@@ -226,8 +226,8 @@ void BigRealPoly_shift_toBigTorus(BigTorusPolynomial &out, BigReal *array, int64
 void iFFT(BigComplex *out, const BigTorusPolynomial &a) {
     const int64_t N = a.length;
     const int64_t fft_limbs = out[0].real.nblimbs;
-    BigReal *ar = new_BigReal_array(a.length, fft_limbs);
-    for (int i = 0; i < N; i++) {
+    BigReal *ar = new_BigReal_array(N, fft_limbs);
+    for (int64_t i = 0; i < N; i++) {
         to_BigReal(ar[i], a.getAT(i));
     }
     iFFT(out, ar, 2 * N, fftAutoPrecomp.omega(2 * N, fft_limbs));
