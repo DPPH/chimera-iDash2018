@@ -104,7 +104,7 @@ int main() {
 #endif
 
 
-#define FAKE_BOOTSTRAPPING
+//#define FAKE_BOOTSTRAPPING
 #ifdef FAKE_BOOTSTRAPPING
     // ------ test vector and p params
     // ------

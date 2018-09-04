@@ -13,7 +13,7 @@ namespace section2_params {
     //
     static const int64_t default_plaintext_precision = 14;
     //
-    static const int64_t n_lvl0 = 50;    //TODO: synchronize with section 1
+    static const int64_t n_lvl0 = 612;    //TODO: synchronize with section 1
     static const std::string lvl0_key_filename = "secret_keyset.bin";
     //
     static const int64_t N = 4096; //TODO

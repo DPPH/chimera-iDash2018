@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_CXX_FLAGS "--std=c++17")
+set(CMAKE_CXX_FLAGS "--std=c++17 -no-pie")
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -Wall -Werror")
-set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O9 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -Wall -Werror -no-pie")
+set(CMAKE_CXX_FLAGS_RELEASE "-g3 -O9 -DNDEBUG -no-pie")
 
 set(TFHE_LIB_PATH external/tfhe_torus_generic/src)
 set(CXXOPTS_LIB_PATH external/cxxopts)
