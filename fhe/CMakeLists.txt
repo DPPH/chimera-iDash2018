@@ -32,14 +32,17 @@ add_library(chimera-dpph
         BigTorusPolynomial.cpp BigTorusPolynomial.h
         TRLwe.cpp TRLwe.h
         TRGSW.cpp TRGSW.h
-        mainalgo.cpp mainalgo.h section2_params.h)
+        mainalgo.cpp mainalgo.h
+        section2_params.h)
 
 set(MAIN_PROGS
         main.cpp
         cloud-program.cpp
+        cloud-program-debug.cpp
         key-gen-program.cpp
         debug-decrypt-program.cpp
         encrypt-program.cpp
+        plaintext.cpp
         )
 
 foreach (PROG_CPP ${MAIN_PROGS})
