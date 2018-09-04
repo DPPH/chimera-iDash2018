@@ -343,7 +343,10 @@ vec_mat_prod(const TRLWEVector &v, const TRGSWMatrix &A, int64_t target_level_ex
         TRLwe accum(*accum_trlwe_params);
         for (int j = 0; j < A.cols; j++) {
             external_product(accum, A.data[i][j], shifted_input.data[i], accum_alpha_bits);
-            add(reps->data[j], reps->data[j], accum);
+#pragma omp critical
+            {
+                add(reps->data[j], reps->data[j], accum);
+            }
         }
     }
 
