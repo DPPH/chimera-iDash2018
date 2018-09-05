@@ -79,7 +79,7 @@ void print_difference(const mat_RR &actual, const mat_RR &expected, const string
     cerr << "Distance " << name << " max-error: " << max_diff << " avg-error: " << avg_diff << endl;
 }
 
-#define DEBUG_MODE
+//#define DEBUG_MODE
 
 int main() {
     using namespace section2_params;
@@ -228,7 +228,7 @@ int main() {
         RR actual_phase_ks = fixp_decrypt_number(p_lvl4.data[i], *key);
 #pragma omp critical
         {
-            cout << "at index i............: " << endl;
+            cout << "at index i............: " << i << endl;
             cout << "in phase..............: " << in_phase << endl;
             cout << "expected output phase.: " << expected_phase << endl;
             cout << "actual phase trivial..: " << actual_phase_trivial << endl;
@@ -258,8 +258,8 @@ int main() {
 #ifdef DEBUG_MODE
     vec_RR decrypted_p = decrypt_individual_trlwe(p_lvl4, *key, algo_n);
     cerr << "DEBUG decrypt p: " << decrypted_p << endl;
+    print_difference(decrypted_p, decrypted_p, "p");
     assert_weakly(compute_public_exponent(decrypted_p) <= p_lvl4.data[0].params.fixp_params.plaintext_expo);
-
 #endif //DEBUG_MODE
 
     // ------------------
@@ -468,14 +468,14 @@ int main() {
     }
     for (int i = 0; i < A->rows; i++) {
         for (int j = 0; j < A->cols; j++) {
-            cerr << "AO-" << i << "-" << j << ": " << slot_decrypt(A->data[i][j], *key) << endl;
+            //cerr << "AO-" << i << "-" << j << ": " << slot_decrypt(A->data[i][j], *key) << endl;
             fixp_internal_product(tempsA2, A->data[i][j], A->data[i][j], *rk,
                                   section2_params::default_plaintext_precision);
-            cerr << "AA-" << i << "-" << j << ": " << slot_decrypt(tempsA2, *key) << endl;
+            //cerr << "AA-" << i << "-" << j << ": " << slot_decrypt(tempsA2, *key) << endl;
             fixp_public_product(temps, tempsA2, 4);
-            cerr << "AB-" << i << "-" << j << ": " << slot_decrypt(temps, *key) << endl;
+            //cerr << "AB-" << i << "-" << j << ": " << slot_decrypt(temps, *key) << endl;
             fixp_add(denom_2.data[j], denom_2.data[j], temps);
-            cerr << "AC-" << i << "-" << j << ": " << slot_decrypt(denom_2.data[j], *key) << endl;
+            //cerr << "AC-" << i << "-" << j << ": " << slot_decrypt(denom_2.data[j], *key) << endl;
         }
     }
 

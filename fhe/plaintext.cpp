@@ -1,14 +1,144 @@
-#include <io.h>
-#include <common.h>
+#include <iostream>
 
 #include <NTL/LLL.h>
 #include <NTL/ZZ_limbs.h>
 #include <cassert>
+#include <fstream>
+#include <sstream>
 
 NTL_CLIENT;
 
 typedef NTL::Vec<float> vec_float;
 typedef NTL::Mat<float> mat_float;
+
+
+struct Data {
+    int n;        // number X rows
+    int k;        // number X cols
+    int m;        // number SNPs
+
+    mat_float X;
+    vec_float y;
+    mat_float S;
+};
+
+bool is_binary(float x) {
+    return x == 0 || x == 1;
+}
+
+void read_S(string filename, Data &data) {
+    ifstream ifs(filename); //"data/snpMat.txt"
+    assert(ifs);
+
+    mat_float &S = data.S;
+    const int n = data.n;
+    const int m = data.m;
+
+    S.SetDims(n, m);
+    string line;
+    std::getline(ifs, line); //ignore first header line
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < m; j++) {
+            ifs >> S[i][j];
+            assert(is_binary(S[i][j])); //S binary
+        }
+    assert(ifs); //verify that all values have been read
+    ifs.close();
+}
+
+void read_ortho_Xy(std::string filename, Data &data) {
+    ifstream ifs(filename); // "data/covariates.csv"
+    assert(ifs);
+
+    mat_float &X = data.X;
+    vec_float &y = data.y;
+    const int n = data.n;
+    const int k = data.k;
+
+    X.SetDims(n, k);
+    y.SetLength(n);
+    mat_RR B;
+    vec_RR sums;
+    vec_RR nbels;
+    B.SetDims(k, n);
+    sums.SetLength(k);
+    clear(sums);
+    nbels.SetLength(k);
+    clear(nbels);
+
+    string line;
+    string buf;
+    std::getline(ifs, line); //ignore first header line
+    for (int i = 0; i < n; i++) {
+        std::getline(ifs, line);
+        for (int j = 0; j < int(line.size()); j++) {
+            if (line[j] == ',') line[j] = ' ';
+        }
+        istringstream iss(line);
+        iss >> buf; //ignore label
+        iss >> y[i]; //read y
+        assert(is_binary(y[i])); //S binary
+        B[0][i] = 1.; //intercept first
+        nbels[0]++;
+        for (int j = 1; j < k; j++) {
+            iss >> buf;
+            if (buf == "NA") {
+                B[j][i] = -1e80;
+            } else {
+                B[j][i] = stod(buf);
+                sums[j] += B[j][i];
+                nbels[j]++;
+            }
+        }
+        assert(iss);
+    }
+    assert(ifs);
+    ifs.close();
+    //replace all NANs by average
+    //cout << B << endl;
+    //cout << nbels << endl;
+    for (int j = 0; j < k; j++) {
+        sums[j] /= nbels[j];
+    }
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < k; j++) {
+            if (B[j][i] < 1e-75) {
+                B[j][i] = sums[j];
+            }
+        }
+    }
+    //orthogonalize B
+    for (int i = 0; i < k; i++) {
+        //remove component on previous vectors
+        for (int j = 0; j < i; j++) {
+            B[i] -= (B[i] * B[j]) * B[j];
+        }
+        //normalize B[i]
+        RR alpha = inv(sqrt(B[i] * B[i]));
+        B[i] *= alpha;
+    }
+    //cout << B << endl;
+    //cout << B*transpose(B) << endl;
+    //put B in X
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < k; j++) {
+            conv(X[i][j], B[j][i]);
+        }
+    }
+}
+
+void fill_data(Data &data) {
+    data.n = 245;
+    data.k = 4;
+    data.m = 10643;
+
+    read_S("data/snpMat.txt", data);
+    read_ortho_Xy("data/covariates.csv", data);
+}
+
+float sigmoid(float x) {
+    return 1. / (1 + exp(-x));
+}
 
 
 vec_float sigmoid_vec(const vec_float &x) {
@@ -226,16 +356,16 @@ float pvalexp_exact(float x) {
 }
 
 float pvalexp_approx(float x) {
-    x = exp(x/2.) / sqrt(2.);
-    float a1=.278393;
-    float a2=.230389;
-    float a3=.000972;
-    float a4=.078108;
+    x = exp(x / 2.) / sqrt(2.);
+    float a1 = .278393;
+    float a2 = .230389;
+    float a3 = .000972;
+    float a4 = .078108;
 
-    float t = (1 + a1 * x + a2 * x*x + a3 * x*x*x + a4 * x*x*x*x);
-    t = t*t*t*t;
+    float t = (1 + a1 * x + a2 * x * x + a3 * x * x * x + a4 * x * x * x * x);
+    t = t * t * t * t;
 
-    return 1.0/t;
+    return 1.0 / t;
 }
 
 #define pvalexp pvalexp_exact
@@ -280,8 +410,8 @@ void draw_histogram(const string &name, const vec_float &values) {
     ofs2 << "set output '" << name << ".eps'" << endl;
     ofs2 << "plot '" << name << ".histo' with boxes" << endl;
     ofs2.close();
-    system((string("gnuplot ")+name+string(".histo.plot")).c_str());
-    system((string("epstopdf ")+name+string(".eps")).c_str());
+    system((string("gnuplot ") + name + string(".histo.plot")).c_str());
+    system((string("epstopdf ") + name + string(".eps")).c_str());
 }
 
 void draw_histogram(const string &name, const mat_float &values) {
@@ -299,8 +429,8 @@ void draw_histogram(const string &name, const mat_float &values) {
 
 void dump_values(const string &name, const vec_float &values) {
     long n = values.length();
-    ofstream out(name+"-plain.dat");
-    for (int64_t i=0; i<n; i++) {
+    ofstream out(name + "-plain.dat");
+    for (int64_t i = 0; i < n; i++) {
         out << values[i] << endl;
     }
 }
@@ -316,9 +446,9 @@ int main() {
     const int k = data.k;
     const int m = data.m;
     const int n = data.n;
-    mat_float& X = data.X;
-    mat_float& S = data.S;
-    vec_float& y = data.y;
+    mat_float &X = data.X;
+    mat_float &S = data.S;
+    vec_float &y = data.y;
 
     //
     vec_float p;
@@ -330,12 +460,12 @@ int main() {
     for (int iter = 0; iter <= ITERS; iter++) {
         cout << "--- iter " << iter << "-----" << endl;
         cout << "beta: " << beta << endl;
-        vec_float XBeta = X*beta;
+        vec_float XBeta = X * beta;
         cout << "XBeta: " << XBeta << endl;
-        draw_histogram(string("X_Beta_")+to_string(iter), XBeta);
+        draw_histogram(string("X_Beta_") + to_string(iter), XBeta);
         p = sigmoid_vec(X * beta);
         cout << "p: " << p << endl;
-        vec_float ymp = y-p;
+        vec_float ymp = y - p;
         cout << "ymp: " << ymp << endl;
         vec_float mgrad = (transpose(X) * ymp);
         cout << "mgrad: " << mgrad << endl;
@@ -383,7 +513,7 @@ int main() {
     vec_float sStar2 = scaledColSqNorms(S, w) - colSqNorms(A);
     cout << "sStar2: " << sStar2 << endl;
     ofstream correl("correlation.txt");
-    for (int j=0; j<m; j++)
+    for (int j = 0; j < m; j++)
         correl << zStar[j] << " " << sStar2[j] << endl;
     correl.close();
     draw_histogram("sStar2", sStar2);
