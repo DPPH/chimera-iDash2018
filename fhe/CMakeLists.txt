@@ -41,6 +41,7 @@ set(MAIN_PROGS
         cloud-program-debug.cpp
         key-gen-program.cpp
         debug-decrypt-program.cpp
+        decrypt-program.cpp
         encrypt-program.cpp
         plaintext.cpp
         )
