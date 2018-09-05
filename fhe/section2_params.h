@@ -38,13 +38,13 @@ namespace section2_params {
     //TODO: synchronize with section 1
     //
     static const std::string p_lvl4_filename = "p_lvl4.bin";
-    static const int64_t p_level = 64; //80-14
+    static const int64_t p_level = 66; //80-14
     static const int64_t p_plaintext_expo = 0;
     static const int64_t p_alpha_bits = p_level + default_plaintext_precision;
     static const int64_t p_limbs = limb_precision(p_alpha_bits);
 
     static const std::string w_lvl3_filename = "w_lvl3.bin";
-    static const int64_t w_level = 49; //80-2*14+1
+    static const int64_t w_level = 52; //80-2*14+1
     static const int64_t w_plaintext_expo = -1;
     static const int64_t w_alpha_bits = w_level + default_plaintext_precision;
     static const int64_t w_limbs = limb_precision(w_alpha_bits);
@@ -54,13 +54,13 @@ namespace section2_params {
     static const int64_t y_plaintext_expo = 0;
 
     static const std::string S_lvl3_filename = "S_lvl3.bin";
-    static const int64_t S_level = 52;
+    static const int64_t S_level = 58;
     static const int64_t S_plaintext_expo = 0;
     static const int64_t S_alpha_bits = S_level + 32 + 5;
 
 
     static const std::string X_lvl2_filename = "X_lvl2.bin";
-    static const int64_t X_level = 32;
+    static const int64_t X_level = 36;
     static const int64_t X_plaintext_expo = 0;
     static const int64_t X_alpha_bits = X_level + 32 + 5;
 

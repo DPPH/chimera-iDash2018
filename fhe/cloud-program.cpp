@@ -269,7 +269,7 @@ int main() {
     shared_ptr<TRGSW> rk = deserializeTRGSW(rk_key_in);
     rk_key_in.close();
     shared_ptr<TRLWEVector> w_lvl3 = compute_w(p_lvl4, *rk, section2_params::w_level, section2_params::w_plaintext_expo,
-                                               section2_params::default_plaintext_precision);
+                                               14); //section2_params::default_plaintext_precision);
 
     // serialize w (lvl 3)
     ofstream w_stream("w_lvl3.bin");
