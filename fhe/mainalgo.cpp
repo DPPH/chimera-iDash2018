@@ -46,6 +46,7 @@ void read_tlwe_sample(istream &f, int64_t *const ab, const int64_t n, const int6
     assert_dramatically((modulus & (modulus - 1)) == 0, "modulus must be a power of 2");
     const UINT64 modulus_bits = __builtin_popcount(modulus - 1); //log_2 of modulus
     const UINT64 t64ToModuloShift = 64ul - modulus_bits;
+    const UINT64 modulusOffset = 1ul << (64ul - modulus_bits - 1ul);
 
     int32_t type_uid;
     istream_read_binary(f, &type_uid, sizeof(int32_t));
@@ -58,7 +59,7 @@ void read_tlwe_sample(istream &f, int64_t *const ab, const int64_t n, const int6
 
     //modulus-rescale from torus64 to modulus
     for (int64_t i = 0; i < n + 1; i++) {
-        ab[i] = (UINT64(ab[i]) >> t64ToModuloShift);
+        ab[i] = ((UINT64(ab[i]) + modulusOffset) >> t64ToModuloShift);
         assert(ab[i] >= 0 && ab[i] < modulus);
     }
 }

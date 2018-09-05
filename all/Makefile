@@ -31,11 +31,11 @@ compile: data compile_section1 compile_section2
 
 compile_section1:
 	bash ../log_regr/patch_tfhe_torus_generic.bash
-	mkdir ../log_regr/build
+	mkdir ../log_regr/build || echo
 	cd ../log_regr/build; cmake .. -DCMAKE_BUILD_TYPE=Release
 	cd ../log_regr/build; make -j 4
 
 compile_section2:
-	mkdir ../fhe/build
+	mkdir ../fhe/build || echo
 	cd ../fhe/build; cmake .. -DCMAKE_BUILD_TYPE=Release
 	cd ../fhe/build; make -j 4
