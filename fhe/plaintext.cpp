@@ -410,8 +410,8 @@ void draw_histogram(const string &name, const vec_float &values) {
     ofs2 << "set output '" << name << ".eps'" << endl;
     ofs2 << "plot '" << name << ".histo' with boxes" << endl;
     ofs2.close();
-    system((string("gnuplot ") + name + string(".histo.plot")).c_str());
-    system((string("epstopdf ") + name + string(".eps")).c_str());
+    if (system((string("gnuplot ") + name + string(".histo.plot")).c_str())) {};
+    if (system((string("epstopdf ") + name + string(".eps")).c_str())) {};
 }
 
 void draw_histogram(const string &name, const mat_float &values) {

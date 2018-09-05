@@ -7,7 +7,8 @@ encrypt: data.ctxt S_lvl3.bin
 keygen: cloud_keyset.bin bk.key
 
 denominator_lvl0.bin: X_beta.ctxt
-	../fhe/build/cloud-program
+	#../fhe/build/cloud-program
+	../fhe/build/cloud-program-debug
 
 X_beta.ctxt:
 	../log_regr/build/log_regr
@@ -26,9 +27,15 @@ cloud_keyset.bin:
 	../log_regr/build/gen_keys
 
 
-compile: data compile_section2
+compile: data compile_section1 compile_section2
+
+compile_section1:
+	bash ../log_regr/patch_tfhe_torus_generic.bash
+	mkdir ../log_regr/build || echo
+	cd ../log_regr/build; cmake .. -DCMAKE_BUILD_TYPE=Release
+	cd ../log_regr/build; make -j 4
 
 compile_section2:
-	mkdir ../fhe/build
+	mkdir ../fhe/build || echo
 	cd ../fhe/build; cmake .. -DCMAKE_BUILD_TYPE=Release
 	cd ../fhe/build; make -j 4
