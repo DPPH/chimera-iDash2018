@@ -390,7 +390,7 @@ int main() {
     X_in.close();
 
     shared_ptr<TRLweMatrix> A = compute_A(*X, *S, *w_lvl3, A_level, A_plaintext_expo,
-                                          section2_params_temporal::default_plaintext_precision + 2);
+                                          section2_params_temporal::default_plaintext_precision + 4);
 
     // serialize A (lvl 1)
     ofstream A_stream("A_lvl1.bin");
