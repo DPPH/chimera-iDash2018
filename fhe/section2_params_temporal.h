@@ -11,7 +11,7 @@ namespace section2_params_temporal {
     static const int64_t algo_k = 3;
     static const int64_t algo_m = 10643;
     //
-    static const int64_t default_plaintext_precision = 16;
+    static const int64_t default_plaintext_precision = 18;
     //
     static const int64_t n_lvl0 = 612;    //TODO: synchronize with section 1
     static const std::string lvl0_key_filename = "secret_keyset.bin";
@@ -38,13 +38,13 @@ namespace section2_params_temporal {
     //TODO: synchronize with section 1
     //
     static const std::string p_lvl4_filename = "p_lvl4.bin";
-    static const int64_t p_level = 64; //80-14
+    static const int64_t p_level = 57; //80-14
     static const int64_t p_plaintext_expo = 0;
     static const int64_t p_alpha_bits = p_level + default_plaintext_precision;
     static const int64_t p_limbs = limb_precision(p_alpha_bits);
 
     static const std::string w_lvl3_filename = "w_lvl3.bin";
-    static const int64_t w_level = 49; //80-2*14+1
+    static const int64_t w_level = 40; //80-2*14+1
     static const int64_t w_plaintext_expo = -1;
     static const int64_t w_alpha_bits = w_level + default_plaintext_precision;
     static const int64_t w_limbs = limb_precision(w_alpha_bits);
@@ -69,7 +69,7 @@ namespace section2_params_temporal {
     static const int64_t numerator_plaintext_expo = 6; //TODO
 
     static const std::string A_lvl1_filename = "A_lvl1.bin";
-    static const int64_t A_level = 13; //38-14-3
+    static const int64_t A_level = 1; //38-14-3
     static const int64_t A_plaintext_expo = 2; //TODO
 
 
