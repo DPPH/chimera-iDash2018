@@ -465,11 +465,11 @@ int main() {
     //numerator is already at level 1, so no need to shift
     ofstream N0_stream("num_sec3.bin");
     tmp = N;
-    ostream_write_binary(N0_stream, &tmp, sizeof(int64_t));
+    ostream_write_binary(N0_stream, &tmp, sizeof(int64_t)); //key size
     tmp = numerator->length;
-    ostream_write_binary(N0_stream, &tmp, sizeof(int64_t));
+    ostream_write_binary(N0_stream, &tmp, sizeof(int64_t)); //number of ciphertexts
     tmp = algo_m;
-    ostream_write_binary(N0_stream, &tmp, sizeof(int64_t));
+    ostream_write_binary(N0_stream, &tmp, sizeof(int64_t)); //unpacked length
     tmp = numerator->data[0].params.fixp_params.plaintext_expo + 1; //scaling factor
     ostream_write_binary(N0_stream, &tmp, sizeof(int64_t));
     for (int64_t i = 0; i < numerator->length; i++) {
