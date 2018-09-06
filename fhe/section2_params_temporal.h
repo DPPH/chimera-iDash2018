@@ -69,7 +69,7 @@ namespace section2_params_temporal {
     static const int64_t numerator_plaintext_expo = 6; //TODO
 
     static const std::string A_lvl1_fi4lename = "A_lvl1.bin";
-    static const int64_t A_level = 17; //38-14-3
+    static const int64_t A_level = 15; //38-14-3
     static const int64_t A_plaintext_expo = 2; //TODO
 
 
