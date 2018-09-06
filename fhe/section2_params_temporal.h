@@ -60,7 +60,7 @@ namespace section2_params_temporal {
 
 
     static const std::string X_lvl2_filename = "X_lvl2.bin";
-    static const int64_t X_level = 40;
+    static const int64_t X_level = 50;
     static const int64_t X_plaintext_expo = 0;
     static const int64_t X_alpha_bits = X_level + 32 + 5;
 
