@@ -112,7 +112,7 @@ int main() {
         pp[i] = random_RR();
     }
     shared_ptr<TRLWEVector> p_lvl4p = encrypt_individual_trlwe(pp, *key, N, p_level, p_plaintext_expo,
-                                                               section2_params::default_plaintext_precision);
+                                                               section2_params_temporal::default_plaintext_precision);
     TRLWEVector &p_lvl4 = *p_lvl4p;
 #else
     // read the bk key
@@ -162,7 +162,7 @@ int main() {
     BigTorus sigmoid_offset(p_bt_params);
     to_fixP(sigmoid_offset, to_RR(0.5));
     TRLwe sigmoid_test_vector(p_trlwe_params);
-    fixp_trivial(sigmoid_test_vector, plaintext_test_vector, section2_params::default_plaintext_precision);
+    fixp_trivial(sigmoid_test_vector, plaintext_test_vector, section2_params_temporal::default_plaintext_precision);
 
     // read the input ciphertexts (from section 1)
     // read the input trlwe
@@ -263,8 +263,9 @@ int main() {
     ifstream rk_key_in(section2_rk_filename);
     shared_ptr<TRGSW> rk = deserializeTRGSW(rk_key_in);
     rk_key_in.close();
-    shared_ptr<TRLWEVector> w_lvl3 = compute_w(p_lvl4, *rk, section2_params::w_level, section2_params::w_plaintext_expo,
-                                               14); //section2_params::default_plaintext_precision);
+    shared_ptr<TRLWEVector> w_lvl3 = compute_w(p_lvl4, *rk, section2_params_temporal::w_level,
+                                               section2_params_temporal::w_plaintext_expo,
+                                               14); //section2_params_temporal::default_plaintext_precision);
 
     // serialize w (lvl 3)
     ofstream w_stream("w_lvl3.bin");
@@ -310,7 +311,7 @@ int main() {
 #endif //DEBUG_MODE
 
     shared_ptr<TRLWEVector> ymp = substract_ind_TRLWE(y, p_lvl4, y_level, y_plaintext_expo,
-                                                      section2_params::default_plaintext_precision);
+                                                      section2_params_temporal::default_plaintext_precision);
 #ifdef DEBUG_MODE
     vec_RR expected_ymp = decrypted_y - decrypted_p;
     vec_RR decrypted_ymp = decrypt_individual_trlwe(*ymp, *key, algo_n);
@@ -346,7 +347,7 @@ int main() {
 
 
     shared_ptr<TRLWEVector> numerator = vec_mat_prod(*ymp, *S, numerator_level, numerator_plaintext_expo,
-                                                     section2_params::default_plaintext_precision);
+                                                     section2_params_temporal::default_plaintext_precision);
 
 
     // serialize numerator (lvl 0)
@@ -389,7 +390,7 @@ int main() {
     X_in.close();
 
     shared_ptr<TRLweMatrix> A = compute_A(*X, *S, *w_lvl3, A_level, A_plaintext_expo,
-                                          section2_params::default_plaintext_precision);
+                                          section2_params_temporal::default_plaintext_precision);
 
     // serialize A (lvl 1)
     ofstream A_stream("A_lvl1.bin");
