@@ -425,9 +425,62 @@ int main() {
     assert_weakly(compute_public_exponent(decrypted_A) <= A->data[0][0].params.fixp_params.plaintext_expo);
 #endif //DEBUG_MODE
 
-
     //free S and X here
     S = nullptr;
     X = nullptr;
+
+    // serialize A (lvl 0) -> section 3
+    cerr << "Serialize A for section 3" << endl;
+    BigTorusParams a_lvl0_bt_params(1, 0, 1);
+    TRLweParams a_lvl0_trlwe_params(N, a_lvl0_bt_params);
+    int64_t rsShift = A->data[0][0].params.fixp_params.level_expo - 1;
+    TRLwe tmpA(a_lvl0_trlwe_params);
+
+    ofstream A0_stream("A_sec3.bin");
+    int64_t tmp;
+    tmp = N;
+    ostream_write_binary(A0_stream, &tmp, sizeof(int64_t)); //key size
+    tmp = A->rows;
+    ostream_write_binary(A0_stream, &tmp, sizeof(int64_t)); //rows
+    tmp = A->cols;
+    ostream_write_binary(A0_stream, &tmp, sizeof(int64_t)); //cols
+    tmp = algo_m;
+    ostream_write_binary(A0_stream, &tmp, sizeof(int64_t)); //unpacked cols
+    tmp = A->data[0][0].params.fixp_params.plaintext_expo + 1; //scaling factor
+    ostream_write_binary(A0_stream, &tmp, sizeof(int64_t));
+    for (int64_t i = 0; i < A->rows; i++) {
+        for (int64_t j = 0; j < A->cols; j++) {
+            lshift(tmpA, A->data[0][0], rsShift);
+            for (int64_t k = 0; k < N; k++) {
+                ostream_write_binary(A0_stream, tmpA.a[0].getAT(k).limbs_end - 4, 4);
+            }
+            for (int64_t k = 0; k < N; k++) {
+                ostream_write_binary(A0_stream, tmpA.a[1].getAT(k).limbs_end - 4, 4);
+            }
+        }
+    }
+    A0_stream.close();
+
+    cerr << "Serialize numerator for section 3" << endl;
+    //numerator is already at level 1, so no need to shift
+    ofstream N0_stream("num_sec3.bin");
+    tmp = N;
+    ostream_write_binary(N0_stream, &tmp, sizeof(int64_t));
+    tmp = numerator->length;
+    ostream_write_binary(N0_stream, &tmp, sizeof(int64_t));
+    tmp = algo_m;
+    ostream_write_binary(N0_stream, &tmp, sizeof(int64_t));
+    tmp = numerator->data[0].params.fixp_params.plaintext_expo + 1; //scaling factor
+    ostream_write_binary(N0_stream, &tmp, sizeof(int64_t));
+    for (int64_t i = 0; i < numerator->length; i++) {
+        for (int64_t k = 0; k < N; k++) {
+            ostream_write_binary(N0_stream, numerator->data[i].a[0].getAT(k).limbs_end - 4, 4);
+        }
+        for (int64_t k = 0; k < N; k++) {
+            ostream_write_binary(N0_stream, numerator->data[i].a[1].getAT(k).limbs_end - 4, 4);
+        }
+    }
+    N0_stream.close();
+
 
 }
