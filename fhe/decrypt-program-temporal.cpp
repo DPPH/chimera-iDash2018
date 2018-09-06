@@ -5,13 +5,13 @@
 #include "TLwe.h"
 #include "TRLwe.h"
 #include "mainalgo.h"
-#include "section2_params.h"
+#include "section2_params_temporal.h"
 
 NTL_CLIENT;
 
 int main() {
     // algo parameters (TODO: share these parameters everywhere)
-    using namespace section2_params;
+    using namespace section2_params_temporal;
 
     // read the secret key
     cerr << "deserializing the section2 key" << endl;

@@ -33,7 +33,8 @@ add_library(chimera-dpph
         TRLwe.cpp TRLwe.h
         TRGSW.cpp TRGSW.h
         mainalgo.cpp mainalgo.h
-        section2_params.h)
+        section2_params.h
+        section2_params_temporal.h)
 
 set(MAIN_PROGS
         main.cpp

@@ -5,7 +5,7 @@
 #include "TLwe.h"
 #include "TRLwe.h"
 #include "mainalgo.h"
-#include "section2_params.h"
+#include "section2_params_temporal.h"
 #include "arithmetic.h"
 
 NTL_CLIENT;
@@ -13,7 +13,7 @@ NTL_CLIENT;
 #define DEBUG_MODE
 
 int main() {
-    using namespace section2_params;
+    using namespace section2_params_temporal;
 
 
     cerr << "Deserializing the section2 key (N = " << N << ")" << endl;

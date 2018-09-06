@@ -5,7 +5,7 @@
 #include "TLwe.h"
 #include "TRLwe.h"
 #include "mainalgo.h"
-#include "section2_params.h"
+#include "section2_params_temporal.h"
 #include "arithmetic.h"
 
 NTL_CLIENT;
@@ -77,7 +77,7 @@ void print_difference(const mat_RR &actual, const mat_RR &expected, const string
 #define DEBUG_MODE
 
 int main() {
-    using namespace section2_params;
+    using namespace section2_params_temporal;
 
 #ifdef DEBUG_MODE
     cerr << "DEBUG!!! reading lvl0 key...";
