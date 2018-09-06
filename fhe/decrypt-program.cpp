@@ -9,12 +9,6 @@
 
 NTL_CLIENT;
 
-NTL::mat_RR debug_S;
-NTL::mat_RR debug_X;
-NTL::vec_RR debug_W;
-shared_ptr<TLweKey> debug_key;
-
-
 int main() {
     // algo parameters (TODO: share these parameters everywhere)
     using namespace section2_params;
@@ -26,89 +20,64 @@ int main() {
     shared_ptr<TLweKey> key = deserializeTLweKey(key_in, N);
     key_in.close();
 
-    // deserialize bootstrapping key
-    cerr << "deserializing level0 key" << endl;
-    vector<int64_t> key_lvl0(n_lvl0);
-    read_tlwe_key(lvl0_key_filename.c_str(), key_lvl0.data(), n_lvl0);
+
     NTL::vec_RR denominator_plaintext;
     NTL::vec_RR numerator_plaintext;
 
-    denominator_plaintext.SetLength(algo_n);
-    numerator_plaintext.SetLength(algo_n);
+    denominator_plaintext.SetLength(algo_m);
+    numerator_plaintext.SetLength(algo_m);
 
 
-    // read the input ciphertexts (from section 1)
+    // read the input ciphertexts 
     int64_t length;
     ifstream numerator_stream(numerator_lvl0_filename);
     if (numerator_stream) {
         istream_read_binary(numerator_stream, &length, sizeof(int64_t));
-        assert_dramatically(length == algo_n, "wrong size of numerator");
         auto numerator_params = deserializeTRLweParams(numerator_stream);
+        store_forever(numerator_params);
         assert_dramatically(int64_t(numerator_params->N) == N);
-        //assert_dramatically(int64_t(numerator_params->fixp_params.torus_limbs) == p_limbs);
-        assert_dramatically(int64_t(numerator_params->fixp_params.level_expo) == numerator_level);
-        assert_dramatically(int64_t(numerator_params->fixp_params.plaintext_expo) == numerator_plaintext_expo);
-        TRLWEVector numerator(algo_n, *numerator_params);
-        for (int64_t i = 0; i < algo_n; i++) {
+        TRLWEVector numerator(length, *numerator_params);
+        for (int64_t i = 0; i < length; i++) {
             deserializeTRLweContent(numerator_stream, numerator.data[i]);
         }
-        cout << "numerator: " << decrypt_individual_trlwe(numerator, *key, algo_n) << endl;
-        numerator_plaintext = decrypt_individual_trlwe(numerator, *key, algo_n);
+        numerator_plaintext = decrypt_heaan_packed_trlwe(numerator, *key, algo_m);
+        cout << "numerator: " << numerator_plaintext << endl;
+       
     } else {
         cout << "numerator: " << "absent!" << endl;
     }
     numerator_stream.close();
 
-    // serialize numerator plaintext
-    ofstream numerator_plaintext_stream("numerator_plaintext_plaintext.bin");
-    ostream_write_binary(numerator_plaintext_stream, &length, sizeof(int64_t));
-    for (int64_t i = 0; i < algo_n; i++) {
-        ostream_write_binary(numerator_plaintext_stream, &numerator_plaintext[i], sizeof(NTL::RR));
-    }
-    numerator_plaintext_stream.close();
 
     ifstream denominator_stream(denominator_lvl0_filename);
     if (denominator_stream) {
         istream_read_binary(denominator_stream, &length, sizeof(int64_t));
-        assert_dramatically(length == algo_n, "wrong size of denominator");
         auto denominator_params = deserializeTRLweParams(denominator_stream);
+        store_forever(denominator_params);
         assert_dramatically(int64_t(denominator_params->N) == N);
-        assert_dramatically(int64_t(denominator_params->fixp_params.torus_limbs) == denominator_limbs);
-        assert_dramatically(int64_t(denominator_params->fixp_params.level_expo) == denominator_level);
-        assert_dramatically(int64_t(denominator_params->fixp_params.plaintext_expo) == denominator_plaintext_expo);
-        TRLWEVector denominator(algo_n, *denominator_params);
-        for (int64_t i = 0; i < algo_n; i++) {
+        TRLWEVector denominator(length, *denominator_params);
+        for (int64_t i = 0; i < length; i++) {
             deserializeTRLweContent(denominator_stream, denominator.data[i]);
         }
-        cout << "denominator: " << decrypt_individual_trlwe(denominator, *key, algo_n) << endl;
-        denominator_plaintext = decrypt_individual_trlwe(denominator, *key, algo_n);
+        denominator_plaintext = decrypt_heaan_packed_trlwe(denominator, *key, algo_m);
+        cout << "denominator: " << denominator_plaintext << endl;
+
     } else {
         cout << "denominator: " << "absent!" << endl;
     }
     denominator_stream.close();
 
 
-
-    //serialize denumerator plaintext
-    ofstream denominator_plaintext_stream("denomerator_plaintext_plaintext.bin");
-    ostream_write_binary(denominator_plaintext_stream, &length, sizeof(int64_t));
-    for (int64_t i = 0; i < algo_n; i++) {
-        ostream_write_binary(denominator_plaintext_stream, &denominator_plaintext[i], sizeof(NTL::RR));
-    }
-    denominator_plaintext_stream.close();
-
-
     NTL::vec_RR stat;
-    stat.SetLength(algo_n);
-    for (int64_t i = 0; i < algo_n; i++) {
-        stat[i] = numerator_plaintext[i] / denominator_plaintext[i];
+    stat.SetLength(algo_m);
+    for (int64_t i = 0; i < algo_m; i++) {
+        stat[i] = abs(numerator_plaintext[i]) / sqrt(abs(denominator_plaintext[i]));
     }
 
     //serialize stat
-    ofstream stat_stream("stat.bin");
-    ostream_write_binary(stat_stream, &length, sizeof(int64_t));
-    for (int64_t i = 0; i < algo_n; i++) {
-        ostream_write_binary(stat_stream, &stat[i], sizeof(NTL::RR));
+    ofstream stat_stream("stat.txt");
+    for (int64_t i = 0; i < algo_m; i++) {
+        stat_stream << stat[i] << endl;
     }
     stat_stream.close();
 
