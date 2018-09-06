@@ -9,12 +9,6 @@
 
 NTL_CLIENT;
 
-NTL::mat_RR debug_S;
-NTL::mat_RR debug_X;
-NTL::vec_RR debug_W;
-shared_ptr<TLweKey> debug_key;
-
-
 int main() {
     // algo parameters (TODO: share these parameters everywhere)
     using namespace section2_params;
@@ -42,7 +36,7 @@ int main() {
         auto numerator_params = deserializeTRLweParams(numerator_stream);
         store_forever(numerator_params);
         assert_dramatically(int64_t(numerator_params->N) == N);
-        TRLWEVector numerator(algo_m, *numerator_params);
+        TRLWEVector numerator(length, *numerator_params);
         for (int64_t i = 0; i < length; i++) {
             deserializeTRLweContent(numerator_stream, numerator.data[i]);
         }
@@ -61,7 +55,7 @@ int main() {
         auto denominator_params = deserializeTRLweParams(denominator_stream);
         store_forever(denominator_params);
         assert_dramatically(int64_t(denominator_params->N) == N);
-        TRLWEVector denominator(algo_m, *denominator_params);
+        TRLWEVector denominator(length, *denominator_params);
         for (int64_t i = 0; i < length; i++) {
             deserializeTRLweContent(denominator_stream, denominator.data[i]);
         }
