@@ -38,12 +38,11 @@ int main() {
                                                                     section2_params_temporal::default_plaintext_precision);
     cerr << "encrypt X..." << endl;
     shared_ptr<TRGSWMatrix> ciphertext_X = encrypt_X(X, *key, N, X_alpha_bits,
-                                                     section2_params_temporal::default_plaintext_precision + 4);
+                                                     section2_params_temporal::default_plaintext_precision);
 
     cerr << "encrypt S..." << endl;
     shared_ptr<TRGSWMatrix> ciphertext_S = encrypt_S_temporal(S, *key, N, S_alpha_bits,
-                                                              section2_params_temporal::default_plaintext_precision +
-                                                              4);
+                                                              section2_params_temporal::default_plaintext_precision);
     // S is binary
 
 #ifdef DEBUG_MODE

@@ -265,7 +265,7 @@ int main() {
     rk_key_in.close();
     shared_ptr<TRLWEVector> w_lvl3 = compute_w(p_lvl4, *rk, section2_params_temporal::w_level,
                                                section2_params_temporal::w_plaintext_expo,
-                                               14); //section2_params_temporal::default_plaintext_precision);
+                                               section2_params_temporal::default_plaintext_precision);
 
     // serialize w (lvl 3)
     ofstream w_stream("w_lvl3.bin");
@@ -390,7 +390,7 @@ int main() {
     X_in.close();
 
     shared_ptr<TRLweMatrix> A = compute_A(*X, *S, *w_lvl3, A_level, A_plaintext_expo,
-                                          section2_params_temporal::default_plaintext_precision + 4);
+                                          section2_params_temporal::default_plaintext_precision);
 
     // serialize A (lvl 1)
     ofstream A_stream("A_lvl1.bin");
