@@ -1,31 +1,21 @@
 all:
 
-cloud: X_beta.ctxt denominator_lvl0.bin
+decrypt:
+	../fhe/build/decrypt-program
+	# results are in stat.txt 
 
-encrypt: data.ctxt S_lvl3.bin
-
-keygen: cloud_keyset.bin bk.key
-
-denominator_lvl0.bin: X_beta.ctxt
-	#../fhe/build/cloud-program
-	../fhe/build/cloud-program-debug
-
-X_beta.ctxt:
+cloud: 
 	../log_regr/build/log_regr
+	../fhe/build/cloud-program
+	#../fhe/build/cloud-program-debug
 
-S_lvl3.bin:
+encrypt: 
+	../log_regr/build/encrypt_data
 	../fhe/build/encrypt-program
 
-data.ctxt:
-	../log_regr/build/encrypt_data
-
-bk.key: cloud_keyset.bin
-	../fhe/build/key-gen-program
-
-
-cloud_keyset.bin:
+keygen: 
 	../log_regr/build/gen_keys
-
+	../fhe/build/key-gen-program
 
 compile: data compile_section1 compile_section2
 
