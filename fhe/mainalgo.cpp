@@ -219,8 +219,8 @@ encrypt_S_temporal(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t
     long real_plaintext_exponent_a = to_long(ceil(log(maxiNorm2Sq) / 2 / log(2.))); //todo override?
     long real_plaintext_exponent_b = to_long(ceil(log(maxiNormInf) / log(2.)));     //todo override?
     cout << "deduced plaintext exponents: " << real_plaintext_exponent_a << " or " << real_plaintext_exponent_b << endl;
-    long real_plaintext_exponent = std::max(real_plaintext_exponent_b, real_plaintext_exponent_a);
-    long trgsw_bits_a = real_plaintext_exponent; //plaintext_precision_bits;
+    long real_plaintext_exponent = std::min(real_plaintext_exponent_b, real_plaintext_exponent_a);
+    long trgsw_bits_a = plaintext_precision_bits;
     //assert_dramatically(trgsw_bits_a == 1);
     //assert_dramatically(real_plaintext_exponent == 0);
     //long trgsw_shift = real_plaintext_exponent - trgsw_bits_a;
