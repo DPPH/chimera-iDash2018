@@ -5,15 +5,16 @@
 #include <cstdint>
 #include <string>
 #include "commons.h"
+#include "data_reader.h"
 
 namespace section2_params {
-    static const int64_t algo_n = 245;
-    static const int64_t algo_k = 3;
-    static const int64_t algo_m = 10643;
+    static const int64_t algo_n = read_dims_from_data(0); // 245;
+    static const int64_t algo_k = read_dims_from_data(1); // 3;
+    static const int64_t algo_m = read_dims_from_data(2); // 10643;
     //
     static const int64_t default_plaintext_precision = 16;
     //
-    static const int64_t n_lvl0 = 612;    //TODO: synchronize with section 1
+    static const int64_t n_lvl0 = read_dims_from_data(3); // 612;    //TODO: synchronize with section 1
     static const std::string lvl0_key_filename = "secret_keyset.bin";
     //
     static const int64_t N = 4096; //TODO

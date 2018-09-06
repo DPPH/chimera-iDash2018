@@ -34,7 +34,7 @@ add_library(chimera-dpph
         TRGSW.cpp TRGSW.h
         mainalgo.cpp mainalgo.h
         section2_params.h
-        section2_params_temporal.h)
+        section2_params_temporal.h "data_reader.cpp" data_reader.h)
 
 set(MAIN_PROGS
         main.cpp
