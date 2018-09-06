@@ -223,4 +223,7 @@ encrypt_S_temporal(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t
                    int64_t plaintext_precision_bits);
 
 
+NTL::vec_RR decrypt_temporal_packed_trlwe(const TRLWEVector &ciphertext, const TLweKey &key, int64_t length);
+
+NTL::mat_RR decrypt_temporal_packed_trlwe(const TRLweMatrix &ciphertext, const TLweKey &key, int64_t plaintext_cols);
 #endif //FHE_MAINALGO_H

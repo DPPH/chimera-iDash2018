@@ -360,7 +360,7 @@ int main() {
 
 #ifdef DEBUG_MODE
     vec_RR expected_numerator = decrypted_ymp * plain_S;
-    vec_RR decrypted_numerator = decrypt_heaan_packed_trlwe(*numerator, *key, algo_m);
+    vec_RR decrypted_numerator = decrypt_temporal_packed_trlwe(*numerator, *key, algo_m);
     cerr << "DEBUG decrypt numerator: " << decrypted_numerator << endl;
     cerr << "DEBUG expectd numerator: " << expected_numerator << endl;
     print_difference(decrypted_numerator, expected_numerator, "numerator");
@@ -417,7 +417,7 @@ int main() {
             }
         }
     }
-    mat_RR decrypted_A = decrypt_heaan_packed_trlwe(*A, *key, algo_m);
+    mat_RR decrypted_A = decrypt_temporal_packed_trlwe(*A, *key, algo_m);
     cerr << "DEBUG decrypt A: " << decrypted_A << endl;
     cerr << "DEBUG expectd A: " << expected_A << endl;
     print_difference(decrypted_A, expected_A, "A");
@@ -428,88 +428,5 @@ int main() {
     //free S and X here
     S = nullptr;
     X = nullptr;
-
-    // -------------------
-    // denom_1 proportional to row 0 of A    A[0]*sqrt(algo_n)= denom_1
-
-    BigTorusParams denom_bt_params(denominator_limbs, denominator_plaintext_expo, denominator_level);
-    TRLweParams denom_params(N, denom_bt_params);
-    TRLWEVector denom_1(A->cols, denom_params);
-
-    for (int i = 0; i < A->cols; i++) {
-        fixp_public_product(denom_1.data[i], A->data[0][i], sqrt(algo_n)); //TODO
-    }
-
-#ifdef DEBUG_MODE
-    vec_RR expected_denom1 = sqrt(algo_n) * decrypted_A[0];
-    vec_RR decrypted_denom1 = decrypt_heaan_packed_trlwe(denom_1, *key, algo_m);
-    cerr << "DEBUG decrypt denom1: " << decrypted_denom1 << endl;
-    cerr << "DEBUG expectd denom1: " << expected_denom1 << endl;
-    print_difference(decrypted_denom1, expected_denom1, "denom1");
-    assert_weakly(compute_public_exponent(decrypted_denom1) <= denom_1.data[0].params.fixp_params.plaintext_expo);
-#endif //DEBUG_MODE
-
-
-    // -------------------
-    // denom 2 = 4*norms2(A)
-    TRLwe temps(denom_params);
-    TRLWEVector denom_2(A->cols, denom_params);
-    BigTorusParams A2_bt_params(A2_limbs, A2_plaintext_expo, A2_level);
-    TRLweParams A2_params(N, A2_bt_params);
-    TRLwe tempsA2(A2_params);
-
-    for (int j = 0; j < A->cols; j++) {
-        zero(denom_2.data[j]);
-    }
-    for (int i = 0; i < A->rows; i++) {
-        for (int j = 0; j < A->cols; j++) {
-            //cerr << "AO-" << i << "-" << j << ": " << slot_decrypt(A->data[i][j], *key) << endl;
-            fixp_internal_product(tempsA2, A->data[i][j], A->data[i][j], *rk,
-                                  section2_params::default_plaintext_precision);
-            //cerr << "AA-" << i << "-" << j << ": " << slot_decrypt(tempsA2, *key) << endl;
-            fixp_public_product(temps, tempsA2, 4);
-            //cerr << "AB-" << i << "-" << j << ": " << slot_decrypt(temps, *key) << endl;
-            fixp_add(denom_2.data[j], denom_2.data[j], temps);
-            //cerr << "AC-" << i << "-" << j << ": " << slot_decrypt(denom_2.data[j], *key) << endl;
-        }
-    }
-
-#ifdef DEBUG_MODE
-    vec_RR expected_denom2(INIT_SIZE, algo_m);
-    clear(expected_denom2);
-    for (int64_t i = 0; i < algo_k + 1; i++) {
-        for (int64_t j = 0; j < algo_m; j++) {
-            expected_denom2[j] += 4 * decrypted_A[i][j] * decrypted_A[i][j];
-        }
-    }
-    vec_RR decrypted_denom2 = decrypt_heaan_packed_trlwe(denom_2, *key, algo_m);
-    cerr << "DEBUG decrypt denom2: " << decrypted_denom2 << endl;
-    cerr << "DEBUG expectd denom2: " << expected_denom2 << endl;
-    print_difference(decrypted_denom2, expected_denom2, "denom2");
-    assert_weakly(compute_public_exponent(decrypted_denom2) <= denom_2.data[0].params.fixp_params.plaintext_expo);
-#endif //DEBUG_MODE
-
-    shared_ptr<TRLWEVector> denominator = substract_ind_TRLWE(denom_1, denom_2, denominator_level,
-                                                              denominator_plaintext_expo,
-                                                              section2_params::default_plaintext_precision);
-
-    // serialize denominator (lvl 0)
-    ofstream denominator_stream("denominator_lvl0.bin");
-    ostream_write_binary(denominator_stream, &denominator->length, sizeof(int64_t));
-    serializeTRLweParams(denominator_stream, denominator->data[0].params);
-    for (int64_t i = 0; i < denominator->length; i++) {
-        serializeTRLweContent(denominator_stream, denominator->data[i]);
-    }
-    denominator_stream.close();
-
-#ifdef DEBUG_MODE
-    vec_RR expected_denominator = decrypted_denom1 - decrypted_denom2;
-    vec_RR decrypted_denominator = decrypt_heaan_packed_trlwe(*denominator, *key, algo_m);
-    cerr << "DEBUG decrypt denominator: " << decrypted_denominator << endl;
-    cerr << "DEBUG expectd denominator: " << expected_denominator << endl;
-    print_difference(decrypted_denominator, expected_denominator, "denominator");
-    assert_weakly(
-            compute_public_exponent(decrypted_denominator) <= denominator->data[0].params.fixp_params.plaintext_expo);
-#endif //DEBUG_MODE
 
 }

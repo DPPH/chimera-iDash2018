@@ -43,7 +43,9 @@ set(MAIN_PROGS
         key-gen-program.cpp
         debug-decrypt-program.cpp
         decrypt-program.cpp
+        decrypt-program-temporal.cpp
         encrypt-program.cpp
+        encrypt-program-temporal.cpp
         plaintext.cpp
         )
 
