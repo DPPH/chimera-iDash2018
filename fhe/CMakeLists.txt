@@ -40,6 +40,7 @@ set(MAIN_PROGS
         main.cpp
         cloud-program.cpp
         cloud-program-temporal.cpp
+        cloud-program-temporal-debug.cpp
         cloud-program-debug.cpp
         key-gen-program.cpp
         debug-decrypt-program.cpp
