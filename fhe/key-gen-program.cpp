@@ -35,7 +35,7 @@ int main() {
 
     for (int i = 0; i < n_lvl0; i++) {
 
-        int_encrypt(bk[i], s[i], *key, bk_alpha_bits);
+        int_encrypt(bk[i], s[i], *key, bk_alpha_bits + TRGSWParams::Bgbits);
 #pragma omp critical
         {
             printf("%3d/%3ld\r", k++, long(n_lvl0));

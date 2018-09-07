@@ -21,7 +21,7 @@ namespace section2_params {
     static const std::string section2_key_filename = "section2_secret.key";
     //
     static const std::string section1_2_bk_filename = "bk.key";
-    static const int64_t bk_alpha_bits = 115; //signed
+    static const int64_t bk_alpha_bits = 83; //target bk alpha
     static const int64_t bk_nblimbs = limb_precision(bk_alpha_bits);
     //
     static const std::string section1_2_ks_filename = "ks.key";
