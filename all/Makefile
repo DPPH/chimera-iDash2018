@@ -1,10 +1,30 @@
-all:
-
 decrypt:
 	../fhe/build/decrypt-program
 	# results are in stat.txt 
 
-cloud: 
+cloud:
+	rm -rf cloud || echo
+	mkdir cloud
+	#public/cloud keys from keygen phase
+	cd cloud; ln ../params.bin .
+	cd cloud; ln ../bk.key .
+	cd cloud; ln ../rk.key .
+	cd cloud; ln ../ks.key .
+	cd cloud; ln ../cloud_keyset.bin .
+	#results from the encryption phase
+	cd cloud; ln ../dimensions.txt .
+	cd cloud; ln ../data.ctxt .
+	cd cloud; ln ../X_lvl2.bin .
+	cd cloud; ln ../S_lvl3.bin .
+	cd cloud; ln ../y_lvl2.bin .
+	#run the cloud part
+	cd cloud; ../../log_regr/build/log_regr
+	cd cloud; ../../fhe/build/cloud-program
+	#copy the result
+	cp cloud/numerator_lvl0.bin .
+	cp cloud/denominator_lvl0.bin .
+
+cloud-inplace: 
 	../log_regr/build/log_regr
 	../fhe/build/cloud-program
 	#../fhe/build/cloud-program-debug
