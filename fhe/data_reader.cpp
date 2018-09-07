@@ -16,7 +16,7 @@ int64_t read_dims_from_data(int64_t index) {
             if (!ifs) {
                 //try to read from dimensions.txt
                 ifstream dfs("dimensions.txt");
-                assert_dramatically(ifs, "dimensions.txt not found");
+                assert_dramatically(dfs, "dimensions.txt not found");
                 string buf;
                 dfs >> buf >> dims[0]
                     >> buf >> dims[1]
