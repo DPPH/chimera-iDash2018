@@ -79,7 +79,7 @@ int main() {
     //serialize stat
     ofstream stat_stream("stat.txt");
     for (int64_t i = 0; i < algo_m; i++) {
-        stat_stream << stat[i] << endl;
+        stat_stream << (i + 1) << "\t" << stat[i] << endl;
     }
     stat_stream.close();
 
