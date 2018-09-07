@@ -193,8 +193,9 @@ std::shared_ptr<TRGSWMatrix>
 encrypt_S_temporal(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bits,
                    int64_t plaintext_precision_bits) {
     const int64_t Ns2 = N / 2;
+    const int64_t coeffs_per_ciphertext = Ns2;
     const int64_t rows = plaintext.NumRows();
-    const int64_t cols = ceil(plaintext.NumCols() / double(N)); //there are N slots
+    const int64_t cols = ceil(plaintext.NumCols() / double(coeffs_per_ciphertext));
 
     //find plaintext maximum
     NTL::RR maxiNorm2Sq;
@@ -205,9 +206,9 @@ encrypt_S_temporal(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t
         NTL::RR norm2sq;
         for (int c = 0; c < cols; c++) {
             norm2sq = 0;
-            for (int k = 0; k < Ns2; k++) {
-                if (c * Ns2 + k < plaintext.NumCols()) {
-                    RR slot = plaintext[r][c * Ns2 + k];
+            for (int k = 0; k < coeffs_per_ciphertext; k++) {
+                if (c * coeffs_per_ciphertext + k < plaintext.NumCols()) {
+                    RR slot = plaintext[r][c * coeffs_per_ciphertext + k];
                     norm2sq += slot * slot;
                     if (abs(slot) > maxiNormInf) maxiNormInf = abs(slot);
                 }
@@ -250,8 +251,8 @@ encrypt_S_temporal(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t
         for (int64_t c = 0; c < cols; c++) {
             RR::SetPrecision(plain_limbs * BITS_PER_LIMBS);
             //set the slots at position (r,c)
-            for (int64_t coefid = 0; coefid < N; coefid++) {
-                int64_t pid = c * N + coefid;
+            for (int64_t coefid = 0; coefid < coeffs_per_ciphertext; coefid++) {
+                int64_t pid = c * coeffs_per_ciphertext + coefid;
                 //pre-scale the input by -real_plaintext_exponent
                 if (pid < plaintext.NumCols()) {
                     //rescale and round
@@ -260,6 +261,9 @@ encrypt_S_temporal(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t
                 } else {
                     icoefs[coefid] = 0;
                 }
+            }
+            for (int64_t coefid = coeffs_per_ciphertext; coefid < N; coefid++) {
+                icoefs[coefid] = 0;
             }
             //cerr << endl;
             //encrypt the coefs
@@ -461,14 +465,15 @@ NTL::vec_RR decrypt_heaan_packed_trlwe(const TRLWEVector &ciphertext, const TLwe
 //return a vector with the real part of all slots
 NTL::vec_RR decrypt_temporal_packed_trlwe(const TRLWEVector &ciphertext, const TLweKey &key, int64_t length) {
     const int64_t N = ciphertext.data[0].params.N;
-    assert(int64_t(ciphertext.length * N) >= length);
-    assert(int64_t ((ciphertext.length-1) * N) < length);
+    const int64_t coeffs_per_ciphertext = N / 2;
+    assert(int64_t(ciphertext.length * coeffs_per_ciphertext) >= length);
+    assert(int64_t ((ciphertext.length-1) * coeffs_per_ciphertext) < length);
     vec_RR reps;
     reps.SetLength(length);
     for (int64_t j = 0; j < ciphertext.length; j++) {
         vec_RR plaintexts = fixp_decrypt(ciphertext.data[j], key);
-        for (int64_t k = 0; k < N; k++) {
-            int64_t idx = j * N + k;
+        for (int64_t k = 0; k < coeffs_per_ciphertext; k++) {
+            int64_t idx = j * coeffs_per_ciphertext + k;
             if (idx < length) reps[idx] = plaintexts[k];
         }
     }
@@ -497,15 +502,16 @@ NTL::mat_RR decrypt_heaan_packed_trlwe(const TRLweMatrix &ciphertext, const TLwe
 //return a vector with the real part of all slots
 NTL::mat_RR decrypt_temporal_packed_trlwe(const TRLweMatrix &ciphertext, const TLweKey &key, int64_t plaintext_cols) {
     int64_t N = ciphertext.data[0][0].params.N;
-    assert(int64_t(ciphertext.cols * N) >= plaintext_cols);
-    assert(int64_t ((ciphertext.cols-1) * N) < plaintext_cols);
+    const int64_t coeffs_per_ciphertext = N / 2;
+    assert(int64_t(ciphertext.cols * coeffs_per_ciphertext) >= plaintext_cols);
+    assert(int64_t ((ciphertext.cols-1) * coeffs_per_ciphertext) < plaintext_cols);
     mat_RR reps;
     reps.SetDims(ciphertext.rows, plaintext_cols);
     for (int64_t i = 0; i < ciphertext.rows; i++) {
         for (int64_t j = 0; j < ciphertext.cols; j++) {
             vec_RR plaintexts = fixp_decrypt(ciphertext.data[i][j], key);
-            for (int64_t k = 0; k < N; k++) {
-                int64_t idx = j * N + k;
+            for (int64_t k = 0; k < coeffs_per_ciphertext; k++) {
+                int64_t idx = j * coeffs_per_ciphertext + k;
                 if (idx < plaintext_cols) reps[i][idx] = plaintexts[k];
             }
         }
