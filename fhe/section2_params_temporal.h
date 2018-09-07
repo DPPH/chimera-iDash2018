@@ -29,7 +29,7 @@ namespace section2_params_temporal {
     static const int64_t ks_out_alpha_bits = 80;
     //
     static const std::string section2_rk_filename = "rk.key";
-    static const int64_t rk_alpha_bits = 110;
+    static const int64_t rk_alpha_bits = 78;
     static const int64_t rk_nblimbs = limb_precision(rk_alpha_bits);
     //
     // input tlwe during mega-bootstrap (mapping N/2 -> 2^test_vector_plaintext_expo)
