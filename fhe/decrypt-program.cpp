@@ -69,9 +69,11 @@ int main() {
 
 
     NTL::vec_RR stat;
+    RR denom_epsilon;
+    denom_epsilon = 0.01;
     stat.SetLength(algo_m);
     for (int64_t i = 0; i < algo_m; i++) {
-        stat[i] = abs(numerator_plaintext[i]) / sqrt(abs(denominator_plaintext[i]));
+        stat[i] = numerator_plaintext[i] / max(denom_epsilon, denominator_plaintext[i]);
     }
 
     //serialize stat
