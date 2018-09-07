@@ -71,7 +71,7 @@ int main() {
     TRGSWParams trgswParams_rk(N, bt_params_rk);
     TRGSW rk(trgswParams_rk);
     cout << "start keygen rk key at: " << clock() / double(CLOCKS_PER_SEC) << endl;
-    intPoly_encrypt(rk, key->key, *key, rk_alpha_bits);
+    intPoly_encrypt(rk, key->key, *key, rk_alpha_bits + TRGSWParams::Bgbits);
     cout << "end keygen rk key at: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
     //serialize bootstrapping key
