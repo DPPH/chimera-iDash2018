@@ -3,26 +3,26 @@ decrypt:
 	# results are in stat.txt 
 
 cloud:
-	rm -rf cloud || echo
-	mkdir cloud
+	rm -rf clouddir || echo
+	mkdir clouddir
 	#public/cloud keys from keygen phase
-	cd cloud; ln ../params.bin .
-	cd cloud; ln ../bk.key .
-	cd cloud; ln ../rk.key .
-	cd cloud; ln ../ks.key .
-	cd cloud; ln ../cloud_keyset.bin .
+	cd clouddir; ln ../params.bin .
+	cd clouddir; ln ../bk.key .
+	cd clouddir; ln ../rk.key .
+	cd clouddir; ln ../ks.key .
+	cd clouddir; ln ../cloud_keyset.bin .
 	#results from the encryption phase
-	cd cloud; ln ../dimensions.txt .
-	cd cloud; ln ../data.ctxt .
-	cd cloud; ln ../X_lvl2.bin .
-	cd cloud; ln ../S_lvl3.bin .
-	cd cloud; ln ../y_lvl2.bin .
+	cd clouddir; ln ../dimensions.txt .
+	cd clouddir; ln ../data.ctxt .
+	cd clouddir; ln ../X_lvl2.bin .
+	cd clouddir; ln ../S_lvl3.bin .
+	cd clouddir; ln ../y_lvl2.bin .
 	#run the cloud part
-	cd cloud; ../../log_regr/build/log_regr
-	cd cloud; ../../fhe/build/cloud-program
+	cd clouddir; ../../log_regr/build/log_regr
+	cd clouddir; ../../fhe/build/cloud-program
 	#copy the result
-	cp cloud/numerator_lvl0.bin .
-	cp cloud/denominator_lvl0.bin .
+	cp clouddir/numerator_lvl0.bin .
+	cp clouddir/denominator_lvl0.bin .
 
 cloud-inplace: 
 	../log_regr/build/log_regr
