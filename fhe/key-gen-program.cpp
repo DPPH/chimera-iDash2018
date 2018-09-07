@@ -35,7 +35,7 @@ int main() {
 
     for (int i = 0; i < n_lvl0; i++) {
 
-        int_encrypt(bk[i], s[i], *key, bk_alpha_bits);
+        int_encrypt(bk[i], s[i], *key, bk_alpha_bits + TRGSWParams::Bgbits);
 #pragma omp critical
         {
             printf("%3d/%3ld\r", k++, long(n_lvl0));
@@ -71,7 +71,7 @@ int main() {
     TRGSWParams trgswParams_rk(N, bt_params_rk);
     TRGSW rk(trgswParams_rk);
     cout << "start keygen rk key at: " << clock() / double(CLOCKS_PER_SEC) << endl;
-    intPoly_encrypt(rk, key->key, *key, rk_alpha_bits);
+    intPoly_encrypt(rk, key->key, *key, rk_alpha_bits + TRGSWParams::Bgbits);
     cout << "end keygen rk key at: " << clock() / double(CLOCKS_PER_SEC) << endl;
 
     //serialize bootstrapping key

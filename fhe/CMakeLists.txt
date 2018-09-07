@@ -33,16 +33,20 @@ add_library(chimera-dpph
         TRLwe.cpp TRLwe.h
         TRGSW.cpp TRGSW.h
         mainalgo.cpp mainalgo.h
-        section2_params.h)
+        section2_params.h
+        section2_params_temporal.h "data_reader.cpp" data_reader.h)
 
 set(MAIN_PROGS
         main.cpp
         cloud-program.cpp
+        cloud-program-temporal.cpp
         cloud-program-debug.cpp
         key-gen-program.cpp
         debug-decrypt-program.cpp
         decrypt-program.cpp
+        decrypt-program-temporal.cpp
         encrypt-program.cpp
+        encrypt-program-temporal.cpp
         plaintext.cpp
         )
 

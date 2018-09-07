@@ -5,13 +5,13 @@
 #include "TLwe.h"
 #include "TRLwe.h"
 #include "mainalgo.h"
-#include "section2_params.h"
+#include "section2_params_temporal.h"
 
 NTL_CLIENT;
 
 int main() {
     // algo parameters (TODO: share these parameters everywhere)
-    using namespace section2_params;
+    using namespace section2_params_temporal;
 
     // read the secret key
     cerr << "deserializing the section2 key" << endl;
@@ -21,11 +21,13 @@ int main() {
     key_in.close();
 
 
-    NTL::vec_RR denominator_plaintext;
     NTL::vec_RR numerator_plaintext;
-
-    denominator_plaintext.SetLength(algo_m);
     numerator_plaintext.SetLength(algo_m);
+
+
+    // NTL::mat_RR A_plaintext;
+    // A_plaintext.SetDims(algo_k+1, algo_m);
+
 
 
     // read the input ciphertexts 
@@ -42,46 +44,12 @@ int main() {
         }
         numerator_plaintext = decrypt_heaan_packed_trlwe(numerator, *key, algo_m);
         cout << "numerator: " << numerator_plaintext << endl;
-       
+
     } else {
         cout << "numerator: " << "absent!" << endl;
     }
     numerator_stream.close();
 
-
-    ifstream denominator_stream(denominator_lvl0_filename);
-    if (denominator_stream) {
-        istream_read_binary(denominator_stream, &length, sizeof(int64_t));
-        auto denominator_params = deserializeTRLweParams(denominator_stream);
-        store_forever(denominator_params);
-        assert_dramatically(int64_t(denominator_params->N) == N);
-        TRLWEVector denominator(length, *denominator_params);
-        for (int64_t i = 0; i < length; i++) {
-            deserializeTRLweContent(denominator_stream, denominator.data[i]);
-        }
-        denominator_plaintext = decrypt_heaan_packed_trlwe(denominator, *key, algo_m);
-        cout << "denominator: " << denominator_plaintext << endl;
-
-    } else {
-        cout << "denominator: " << "absent!" << endl;
-    }
-    denominator_stream.close();
-
-
-    NTL::vec_RR stat;
-    RR denom_epsilon;
-    //denom_epsilon = 0.005;
-    stat.SetLength(algo_m);
-    for (int64_t i = 0; i < algo_m; i++) {
-        stat[i] = numerator_plaintext[i] / sqrt(abs(denominator_plaintext[i]));
-    }
-
-    //serialize stat
-    ofstream stat_stream("stat.txt");
-    for (int64_t i = 0; i < algo_m; i++) {
-        stat_stream << (i + 1) << "\t" << stat[i] << endl;
-    }
-    stat_stream.close();
 
 }
 

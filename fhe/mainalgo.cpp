@@ -188,6 +188,93 @@ encrypt_S(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bi
     return std::shared_ptr<TRGSWMatrix>(reps);
 }
 
+
+std::shared_ptr<TRGSWMatrix>
+encrypt_S_temporal(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bits,
+                   int64_t plaintext_precision_bits) {
+    const int64_t Ns2 = N / 2;
+    const int64_t rows = plaintext.NumRows();
+    const int64_t cols = ceil(plaintext.NumCols() / double(N)); //there are N slots
+
+    //find plaintext maximum
+    NTL::RR maxiNorm2Sq;
+    maxiNorm2Sq = -1;
+    NTL::RR maxiNormInf;
+    maxiNormInf = -1;
+    for (int r = 0; r < rows; r++) {
+        NTL::RR norm2sq;
+        for (int c = 0; c < cols; c++) {
+            norm2sq = 0;
+            for (int k = 0; k < Ns2; k++) {
+                if (c * Ns2 + k < plaintext.NumCols()) {
+                    RR slot = plaintext[r][c * Ns2 + k];
+                    norm2sq += slot * slot;
+                    if (abs(slot) > maxiNormInf) maxiNormInf = abs(slot);
+                }
+            }
+            if (norm2sq > maxiNorm2Sq) maxiNorm2Sq = norm2sq;
+        }
+    }
+    //this is the actual plaintext exponent
+    long real_plaintext_exponent_a = to_long(ceil(log(maxiNorm2Sq) / 2 / log(2.))); //todo override?
+    long real_plaintext_exponent_b = to_long(ceil(log(maxiNormInf) / log(2.)));     //todo override?
+    cout << "deduced plaintext exponents: " << real_plaintext_exponent_a << " or " << real_plaintext_exponent_b << endl;
+    long real_plaintext_exponent = std::min(real_plaintext_exponent_b, real_plaintext_exponent_a);
+    long trgsw_bits_a = plaintext_precision_bits;
+    //assert_dramatically(trgsw_bits_a == 1);
+    //assert_dramatically(real_plaintext_exponent == 0);
+    //long trgsw_shift = real_plaintext_exponent - trgsw_bits_a;
+    //info: the trgsw will be shifted by -trgsw_shift upon encryption
+    //info: upon external product, * the level will decrease by tgrsw_bits_a
+    //                             * the plaintext expo increases by real_plaintext_exponent
+
+    //In the first section, we shift the input by -trgsw_shift, and round to integers
+    const int64_t plain_limbs = limb_precision(plaintext_precision_bits + log2(N));
+
+    //Then, for the TRGSW encryption itself:
+    //  * alpha is the requested error level
+    const int64_t reps_limbs = limb_precision(alpha_bits);
+    const int64_t reps_plaintext_exponent = 0; //these two are unused (we leave 0: no shift, for test purposes)
+    const int64_t reps_level_exponent = 0;     //these two are unused (we leave 0: no shift, for test purposes)
+    shared_ptr<BigTorusParams> bt_params = make_shared<BigTorusParams>(reps_limbs, reps_plaintext_exponent,
+                                                                       reps_level_exponent);
+    store_forever(bt_params);
+    shared_ptr<TRGSWParams> trgsw_params = make_shared<TRGSWParams>(N, *bt_params);
+    store_forever(trgsw_params);
+    TRGSWMatrix *reps = new TRGSWMatrix(rows, cols, *trgsw_params);
+
+#pragma omp parallel for
+    for (int64_t r = 0; r < rows; r++) {
+        int64_t *icoefs = new int64_t[N];
+
+        for (int64_t c = 0; c < cols; c++) {
+            RR::SetPrecision(plain_limbs * BITS_PER_LIMBS);
+            //set the slots at position (r,c)
+            for (int64_t coefid = 0; coefid < N; coefid++) {
+                int64_t pid = c * N + coefid;
+                //pre-scale the input by -real_plaintext_exponent
+                if (pid < plaintext.NumCols()) {
+                    //rescale and round
+                    icoefs[coefid] = to_long(
+                            RoundToZZ(to_RR(plaintext[r][pid]) * power2_RR(trgsw_bits_a - real_plaintext_exponent)));
+                } else {
+                    icoefs[coefid] = 0;
+                }
+            }
+            //cerr << endl;
+            //encrypt the coefs
+            intPoly_encrypt(reps->data[r][c], icoefs, key, alpha_bits);
+            //finally, set the real plaintext exponent and bits_a
+            reps->data[r][c].bits_a = trgsw_bits_a;
+            reps->data[r][c].plaintext_exponent = real_plaintext_exponent;
+        }
+        //free resources
+        delete[] icoefs;
+    }
+    //free resources
+    return std::shared_ptr<TRGSWMatrix>(reps);
+}
+
 std::shared_ptr<TRGSWMatrix>
 encrypt_X(NTL::mat_RR plaintext, const TLweKey &key, int64_t N, int64_t alpha_bits, int64_t plaintext_precision_bits) {
     const int64_t rows = plaintext.NumRows();
@@ -372,6 +459,23 @@ NTL::vec_RR decrypt_heaan_packed_trlwe(const TRLWEVector &ciphertext, const TLwe
 }
 
 //return a vector with the real part of all slots
+NTL::vec_RR decrypt_temporal_packed_trlwe(const TRLWEVector &ciphertext, const TLweKey &key, int64_t length) {
+    const int64_t N = ciphertext.data[0].params.N;
+    assert(int64_t(ciphertext.length * N) >= length);
+    assert(int64_t ((ciphertext.length-1) * N) < length);
+    vec_RR reps;
+    reps.SetLength(length);
+    for (int64_t j = 0; j < ciphertext.length; j++) {
+        vec_RR plaintexts = fixp_decrypt(ciphertext.data[j], key);
+        for (int64_t k = 0; k < N; k++) {
+            int64_t idx = j * N + k;
+            if (idx < length) reps[idx] = plaintexts[k];
+        }
+    }
+    return reps;
+}
+
+//return a vector with the real part of all slots
 NTL::mat_RR decrypt_heaan_packed_trlwe(const TRLweMatrix &ciphertext, const TLweKey &key, int64_t plaintext_cols) {
     int64_t Ns2 = ciphertext.data[0][0].params.N / 2;
     assert(int64_t(ciphertext.cols * Ns2) >= plaintext_cols);
@@ -383,6 +487,25 @@ NTL::mat_RR decrypt_heaan_packed_trlwe(const TRLweMatrix &ciphertext, const TLwe
             vec_RR plaintexts = slot_decrypt(ciphertext.data[i][j], key);
             for (int64_t k = 0; k < Ns2; k++) {
                 int64_t idx = j * Ns2 + k;
+                if (idx < plaintext_cols) reps[i][idx] = plaintexts[k];
+            }
+        }
+    }
+    return reps;
+}
+
+//return a vector with the real part of all slots
+NTL::mat_RR decrypt_temporal_packed_trlwe(const TRLweMatrix &ciphertext, const TLweKey &key, int64_t plaintext_cols) {
+    int64_t N = ciphertext.data[0][0].params.N;
+    assert(int64_t(ciphertext.cols * N) >= plaintext_cols);
+    assert(int64_t ((ciphertext.cols-1) * N) < plaintext_cols);
+    mat_RR reps;
+    reps.SetDims(ciphertext.rows, plaintext_cols);
+    for (int64_t i = 0; i < ciphertext.rows; i++) {
+        for (int64_t j = 0; j < ciphertext.cols; j++) {
+            vec_RR plaintexts = fixp_decrypt(ciphertext.data[i][j], key);
+            for (int64_t k = 0; k < N; k++) {
+                int64_t idx = j * N + k;
                 if (idx < plaintext_cols) reps[i][idx] = plaintexts[k];
             }
         }
