@@ -394,8 +394,6 @@ int main() {
 
     // serialize A (lvl 1)
     ofstream A_stream("A_lvl1.bin");
-    ostream_write_binary(numerator_stream, &numerator->length, sizeof(int64_t));
-
     ostream_write_binary(A_stream, &A->rows, sizeof(int64_t));
     ostream_write_binary(A_stream, &A->cols, sizeof(int64_t));
     serializeTRLweParams(A_stream, A->data[0][0].params);
@@ -450,12 +448,12 @@ int main() {
     ostream_write_binary(A0_stream, &tmp, sizeof(int64_t));
     for (int64_t i = 0; i < A->rows; i++) {
         for (int64_t j = 0; j < A->cols; j++) {
-            lshift(tmpA, A->data[0][0], rsShift);
+            lshift(tmpA, A->data[i][j], rsShift);
             for (int64_t k = 0; k < N; k++) {
-                ostream_write_binary(A0_stream, tmpA.a[0].getAT(k).limbs_end - 4, 4);
+                ostream_write_binary(A0_stream, ((char *) tmpA.a[0].getAT(k).limbs_end) - 4, 4);
             }
             for (int64_t k = 0; k < N; k++) {
-                ostream_write_binary(A0_stream, tmpA.a[1].getAT(k).limbs_end - 4, 4);
+                ostream_write_binary(A0_stream, ((char *) tmpA.a[1].getAT(k).limbs_end) - 4, 4);
             }
         }
     }
@@ -474,10 +472,10 @@ int main() {
     ostream_write_binary(N0_stream, &tmp, sizeof(int64_t));
     for (int64_t i = 0; i < numerator->length; i++) {
         for (int64_t k = 0; k < N; k++) {
-            ostream_write_binary(N0_stream, numerator->data[i].a[0].getAT(k).limbs_end - 4, 4);
+            ostream_write_binary(N0_stream, ((char *) numerator->data[i].a[0].getAT(k).limbs_end) - 4, 4);
         }
         for (int64_t k = 0; k < N; k++) {
-            ostream_write_binary(N0_stream, numerator->data[i].a[1].getAT(k).limbs_end - 4, 4);
+            ostream_write_binary(N0_stream, ((char *) numerator->data[i].a[1].getAT(k).limbs_end) - 4, 4);
         }
     }
     N0_stream.close();
