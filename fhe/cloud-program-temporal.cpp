@@ -74,7 +74,7 @@ void print_difference(const mat_RR &actual, const mat_RR &expected, const string
     cerr << "Distance " << name << " max-error: " << max_diff << " avg-error: " << avg_diff << endl;
 }
 
-#define DEBUG_MODE
+//#define DEBUG_MODE
 
 int main() {
     using namespace section2_params_temporal;
